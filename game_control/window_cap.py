@@ -21,12 +21,10 @@ def findWindowId(windowName):
     #         window_size = window.get('kCGWindowBounds', {}).get('Width', 'Unknown'), window.get('kCGWindowBounds', {}).get('Height', 'Unknown')
     #         print(f"Window ID: {window_id}, Window Name: {window_name}, Window Size: {window_size}")
 
-
     for window in window_list:
         if windowName == window['kCGWindowOwnerName']:
             if window.get('kCGWindowBounds', {}).get('Width', 'Unknown') == screen_width and window.get('kCGWindowBounds', {}).get('Height', 'Unknown') == screen_height:
                 print('found window id %s' % window.get('kCGWindowNumber'))
-                print(window.get('kCGWindowBounds', {}))
                 return window.get('kCGWindowNumber')
 
     print('unable to find window id')
@@ -59,6 +57,3 @@ if img is not None:
     plt.show()
 
 
-# # measure frames per second
-# print('FPS {}'.format(1 / (time() - loopTime)))
-# loopTime = time()
