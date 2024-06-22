@@ -1,0 +1,1 @@
+1. The image is a gamescene. The game is not mineceaft, although it looks very similar. The objective of the game is to explore the scene and collect points. In what direction should the player move? Choose one among the following: {forward, backward, left, right}.
