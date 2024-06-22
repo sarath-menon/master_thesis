@@ -1,17 +1,12 @@
 import os
 from openai import AsyncOpenAI
 import asyncio
-import base64
+
+import utils
 
 MODEL = "gpt-4o"
-IMAGE_PATH = "screenshot.jpg"
-
-# Open the image file and encode it as a base64 string
-def encode_image(image_path):
-    with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
-
-base64_image = encode_image(IMAGE_PATH)
+IMAGE_PATH = "screenshot_annotated.jpg"
+PROMPT_PATH = 'prompts/gpt4-0.md'
 
 
 client = AsyncOpenAI(
@@ -19,13 +14,13 @@ client = AsyncOpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
 )
 
-async def main():
+async def main(prompts_dict, base64_image ):
     stream = await client.chat.completions.create(
         model=MODEL,
         messages=[
-            {"role": "system", "content": "You are an expert at QA testing for video games. You will be given a screenshot of a video game and asked to describe what is happening in the game to the user."},
+            {"role": "system", "content": prompts_dict['System']},
             {"role": "user", "content": [
-                {"type": "text", "text": "What is happening in the game?"},
+                {"type": "text", "text": prompts_dict['User']},
                 {"type": "image_url", "image_url": {
                     "url": f"data:image/png;base64,{base64_image}"}
                 }
@@ -38,4 +33,8 @@ async def main():
         print(chunk.choices[0].delta.content or "", end="")
 
 
-asyncio.run(main())
+# Example usage
+prompts_dict = utils.markdown_to_dict(PROMPT_PATH)
+# print(prompts_dict['User'])
+base64_image = utils.encode_image(IMAGE_PATH)
+asyncio.run(main(prompts_dict, base64_image))
