@@ -29,10 +29,6 @@ class GameController:
             self.is_running = True
             print("Game resumed!")
 
-    def end_game(self):
-        self.is_game_over = True
-        print(f"Game over! Final score: {self.score}, Final level: {self.level}")
-
     def move_camera(self, direction):
         if direction == "up":
             pyautogui.press('up')
