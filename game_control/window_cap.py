@@ -7,6 +7,9 @@ import os
 import pyautogui
 import matplotlib.pyplot as plt
 
+windowName = "Ryujinx"
+scale_factor = 0.5  # Define the scale factor for downsampling
+
 def findWindowId(windowName):
     window_list = CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID)
 
@@ -41,17 +44,27 @@ def takeScreenshot(windowId):
     img = ImageGrab.grabclipboard()
 
     if img is not None:
-        img_array = numpy.array(img)
-        return img_array
+        # Get the original dimensions
+        original_width, original_height = img.size
+
+        # Calculate the new dimensions
+        new_width = int(original_width * scale_factor)
+        new_height = int(original_height * scale_factor)
+        print(f"Original dimensions: {original_width}x{original_height}, New dimensions: {new_width}x{new_height}")
+
+        # Downsample the image
+        img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        return img
     else:
         print("No image on clipboard!")
         return None
-    
-windowName = "Ryujinx"
+
 img = takeScreenshot(windowName)
 
 if img is not None:
     plt.imshow(img)
+    plt.title(windowName)
+    plt.axis('off')
     plt.show()
 
 
