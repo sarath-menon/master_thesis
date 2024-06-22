@@ -54,7 +54,12 @@ def takeScreenshot(windowId):
 
         # Downsample the image
         img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-        return img
+
+        # Crop 50 pixels from the top and bottom
+        crop_top = 60
+        crop_bottom = 60
+        cropped_img = img.crop((0, crop_top, new_width, new_height - crop_bottom))  
+        return cropped_img
     else:
         print("No image on clipboard!")
         return None
