@@ -7,9 +7,6 @@ import os
 import pyautogui
 import matplotlib.pyplot as plt
 
-windowName = "Ryujinx"
-screen_width, screen_height = 1728.0, 44.0
-
 def findWindowId(windowName):
     window_list = CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID)
 
@@ -23,7 +20,8 @@ def findWindowId(windowName):
 
     for window in window_list:
         if windowName == window['kCGWindowOwnerName']:
-            if window.get('kCGWindowBounds', {}).get('Width', 'Unknown') == screen_width and window.get('kCGWindowBounds', {}).get('Height', 'Unknown') == screen_height:
+            # 'Ryjunix' has many windows, select the window with a name
+            if window['kCGWindowName'].strip() != "":
                 print('found window id %s' % window.get('kCGWindowNumber'))
                 return window.get('kCGWindowNumber')
 
@@ -49,7 +47,7 @@ def takeScreenshot(windowId):
         print("No image on clipboard!")
         return None
     
-
+windowName = "Ryujinx"
 img = takeScreenshot(windowName)
 
 if img is not None:
