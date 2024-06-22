@@ -1,5 +1,6 @@
 import pyautogui
 import time
+from window_capture import WindowCapture
 
 class GameController:
     def __init__(self):
@@ -8,6 +9,7 @@ class GameController:
         self.is_game_over = False
         self.is_running = True
         self.screen_width, self.screen_height = pyautogui.size()
+        self.window_capture = WindowCapture()
 
     def click_center(self):
         pyautogui.click(self.screen_width/2, self.screen_height/2)
@@ -40,6 +42,9 @@ class GameController:
             pyautogui.press('right')
         else:
             print(f"Invalid direction: {direction}")
+
+    def get_screenshot(self):
+        return self.window_capture.takeScreenshot()
 
     # duration is in seconds
     def move_player(self, direction, duration=0.1):
