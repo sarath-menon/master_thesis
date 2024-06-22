@@ -67,6 +67,8 @@ def takeScreenshot(windowId):
 img = takeScreenshot(windowName)
 
 if img is not None:
+    img = img.convert('RGB')  # Convert the image to RGB mode
+    img.save('screenshot.jpg', format='JPEG', quality=100)
     plt.imshow(img)
     plt.title(windowName)
     plt.axis('off')
