@@ -1,4 +1,5 @@
 import pyautogui
+import time
 
 class GameController:
     def __init__(self):
@@ -10,6 +11,9 @@ class GameController:
 
     def click_center(self):
         pyautogui.click(self.screen_width/2, self.screen_height/2)
+
+    def go_to_game_window(self):
+        self.click_center()
 
     def pause_game(self):
         if self.is_running:
@@ -28,6 +32,42 @@ class GameController:
     def end_game(self):
         self.is_game_over = True
         print(f"Game over! Final score: {self.score}, Final level: {self.level}")
+
+    def move_camera(self, direction):
+        if direction == "up":
+            pyautogui.press('up')
+        elif direction == "down":
+            pyautogui.press('down')
+        elif direction == "left":
+            pyautogui.press('left')
+        elif direction == "right":
+            pyautogui.press('right')
+        else:
+            print(f"Invalid direction: {direction}")
+
+    # duration is in seconds
+    def move_player(self, direction, duration=0.1):
+        key = None
+
+        # set key
+        if direction == "forward":
+            key = 'w'
+        elif direction == "backward":
+            key = 's'
+        elif direction == "left":
+            key = 'a'
+        elif direction == "right":
+            key = 'd'
+        else:
+            print(f"Invalid direction: {direction}")
+
+        # press key for specific duration
+        pyautogui.keyDown(key)
+        time.sleep(duration)  # Duration for which the key will be held down
+        pyautogui.keyUp(key)
+
+    def camera_down(self):
+        pyautogui.hotkey('fn', 'f7')
 
     def get_game_state(self):
         return {
