@@ -6,12 +6,15 @@ from io import BytesIO
 
 URL = "http://localhost:8086/screenshot"
 
-def sepia(input_img):
+def sepia():
     response = requests.get(URL)
     img = Image.open(BytesIO(response.content))
     return np.array(img), "Hello"
 
-demo = gr.Interface(fn=sepia, inputs=[], outputs=[gr.Image(), gr.Code()])
+demo = gr.Interface(fn=sepia, inputs=[], outputs=[
+    gr.Image(),
+    gr.Code()]
+    )
 
 if __name__ == "__main__":
     demo.launch()
