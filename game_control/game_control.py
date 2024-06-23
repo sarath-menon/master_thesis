@@ -1,6 +1,6 @@
 import pyautogui
 import time
-from window_capture import WindowCapture
+from .window_capture import WindowCapture
 import requests
 
 class GameController:
@@ -14,11 +14,20 @@ class GameController:
         self.screen_width, self.screen_height = pyautogui.size()
         self.window_capture = WindowCapture()
     
-    def move_player(self, direction, duration=300):
+    def move_player(self, key, duration=300):
         try:
-            response = requests.post(self.game_url + '/move_player', json={'key': direction, 'duration': duration})
+            response = requests.post(self.game_url + '/move_player', json={'key': key, 'duration': duration})
             response.raise_for_status()  
             return response.status_code
+        except requests.RequestException as e:
+            print(f"Error fetching game data: {e}")
+            return None
+
+    def get_screenshot(self):
+        try:
+            response = requests.get(self.game_url + '/screenshot')
+            response.raise_for_status()  
+            return response.content
         except requests.RequestException as e:
             print(f"Error fetching game data: {e}")
             return None
@@ -54,30 +63,6 @@ class GameController:
             pyautogui.press('right')
         else:
             print(f"Invalid direction: {direction}")
-
-    def get_screenshot(self):
-        return self.window_capture.takeScreenshot()
-
-    # # duration is in seconds
-    # def move_player(self, direction, duration=0.1):
-    #     key = None
-
-    #     # set key
-    #     if direction == "forward":
-    #         key = 'w'
-    #     elif direction == "backward":
-    #         key = 's'
-    #     elif direction == "left":
-    #         key = 'a'
-    #     elif direction == "right":
-    #         key = 'd'
-    #     else:
-    #         print(f"Invalid direction: {direction}")
-
-    #     # press key for specific duration
-    #     pyautogui.keyDown(key)
-    #     time.sleep(duration)  # Duration for which the key will be held down
-    #     pyautogui.keyUp(key)
 
     def camera_down(self):
         pyautogui.hotkey('fn', 'f7')
