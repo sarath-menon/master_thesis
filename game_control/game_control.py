@@ -16,9 +16,9 @@ class GameController:
     
     def move_player(self, direction, duration=300):
         try:
-            response = requests.get(self.game_url + '/move_player', json={'key': direction, 'duration': duration})
+            response = requests.post(self.game_url + '/move_player', json={'key': direction, 'duration': duration})
             response.raise_for_status()  
-            return response.json()
+            return response.status_code
         except requests.RequestException as e:
             print(f"Error fetching game data: {e}")
             return None
