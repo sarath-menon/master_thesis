@@ -9,13 +9,8 @@ class StreamlitGui:
     def __init__(self):
         self.gc = GameController()
 
-        # Initialize the Streamlit GUI elements with hot reloading
-        st.title('Game Image Viewer')
-        st.write('This GUI displays images captured from a game.')
-        self.image_caption = st.text_input('Enter image caption:')
+        # Streamlit GUI elements with hot reloading
         st.button('Get screenshot', on_click=self.get_screenshot_callback)
-        st.button('Next Image', on_click=self.next_image_callback)
-
         st.text_area('Console Output', '', key='console_output', height=150)
 
     def get_screenshot_callback(self):
