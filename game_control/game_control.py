@@ -1,6 +1,6 @@
 import pyautogui
 import time
-from window_capture import WindowCapture
+from .window_capture import WindowCapture
 
 class GameController:
     def __init__(self):
