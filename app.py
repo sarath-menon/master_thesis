@@ -16,7 +16,8 @@ class StreamlitGui:
         st.button('Get screenshot', on_click=self.get_screenshot_callback)
         st.button('Call model', on_click=self.call_model_callback_sync)
 
-        # self.console_output = st.text_area('Console Output', '', key='console_output', height=150)
+        self.console_output_key = 'console_output'
+        st.text_area('Console Output', '', key=self.console_output_key, height=150)
 
         self.game_screenshot = None
         self.model = GPT4OModel()
@@ -40,10 +41,10 @@ class StreamlitGui:
 
         base64_image = base64.b64encode(self.game_screenshot).decode('utf-8')
 
-        response = await self.model.generate_response(base64_image)
+        response = await self.model.generate_waste(base64_image)
         print("Response:", response)
 
         content = response.choices[0].message.content
         content_json = json.loads(content)
 
-        st.text_area('Console Output', content_json['reason'], key='console_output', height=150)
+        st.session_state[self.console_output_key] = content_json['reason']
