@@ -40,19 +40,10 @@ class StreamlitGui:
 
         base64_image = base64.b64encode(self.game_screenshot).decode('utf-8')
 
-        response = await self.model.generate_waste(base64_image)
+        response = await self.model.generate_response(base64_image)
         print("Response:", response)
-
-        # async for chunk in stream:
-        #     chunk_content = chunk.choices[0].delta.content
-        #     if chunk_content is not None:
-        #         response = response + chunk_content
-        #         print(chunk_content or "", end="")
-
-        # Update the console output with the response
-        # response_json = json.loads(response)
 
         content = response.choices[0].message.content
         content_json = json.loads(content)
 
-        st.text_area('Console Output', content_json['model'], key='console_output', height=150)
+        st.text_area('Console Output', content_json['reason'], key='console_output', height=150)
