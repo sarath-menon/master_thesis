@@ -1,19 +1,17 @@
-
-
 import numpy as np
 import gradio as gr
+from PIL import Image
+import requests
+from io import BytesIO
+
+URL = "http://localhost:8086/screenshot"
 
 def sepia(input_img):
-    sepia_filter = np.array([
-        [0.393, 0.769, 0.189], 
-        [0.349, 0.686, 0.168], 
-        [0.272, 0.534, 0.131]
-    ])
-    sepia_img = input_img.dot(sepia_filter.T)
-    sepia_img /= sepia_img.max()
-    return sepia_img
+    response = requests.get(URL)
+    img = Image.open(BytesIO(response.content))
+    return np.array(img), "Hello"
 
-demo = gr.Interface(fn=sepia, inputs=[gr.Image()], outputs=[gr.Image()])
+demo = gr.Interface(fn=sepia, inputs=[], outputs=[gr.Image(), gr.Code()])
 
 if __name__ == "__main__":
     demo.launch()
