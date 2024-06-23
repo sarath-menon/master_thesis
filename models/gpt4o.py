@@ -32,15 +32,5 @@ class GPT4OModel:
             stream=True,
             temperature=0.0,
         )
-        async for chunk in stream:
-            print(chunk.choices[0].delta.content or "", end="")
 
         return stream
-
-# # Example usage
-# gpt4o_model = GPT4OModel()
-# prompts_dict = utils.markdown_to_dict(gpt4o_model.PROMPT_PATH)
-
-# # print(prompts_dict['User'])
-# base64_image = utils.encode_image(gpt4o_model.IMAGE_PATH)
-# asyncio.run(gpt4o_model.main(prompts_dict, base64_image))
