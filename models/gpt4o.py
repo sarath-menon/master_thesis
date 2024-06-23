@@ -2,7 +2,7 @@ import os
 from openai import AsyncOpenAI
 import asyncio
 from . import utils
-
+import json
 
 class GPT4OModel:    
 
@@ -29,8 +29,54 @@ class GPT4OModel:
                     }
                 ]}
             ],
+            # stream=True,
+            temperature=0.0,
+        )
+
+        # response = ""
+        # async for chunk in stream:
+        #     chunk_content = chunk.choices[0].delta.content
+        #     if chunk_content is not None:
+        #         response = response + chunk_content
+        #         print(chunk_content or "", end="")
+
+       
+        # response_json = json.dumps({"response": response})
+        # return response_json
+        return stream
+
+    async def generate_waste(self,  base64_image):
+        response = await self.client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a waste classification model"},
+                {"role": "user", "content": "return a short json with 3 fields"}
+            ],
+            response_format={ "type": "json_object" },
+            temperature=0.0,
+        )
+        return response
+
+    async def generate_waste_async(self,  base64_image):
+        stream = await self.client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a waste classification model"},
+                {"role": "user", "content": "Say oh yeah"}
+            ],
+            response_format={ "type": "json_object" },
             stream=True,
             temperature=0.0,
         )
 
+        # response = ""
+        # async for chunk in stream:
+        #     chunk_content = chunk.choices[0].delta.content
+        #     if chunk_content is not None:
+        #         response = response + chunk_content
+        #         print(chunk_content or "", end="")
+
+       
+        # response_json = json.dumps({"response": response})
         return stream
+

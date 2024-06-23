@@ -5,6 +5,8 @@ from game_control import GameController
 from models import GPT4OModel
 import asyncio
 import base64
+import json
+
 
 class StreamlitGui:
     def __init__(self):
@@ -38,15 +40,19 @@ class StreamlitGui:
 
         base64_image = base64.b64encode(self.game_screenshot).decode('utf-8')
 
-        stream = await self.model.generate_response(base64_image)
-        print("Response:", stream)
+        response = await self.model.generate_waste(base64_image)
+        print("Response:", response)
 
-        response = ""
-        async for chunk in stream:
-            chunk_content = chunk.choices[0].delta.content
-            if chunk_content is not None:
-                response = response + chunk_content
-                print(chunk_content or "", end="")
+        # async for chunk in stream:
+        #     chunk_content = chunk.choices[0].delta.content
+        #     if chunk_content is not None:
+        #         response = response + chunk_content
+        #         print(chunk_content or "", end="")
 
         # Update the console output with the response
-        st.text_area('Console Output', response, key='console_output', height=150)
+        # response_json = json.loads(response)
+
+        content = response.choices[0].message.content
+        content_json = json.loads(content)
+
+        st.text_area('Console Output', content_json['model'], key='console_output', height=150)
