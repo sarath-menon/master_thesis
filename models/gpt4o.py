@@ -33,17 +33,6 @@ class GPT4OModel:
             response_format={ "type": "json_object" },
             temperature=0.0,
         )
-
-        # response = ""
-        # async for chunk in stream:
-        #     chunk_content = chunk.choices[0].delta.content
-        #     if chunk_content is not None:
-        #         response = response + chunk_content
-        #         print(chunk_content or "", end="")
-
-       
-        # response_json = json.dumps({"response": response})
-        # return response_json
         return stream
 
     async def generate_waste(self,  base64_image):
@@ -51,7 +40,7 @@ class GPT4OModel:
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a waste classification model"},
-                {"role": "user", "content": "return a short json with 3 fields"}
+                {"role": "user", "content": "return a short json with 3 fields, one called reason"}
             ],
             response_format={ "type": "json_object" },
             temperature=0.0,
@@ -70,14 +59,5 @@ class GPT4OModel:
             temperature=0.0,
         )
 
-        # response = ""
-        # async for chunk in stream:
-        #     chunk_content = chunk.choices[0].delta.content
-        #     if chunk_content is not None:
-        #         response = response + chunk_content
-        #         print(chunk_content or "", end="")
-
-       
-        # response_json = json.dumps({"response": response})
         return stream
 
