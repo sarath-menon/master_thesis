@@ -12,7 +12,7 @@ class GameController:
         self.is_running = True
         self.screen_width, self.screen_height = pyautogui.size()
     
-    def move_player(self, direction, duration=300):
+    def move_player(self, direction, duration=500):
         key = None
         if direction == "forward":
             key = 'W'
