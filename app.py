@@ -9,6 +9,7 @@ import base64
 import asyncio
 import datetime
 import os
+import json
 
 URL = "http://localhost:8086/screenshot"
 
@@ -25,11 +26,21 @@ async def single_game_screenshot():
     print("Got game screenshot")
     img = Image.open(BytesIO(game_screenshot))
 
-    base64_image = base64.b64encode(game_screenshot).decode('utf-8')
+    # base64_image = base64.b64encode(game_screenshot).decode('utf-8')
     # response = await model.generate_response(base64_image)
     # content = response.choices[0].message.content
+    # content = json.loads(content)
 
-    content = "selv"
+    content = {
+        "action": "move_player",
+        "direction": "forward",
+        "reason": "To get a better view of the environment and identify potential paths or treasures."
+    }
+
+    await do_action(content["action"], content["direction"])
+
+    content = f"Action: {content['action']}, Direction: {content['direction']}, Reason: {content['reason']}"
+
     return np.array(img), content
 
 async def save_image_and_response(image_array, response):
@@ -66,21 +77,21 @@ async def stream_game_screenshot():
         yield np.array(img), content
 
 async def do_action(action, direction):
-    if action == "Move player":
+    if action == "move_player":
         gc.move_player(direction)
-    elif action == "Orbit camera":
+    elif action == "orbit_camera":
         gc.orbit_camera(direction)
-    elif action == "Pick asset":
+    elif action == "collect_treasure":
         gc.pick_asset(direction)
     print(f"Doing action: {action}, direction: {direction}")
 
 def update_direction_options(action):
-    if action == "Move player":
+    if action == "move_player":
         return gr.update(choices=["forward", "backward", "left", "right"])
-    elif action == "Orbit camera":
+    elif action == "orbit_camera":
         return gr.update(choices=["up", "down", "left", "right"])
-    elif action == "Pick asset":
-        return gr.update(choices=["asset1", "asset2", "asset3"])
+    elif action == "collect_treasure":
+        return gr.update(choices=["forward", "backward", "left", "right"])
     return gr.update(choices=[])
 
 with gr.Blocks() as demo:
@@ -94,9 +105,12 @@ with gr.Blocks() as demo:
             # text_input = gr.Textbox(container=False, lines=6)
             code_output = gr.Code(label="Response")
             submit_button = gr.Button("Submit")
+            debug_button = gr.Button("Print Model Prompts")
+            debug_button.click(fn=lambda: print(model.prompts_dict))
+
         with gr.Column():
             gr.Markdown("## Select action manually")
-            action_select = gr.Radio(["Move player", "Orbit camera", "Pick asset"], label="Select action")
+            action_select = gr.Radio(["move_player", "orbit_camera", "collect_treasure"], label="Select action")
 
             direction_select = gr.Radio(["forward", "backward", "left", "right"], label="Select direction")
 
