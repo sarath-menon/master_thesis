@@ -35,22 +35,24 @@ async def get_bboxes(image_array, text_input):
     bbox_image = bbox_model.get_bbox_image(image, results['<CAPTION_TO_PHRASE_GROUNDING>'])
     return bbox_image
 
-async def single_game_screenshot():
+async def single_game_screenshot(dummy_call=True):
+
+
     game_screenshot = gc.get_screenshot()
     print("Got game screenshot")
     img = Image.open(BytesIO(game_screenshot))
 
-    # # call model
-    # base64_image = base64.b64encode(game_screenshot).decode('utf-8')
-    # response = await model.generate_response(base64_image)
-    # content = response.choices[0].message.content
-    # content = json.loads(content)
+    if dummy_call:
+        content = {"action": "move_player", "direction": "forward", "reason": "testing"}
 
-
-    content = {"action": "move_player", "direction": "forward", "reason": "testing"}
+    else:
+        # call model
+        base64_image = base64.b64encode(game_screenshot).decode('utf-8')
+        response = await model.generate_response(base64_image)
+        content = response.choices[0].message.content
+        content = json.loads(content)
 
     await do_action(content["action"], content["direction"])
-
     content = f"Action: {content['action']}, Direction: {content['direction']}, Reason: {content['reason']}"
 
     return np.array(img), content
