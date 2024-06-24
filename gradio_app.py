@@ -22,7 +22,7 @@ async def single_game_screenshot(text):
     # response = await model.generate_response(base64_image)
     # content = response.choices[0].message.content
 
-    content = "Hello"
+    content = "selv"
 
     return np.array(img), content
 
@@ -38,7 +38,7 @@ async def stream_game_screenshot(text):
         print("Got response")
 
         # content = "Hello"
-        await asyncio.sleep(0.01)  # Sleep for 0.1 seconds (10 times a second)
+        await asyncio.sleep(0.01) #ms
         yield np.array(img), content
 
 with gr.Blocks() as demo:
@@ -48,8 +48,14 @@ with gr.Blocks() as demo:
         code_output = gr.Code(label="Response")
     with gr.Row():
         with gr.Column():
-            text_input = gr.Textbox(label="Prompt", lines=6)
+            gr.Markdown("## Prompt")
+            text_input = gr.Textbox(container=False, lines=6)
             submit_button = gr.Button("Submit")
+        with gr.Column(scale=0.5):
+            gr.Markdown("## Select action manually")
+            action_select = gr.Radio(["Move player", "Move camera", "Pick asset"], label="Select action")
+            direction_select = gr.Radio(["Forward", "Backward", "Left", "Right"], label="Select direction")
+            action_button = gr.Button("Do action")
 
     submit_button.click(fn=single_game_screenshot, inputs=text_input, outputs=[image_output, code_output])
 
