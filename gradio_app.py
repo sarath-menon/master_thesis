@@ -42,13 +42,27 @@ async def stream_game_screenshot():
         yield np.array(img), content
 
 async def do_action(action, direction):
-    gc.move_player(direction)
+    if action == "Move player":
+        gc.move_player(direction)
+    elif action == "Orbit camera":
+        gc.orbit_camera(direction)
+    elif action == "Pick asset":
+        gc.pick_asset(direction)
     print(f"Doing action: {action}, direction: {direction}")
+
+def update_direction_options(action):
+    if action == "Move player":
+        return gr.update(choices=["forward", "backward", "left", "right"])
+    elif action == "Orbit camera":
+        return gr.update(choices=["up", "down", "left", "right"])
+    elif action == "Pick asset":
+        return gr.update(choices=["asset1", "asset2", "asset3"])
+    return gr.update(choices=[])
 
 with gr.Blocks() as demo:
     gr.Markdown("# Game Screenshot and Response")
     with gr.Row():
-        image_output = gr.Image(label="Game Screenshot", scale=2)
+        image_output = gr.Image(label="Game Screenshot")
         # code_output = gr.Code(label="Response")
     with gr.Row():
         with gr.Column():
@@ -58,11 +72,13 @@ with gr.Blocks() as demo:
             submit_button = gr.Button("Submit")
         with gr.Column(scale=0.5):
             gr.Markdown("## Select action manually")
-            action_select = gr.Radio(["Move player", "Move camera", "Pick asset"], label="Select action")
+            action_select = gr.Radio(["Move player", "Orbit camera", "Pick asset"], label="Select action")
+
             direction_select = gr.Radio(["forward", "backward", "left", "right"], label="Select direction")
 
             action_button = gr.Button("Do action")
             action_button.click(fn=do_action, inputs=[action_select, direction_select])
+            action_select.change(fn=update_direction_options, inputs=[action_select], outputs=[direction_select])
 
             with gr.Row():
                 pause_button = gr.Button("Pause game")
@@ -71,7 +87,6 @@ with gr.Blocks() as demo:
                 pause_button.click(fn=gc.pause_game)
                 resume_button.click(fn=gc.resume_game)
 
-            
 
     submit_button.click(fn=single_game_screenshot, inputs=[], outputs=[image_output, code_output])
 
