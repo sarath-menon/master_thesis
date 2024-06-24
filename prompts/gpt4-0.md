@@ -17,7 +17,3 @@ Decide what to do based on the image and the instructions. Also, give a reasonin
 3. reason: {30 words}
 
 Do not include any preamble or other instructions.
-
-# Movements
-
-1. The image is a gamescene. The game is not minecraft, although it looks very similar. The objective of the game is to explore the scene and collect points. In what direction should the player move? Choose one among the following: {forward, backward, left, right}.
