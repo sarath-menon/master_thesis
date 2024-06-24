@@ -26,16 +26,10 @@ async def single_game_screenshot():
     print("Got game screenshot")
     img = Image.open(BytesIO(game_screenshot))
 
-    # base64_image = base64.b64encode(game_screenshot).decode('utf-8')
-    # response = await model.generate_response(base64_image)
-    # content = response.choices[0].message.content
-    # content = json.loads(content)
-
-    content = {
-        "action": "move_player",
-        "direction": "forward",
-        "reason": "To get a better view of the environment and identify potential paths or treasures."
-    }
+    base64_image = base64.b64encode(game_screenshot).decode('utf-8')
+    response = await model.generate_response(base64_image)
+    content = response.choices[0].message.content
+    content = json.loads(content)
 
     await do_action(content["action"], content["direction"])
 
@@ -82,7 +76,7 @@ async def do_action(action, direction):
     elif action == "orbit_camera":
         gc.orbit_camera(direction)
     elif action == "collect_treasure":
-        gc.pick_asset(direction)
+        gc.collect_treasure(direction)
     print(f"Doing action: {action}, direction: {direction}")
 
 def update_direction_options(action):
@@ -103,7 +97,7 @@ with gr.Blocks() as demo:
         with gr.Column():
             gr.Markdown("## Model output")
             # text_input = gr.Textbox(container=False, lines=6)
-            code_output = gr.Code(label="Response")
+            code_output = gr.Textbox(container=False, lines=6)
             submit_button = gr.Button("Submit")
             debug_button = gr.Button("Print Model Prompts")
             debug_button.click(fn=lambda: print(model.prompts_dict))

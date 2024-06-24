@@ -1,6 +1,5 @@
 import pyautogui
 import time
-from .window_capture import WindowCapture
 import requests
 
 class GameController:
@@ -12,7 +11,6 @@ class GameController:
         self.is_game_over = False
         self.is_running = True
         self.screen_width, self.screen_height = pyautogui.size()
-        self.window_capture = WindowCapture()
     
     def move_player(self, direction, duration=300):
         key = None
@@ -24,6 +22,9 @@ class GameController:
             key = 'A'
         elif direction == "right":
             key = 'D'
+        else:
+            print(f"Invalid direction: {direction}")
+            return None
         try:
             response = requests.post(self.game_url + '/move_player', json={'key': key, 'duration': duration})
             response.raise_for_status()  
@@ -42,7 +43,10 @@ class GameController:
             return None
 
     def click_center(self):
-        pyautogui.click(self.screen_width/2, self.screen_height/2)
+        pyautogui.moveTo(self.screen_width/2, self.screen_height/2)
+        pyautogui.mouseDown()
+        time.sleep(0.1)
+        pyautogui.mouseUp()
 
     def go_to_game_window(self):
         self.click_center()
@@ -90,3 +94,7 @@ class GameController:
             "level": self.level,
             "is_game_over": self.is_game_over
         }
+    
+    def collect_treasure(self, direction):
+        print(f"Collecting treasure in {direction}")
+        
