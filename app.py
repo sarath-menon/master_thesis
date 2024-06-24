@@ -4,7 +4,7 @@ from PIL import Image
 import requests
 from io import BytesIO
 from game_control import GameController
-from models import GPT4OModel
+from models import GPT4OModel, Florence2Model
 import base64
 import asyncio
 import datetime
@@ -15,21 +15,39 @@ URL = "http://localhost:8086/screenshot"
 
 gc = GameController()
 model = GPT4OModel()
+bbox_model = Florence2Model()
 
 def post_screenshot_callback(image, content):
     print("Post screenshot callback executed")
     # Add any additional logic you want to execute after the screenshot is taken
     return image, content
 
+async def get_bboxes(image_array, text_input):
+
+    print("text_input:", text_input)
+
+    text_input = "locate the ladder"
+    image = Image.fromarray(image_array)
+
+    # phrase grounded detection
+    task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
+    results = bbox_model.run_example(image, task_prompt, text_input=text_input)
+    bbox_image = bbox_model.get_bbox_image(image, results['<CAPTION_TO_PHRASE_GROUNDING>'])
+    return bbox_image
+
 async def single_game_screenshot():
     game_screenshot = gc.get_screenshot()
     print("Got game screenshot")
     img = Image.open(BytesIO(game_screenshot))
 
-    base64_image = base64.b64encode(game_screenshot).decode('utf-8')
-    response = await model.generate_response(base64_image)
-    content = response.choices[0].message.content
-    content = json.loads(content)
+    # # call model
+    # base64_image = base64.b64encode(game_screenshot).decode('utf-8')
+    # response = await model.generate_response(base64_image)
+    # content = response.choices[0].message.content
+    # content = json.loads(content)
+
+
+    content = {"action": "move_player", "direction": "forward", "reason": "testing"}
 
     await do_action(content["action"], content["direction"])
 
@@ -60,11 +78,10 @@ async def stream_game_screenshot():
         game_screenshot = gc.get_screenshot()
         img = Image.open(BytesIO(game_screenshot))
 
+        # call model
         base64_image = base64.b64encode(game_screenshot).decode('utf-8')
-
         response = await model.generate_response(base64_image)
         content = response.choices[0].message.content
-        print("Got response")
 
         # content = "Hello"
         await asyncio.sleep(0.01) #ms
@@ -91,8 +108,11 @@ def update_direction_options(action):
 with gr.Blocks() as demo:
     gr.Markdown("# Game Screenshot and Response")
     with gr.Row():
-        image_output = gr.Image(label="Game Screenshot")
-        # code_output = gr.Code(label="Response")
+        with gr.Tab("VLM Input"):
+            vlm_input = gr.Image(show_label=False)
+        with gr.Tab("Bounding Boxes"):
+            bbox_output = gr.Image(show_label=False)
+
     with gr.Row():
         with gr.Column():
             gr.Markdown("## Model output")
@@ -120,9 +140,13 @@ with gr.Blocks() as demo:
                 resume_button.click(fn=gc.resume_game)
 
 
-    submit_button.click(fn=single_game_screenshot, inputs=[], outputs=[image_output, code_output]).then(
-        fn=save_image_and_response, inputs=[image_output, code_output]
+    submit_button.click(fn=single_game_screenshot, inputs=[], outputs=[vlm_input, code_output]).then(
+        fn=get_bboxes, inputs=[vlm_input, code_output], outputs=[bbox_output]
     )
+
+    # .then(
+    #     fn=save_image_and_response, inputs=[vlm_input, code_output]
+    # )
 
 if __name__ == "__main__":
     demo.launch()
