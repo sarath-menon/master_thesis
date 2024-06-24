@@ -14,7 +14,16 @@ class GameController:
         self.screen_width, self.screen_height = pyautogui.size()
         self.window_capture = WindowCapture()
     
-    def move_player(self, key, duration=300):
+    def move_player(self, direction, duration=300):
+        key = None
+        if direction == "forward":
+            key = 'W'
+        elif direction == "backward":
+            key = 'S'
+        elif direction == "left":
+            key = 'A'
+        elif direction == "right":
+            key = 'D'
         try:
             response = requests.post(self.game_url + '/move_player', json={'key': key, 'duration': duration})
             response.raise_for_status()  
@@ -39,30 +48,38 @@ class GameController:
         self.click_center()
 
     def pause_game(self):
-        if self.is_running:
-            self.click_center()
-            pyautogui.hotkey('fn', 'f5')
-            self.is_running = False
-            print("Game paused!")
+        try:
+            response = requests.post(self.game_url + '/pause')
+            response.raise_for_status()  
+            return response.status_code
+        except requests.RequestException as e:
+            print(f"Error pausing game: {e}")
 
     def resume_game(self):
-        if not self.is_running:
-            self.click_center()
-            pyautogui.hotkey('fn', 'f5')
-            self.is_running = True
-            print("Game resumed!")
+        try:
+            response = requests.post(self.game_url + '/resume')
+            response.raise_for_status()  
+            return response.status_code
+        except requests.RequestException as e:
+            print(f"Error resuming game: {e}")
 
-    def move_camera(self, direction):
+    def orbit_camera(self, direction, duration=300):
+        key = None
         if direction == "up":
-            pyautogui.press('up')
+            key = 'Up'
         elif direction == "down":
-            pyautogui.press('down')
+            key = 'Down'
         elif direction == "left":
-            pyautogui.press('left')
+            key = 'Left'
         elif direction == "right":
-            pyautogui.press('right')
-        else:
-            print(f"Invalid direction: {direction}")
+            key = 'Right'
+        try:
+            response = requests.post(self.game_url + '/orbit_camera', json={'key': key, 'duration': duration})
+            response.raise_for_status()  
+            return response.status_code
+        except requests.RequestException as e:
+            print(f"Error fetching game data: {e}")
+            return None
 
     def camera_down(self):
         pyautogui.hotkey('fn', 'f7')
