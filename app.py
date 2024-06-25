@@ -149,8 +149,11 @@ async def slow_echo(message, history, dummy_call=True):
     # # do action
     # await do_action(content["action"], content["direction"])
 
-def greet(name, selv):
-    return "Hello " + name + "!"
+def object_detection_callback(name, selv):
+    img = gc.get_screenshot()
+    img = Image.open(BytesIO(img))
+    
+    return img, "Hello " + name + "!"
         
 with gr.Blocks() as demo:
     gr.Markdown("# Game Screenshot and Response")
@@ -194,14 +197,16 @@ with gr.Blocks() as demo:
 
         # object detection output
         with gr.Tab("Object Detection"):
-            vlm_input = gr.Image(show_label=False)
-            dropdown = gr.Dropdown(["USA", "Japan", "Pakistan"], label="Select model", render=False)
+            with gr.Column():
+                vlm_input = gr.Image(show_label=False)
+                text_input = gr.Textbox(label="Text input")
+                
+                dropdown = gr.Dropdown(["Grounding Dino", "Florence 2"], label="Select model")
+                submit_button = gr.Button("Submit")
+                text_output = gr.Textbox(label="Model output")
 
-            gr.Interface(fn=greet, inputs=[gr.Textbox(), dropdown], outputs=[gr.Textbox()])
-
-            # submit_button.click(fn=single_game_screenshot, inputs=[], outputs=[vlm_input, code_output]).then(
-            #     fn=get_bboxes, inputs=[vlm_input, code_output], outputs=[bbox_output]
-            # )
+                submit_button.click(fn=object_detection_callback, inputs=[text_input, dropdown], outputs=[vlm_input, text_output])
+            
 
     # .then(
     #     fn=save_image_and_response, inputs=[vlm_input, code_output]
