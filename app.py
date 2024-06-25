@@ -199,13 +199,18 @@ with gr.Blocks() as demo:
         with gr.Tab("Object Detection"):
             with gr.Column():
                 vlm_input = gr.Image(show_label=False)
-                text_input = gr.Textbox(label="Text input")
-                
-                dropdown = gr.Dropdown(["Grounding Dino", "Florence 2"], label="Select model")
-                submit_button = gr.Button("Submit")
-                text_output = gr.Textbox(label="Model output")
 
-                submit_button.click(fn=object_detection_callback, inputs=[text_input, dropdown], outputs=[vlm_input, text_output])
+            with gr.Row():
+                with gr.Column():
+                    text_input = gr.Textbox(label="Text input")
+                
+                    dropdown = gr.Dropdown(["Grounding Dino", "Florence 2"], label="Select model")
+                    submit_button = gr.Button("Submit")
+
+                with gr.Column():
+                    text_output = gr.Textbox(label="Model output")
+
+            submit_button.click(fn=object_detection_callback, inputs=[text_input, dropdown], outputs=[vlm_input, text_output])
             
 
     # .then(
