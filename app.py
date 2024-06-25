@@ -146,8 +146,11 @@ async def slow_echo(message, history, dummy_call=True):
     content = json.loads(response)
     print(content)
     
-    # do action
-    await do_action(content["action"], content["direction"])
+    # # do action
+    # await do_action(content["action"], content["direction"])
+
+def greet(name, selv):
+    return "Hello " + name + "!"
         
 with gr.Blocks() as demo:
     gr.Markdown("# Game Screenshot and Response")
@@ -158,40 +161,43 @@ with gr.Blocks() as demo:
     #         bbox_output = gr.Image(show_label=False)
 
     with gr.Column(scale=2):
-        chatbot = gr.Chatbot(render=False)
+        with gr.Tab("Chatbot"):
+            chatbot = gr.Chatbot(render=False)            
+            chat_input = gr.ChatInterface(
+                fn=slow_echo,
+                # examples=[{"text": "hello"}, {"text": "hola"}, {"text": "merhaba"}],
+                chatbot=chatbot,
+                retry_btn=None,
+                undo_btn=None,
+                # clear_btn=None,
+            )
 
-        gr.ChatInterface(
-        fn=slow_echo,
-        examples=[{"text": "hello"}, {"text": "hola"}, {"text": "merhaba"}],
-            chatbot=chatbot
-        )
-
-    with gr.Row():
-    #     with gr.Column():
-    #         gr.Markdown("## Model output")
-    #         # text_input = gr.Textbox(container=False, lines=6)
-    #         # code_output = gr.Textbox(container=False, lines=6)
-    #         submit_button = gr.Button("Submit")
-    #         # debug_button = gr.Button("Print Model Prompts")
-    #         # debug_button.click(fn=lambda: print(model.prompts_dict))
-
-        with gr.Column():
-            gr.Markdown("## Select action manually")
-            action_select = gr.Radio(["move_player", "orbit_camera", "collect_treasure"], label="Select action")
-
-            direction_select = gr.Radio(["forward", "backward", "left", "right"], label="Select direction")
-
-            action_button = gr.Button("Do action")
-            action_button.click(fn=do_action, inputs=[action_select, direction_select])
-            action_select.change(fn=update_direction_options, inputs=[action_select], outputs=[direction_select])
+            # clear = gr.ClearButton([chatbot])
 
             with gr.Row():
-                pause_button = gr.Button("Pause game")
-                resume_button = gr.Button("Resume game")
+                with gr.Column():
+                    gr.Markdown("## Select action manually")
+                    action_select = gr.Radio(["move_player", "orbit_camera", "collect_treasure"], label="Select action")
 
-                pause_button.click(fn=gc.pause_game)
-                resume_button.click(fn=gc.resume_game)
+                    direction_select = gr.Radio(["forward", "backward", "left", "right"], label="Select direction")
 
+                    action_button = gr.Button("Do action")
+                    action_button.click(fn=do_action, inputs=[action_select, direction_select])
+                    action_select.change(fn=update_direction_options, inputs=[action_select], outputs=[direction_select])
+
+                    with gr.Row():
+                        pause_button = gr.Button("Pause game")
+                        resume_button = gr.Button("Resume game")
+
+                        pause_button.click(fn=gc.pause_game)
+                        resume_button.click(fn=gc.resume_game)
+
+        # object detection output
+        with gr.Tab("Object Detection"):
+            vlm_input = gr.Image(show_label=False)
+            dropdown = gr.Dropdown(["USA", "Japan", "Pakistan"], label="Select model", render=False)
+
+            gr.Interface(fn=greet, inputs=[gr.Textbox(), dropdown], outputs=[gr.Textbox()])
 
             # submit_button.click(fn=single_game_screenshot, inputs=[], outputs=[vlm_input, code_output]).then(
             #     fn=get_bboxes, inputs=[vlm_input, code_output], outputs=[bbox_output]
