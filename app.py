@@ -132,13 +132,10 @@ async def chatbox_callback(message, history, dummy_call=True):
 
     # pause game
     gc.pause_game()
-
     game_screenshot = gc.get_screenshot()
-    print("Got game screenshot")
-    img = Image.open(BytesIO(game_screenshot))
 
     # call model
-    stream = await call_model(message, img)
+    stream = await call_model(message, game_screenshot )
     
     # print response
     response = ""
@@ -175,7 +172,7 @@ with gr.Blocks() as demo:
             chatbot = gr.Chatbot(render=False)            
             chat_input = gr.ChatInterface(
                 fn=chatbox_callback,
-                # examples=[{"text": "hello"}, {"text": "hola"}, {"text": "merhaba"}],
+                examples=["what do yo see", {"text": "hola"}, {"text": "merhaba"}],
                 chatbot=chatbot,
                 retry_btn=None,
                 undo_btn=None,
