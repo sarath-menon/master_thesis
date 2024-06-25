@@ -163,7 +163,7 @@ with gr.Blocks() as demo:
     #     with gr.Tab("Bounding Boxes"):
     #         bbox_output = gr.Image(show_label=False)
 
-    with gr.Column(scale=2):
+    with gr.Column():
         with gr.Tab("Chatbot"):
             chatbot = gr.Chatbot(render=False)            
             chat_input = gr.ChatInterface(
@@ -177,23 +177,6 @@ with gr.Blocks() as demo:
 
             # clear = gr.ClearButton([chatbot])
 
-            with gr.Row():
-                with gr.Column():
-                    gr.Markdown("## Select action manually")
-                    action_select = gr.Radio(["move_player", "orbit_camera", "collect_treasure"], label="Select action")
-
-                    direction_select = gr.Radio(["forward", "backward", "left", "right"], label="Select direction")
-
-                    action_button = gr.Button("Do action")
-                    action_button.click(fn=do_action, inputs=[action_select, direction_select])
-                    action_select.change(fn=update_direction_options, inputs=[action_select], outputs=[direction_select])
-
-                    with gr.Row():
-                        pause_button = gr.Button("Pause game")
-                        resume_button = gr.Button("Resume game")
-
-                        pause_button.click(fn=gc.pause_game)
-                        resume_button.click(fn=gc.resume_game)
 
         # object detection output
         with gr.Tab("Object Detection"):
@@ -211,7 +194,24 @@ with gr.Blocks() as demo:
                     text_output = gr.Textbox(label="Model output")
 
             submit_button.click(fn=object_detection_callback, inputs=[text_input, dropdown], outputs=[vlm_input, text_output])
-            
+
+        with gr.Tab("Manual Action"):
+            with gr.Column():
+                gr.Markdown("## Select action manually")
+                action_select = gr.Radio(["move_player", "orbit_camera", "collect_treasure"], label="Select action")
+
+                direction_select = gr.Radio(["forward", "backward", "left", "right"], label="Select direction")
+
+                action_button = gr.Button("Do action")
+                action_button.click(fn=do_action, inputs=[action_select, direction_select])
+                action_select.change(fn=update_direction_options, inputs=[action_select], outputs=[direction_select])
+
+                with gr.Row():
+                    pause_button = gr.Button("Pause game")
+                    resume_button = gr.Button("Resume game")
+
+                    pause_button.click(fn=gc.pause_game)
+                    resume_button.click(fn=gc.resume_game)
 
     # .then(
     #     fn=save_image_and_response, inputs=[vlm_input, code_output]
