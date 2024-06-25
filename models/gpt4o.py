@@ -8,9 +8,9 @@ from watchdog.events import FileSystemEventHandler
 import atexit
 
 class GPT4OModel:    
-    def __init__(self):
+    def __init__(self, prompt_path):
         self.MODEL = "gpt-4o"
-        self.PROMPT_PATH = 'prompts/gpt4-0.md'
+        self.PROMPT_PATH = prompt_path
         self.client = AsyncOpenAI(
             api_key=os.environ.get("OPENAI_API_KEY"),
         )
@@ -35,12 +35,14 @@ class GPT4OModel:
 
     class _FileChangeHandler(FileSystemEventHandler):
         def __init__(self, model_instance):
-            pass
+            self.model_instance = model_instance
 
         def on_modified(self, event):
             print("Prompt file modified")
             if event.src_path == self.model_instance.PROMPT_PATH:
-                self.prompts_dict = utils.markdown_to_dict(self.model_instance.PROMPT_PATH)
+                self.model_instance.prompts_dict = utils.markdown_to_dict(self.model_instance.PROMPT_PATH)
+            
+            print(self.model_instance.prompts_dict)
 
     async def generate_response(self, base64_image):
         stream = await self.client.chat.completions.create(
@@ -83,3 +85,4 @@ class GPT4OModel:
             temperature=0.0,
         )
         return stream
+
