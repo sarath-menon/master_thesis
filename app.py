@@ -18,6 +18,15 @@ gc = GameController()
 model = GPT4OModel('prompts/mario-odessey.md')
 bbox_model = Florence2Model()
 
+from dataclasses import dataclass
+
+@dataclass
+class GameData:
+    selected_model: str
+
+config = GameData(selected_model="GPT4OModel")
+
+
 def post_screenshot_callback(image, content):
     print("Post screenshot callback executed")
     # Add any additional logic you want to execute after the screenshot is taken
@@ -106,7 +115,7 @@ def update_direction_options(action):
         return gr.update(choices=["forward", "backward", "left", "right"])
     return gr.update(choices=[])
 
-# async def slow_echo(message, history):
+# async def chatbox_callback(message, history):
 #     # pause game
 #     gc.pause_game()
 
@@ -119,7 +128,18 @@ def update_direction_options(action):
 #     # async for chunk in stream:
 #     #     yield chunk.choices[0].delta.content or ""
 
-async def slow_echo(message, history, dummy_call=True):
+async def call_model(text_input, image=None):
+    if config.selected_model == "gpt-4o":
+        base64_image = base64.b64encode(image).decode('utf-8')
+        stream = await model.generate_response_async(base64_image)
+        return stream
+    elif config.selected_model == "gpt-3.5":
+        return await model.generate_waste_async(text_input)
+    else:
+        print("Model not supported")
+        return None
+
+async def chatbox_callback(message, history, dummy_call=True):
 
     # pause game
     gc.pause_game()
@@ -129,8 +149,8 @@ async def slow_echo(message, history, dummy_call=True):
     img = Image.open(BytesIO(game_screenshot))
 
     # call model
-    base64_image = base64.b64encode(game_screenshot).decode('utf-8')
-    stream = await model.generate_response_async(base64_image)
+    stream = await call_model(message, img)
+    
     # content = response.choices[0].message.content
     # content = json.loads(content)
 
@@ -142,6 +162,8 @@ async def slow_echo(message, history, dummy_call=True):
         content = chunk.choices[0].delta.content or ""
         response += content
         yield response
+
+    print(response)
 
     content = json.loads(response)
     print(content)
@@ -167,7 +189,7 @@ with gr.Blocks() as demo:
         with gr.Tab("Chatbot"):
             chatbot = gr.Chatbot(render=False)            
             chat_input = gr.ChatInterface(
-                fn=slow_echo,
+                fn=chatbox_callback,
                 # examples=[{"text": "hello"}, {"text": "hola"}, {"text": "merhaba"}],
                 chatbot=chatbot,
                 retry_btn=None,
@@ -175,8 +197,11 @@ with gr.Blocks() as demo:
                 # clear_btn=None,
             )
 
-            # clear = gr.ClearButton([chatbot])
 
+            with gr.Row():
+                model_select = gr.Dropdown(["gpt-4o", "gpt4-vision",'llava-1.6',"gpt-3.5"], label="Select model")
+                
+                model_select.change(fn=lambda x: setattr(config, 'selected_model', x), inputs=[model_select], outputs=[])
 
         # object detection output
         with gr.Tab("Object Detection"):
