@@ -22,9 +22,10 @@ from dataclasses import dataclass
 
 @dataclass
 class GameData:
-    selected_model: str
+    selected_model: str = "gpt-4o"
+    is_auto_execute: bool = False
 
-config = GameData(selected_model="GPT4OModel")
+config = GameData()
 
 
 def post_screenshot_callback(image, content):
@@ -115,18 +116,6 @@ def update_direction_options(action):
         return gr.update(choices=["forward", "backward", "left", "right"])
     return gr.update(choices=[])
 
-# async def chatbox_callback(message, history):
-#     # pause game
-#     gc.pause_game()
-
-#     # # get model output and game screenshot
-#     # (img, content) = await single_game_screenshot()
-
-#     chunk = await model.generate_waste_async(message)
-#     print(chunk)
-
-#     # async for chunk in stream:
-#     #     yield chunk.choices[0].delta.content or ""
 
 async def call_model(text_input, image=None):
     if config.selected_model == "gpt-4o":
@@ -151,11 +140,6 @@ async def chatbox_callback(message, history, dummy_call=True):
     # call model
     stream = await call_model(message, img)
     
-    # content = response.choices[0].message.content
-    # content = json.loads(content)
-
-    # stream = await model.generate_waste_async(message)
-
     # print response
     response = ""
     async for chunk in stream:
@@ -165,11 +149,12 @@ async def chatbox_callback(message, history, dummy_call=True):
 
     print(response)
 
-    content = json.loads(response)
-    print(content)
+    response_json = json.loads(response)
+    print(response_json)
     
-    # # do action
-    # await do_action(content["action"], content["direction"])
+    # take action if auto execute is true
+    if config.is_auto_execute:
+        await do_action(response_json["action"], response_json["direction"])
 
 def object_detection_callback(name, selv):
     img = gc.get_screenshot()
@@ -199,9 +184,13 @@ with gr.Blocks() as demo:
 
 
             with gr.Row():
-                model_select = gr.Dropdown(["gpt-4o", "gpt4-vision",'llava-1.6',"gpt-3.5"], label="Select model")
+                model_select = gr.Dropdown(value="gpt-4o", choices=["gpt-4o", "gpt4-vision",'llava-1.6',"gpt-3.5"], label="Select model")
+
+                auto_execute_checkbox = gr.Checkbox(label="Auto execute")
                 
                 model_select.change(fn=lambda x: setattr(config, 'selected_model', x), inputs=[model_select], outputs=[])
+
+                auto_execute_checkbox.change(fn=lambda x: setattr(config, 'is_auto_execute', x), inputs=[auto_execute_checkbox], outputs=[])
 
         # object detection output
         with gr.Tab("Object Detection"):
@@ -210,9 +199,9 @@ with gr.Blocks() as demo:
 
             with gr.Row():
                 with gr.Column():
-                    text_input = gr.Textbox(label="Text input")
+                    text_input = gr.Textbox(label="Text input", placeholder="Enter a text input")
                 
-                    dropdown = gr.Dropdown(["Grounding Dino", "Florence 2"], label="Select model")
+                    dropdown = gr.Dropdown(value="florence_2", choices=["grounding_dino", "florence_2"], label="Select model")
                     submit_button = gr.Button("Submit")
 
                 with gr.Column():
