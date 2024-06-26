@@ -11,8 +11,17 @@ class GameController:
         self.is_game_over = False
         self.is_running = True
         self.screen_width, self.screen_height = pyautogui.size()
+
+    def keypress(self, key, duration):
+        try:
+            response = requests.post(self.game_url + '/keypress', json={'key': key, 'duration': duration})
+            response.raise_for_status()  
+            return response.status_code
+        except requests.RequestException as e:
+            print(f"Error fetching game data: {e}")
+            return None 
     
-    def move_player(self, direction, duration=500):
+    def move_player(self, direction, duration=3000):
         key = None
         if direction == "forward":
             key = 'W'
@@ -25,13 +34,9 @@ class GameController:
         else:
             print(f"Invalid direction: {direction}")
             return None
-        try:
-            response = requests.post(self.game_url + '/move_player', json={'key': key, 'duration': duration})
-            response.raise_for_status()  
-            return response.status_code
-        except requests.RequestException as e:
-            print(f"Error fetching game data: {e}")
-            return None
+
+        self.keypress(key, duration)
+       
 
     def get_screenshot(self):
         try:
@@ -77,13 +82,25 @@ class GameController:
             key = 'Left'
         elif direction == "right":
             key = 'Right'
-        try:
-            response = requests.post(self.game_url + '/orbit_camera', json={'key': key, 'duration': duration})
-            response.raise_for_status()  
-            return response.status_code
-        except requests.RequestException as e:
-            print(f"Error fetching game data: {e}")
+        else:
+            print(f"Invalid direction: {direction}")
             return None
+        self.keypress(key, duration)
+
+    def special_action(self, action):
+        key = None
+        duration = 500
+
+        if action == "jump":
+            key = 'B'
+        elif action == "throw_hat":
+            key = 'Y'
+        else:
+            print(f"Invalid special action: {action}")
+            return None
+
+        self.keypress(key, duration)
+        
 
     def camera_down(self):
         pyautogui.hotkey('fn', 'f7')
