@@ -4,7 +4,7 @@ from PIL import Image
 import requests
 from io import BytesIO
 from game_control import GameController
-from models import GPT4OModel, Florence2Model
+from models import GPT4OModel, Florence2Model, markdown_to_dict
 import base64
 import asyncio
 import datetime
@@ -13,9 +13,10 @@ import json
 import time
 
 URL = "http://localhost:8086/screenshot"
+PROMPT_PATH = "prompts/mario-odessey.md"
 
 gc = GameController()
-model = GPT4OModel('prompts/mario-odessey.md')
+model = GPT4OModel()
 bbox_model = Florence2Model()
 
 from dataclasses import dataclass
@@ -85,9 +86,20 @@ def update_direction_options(action):
 
 
 async def call_model(text_input, image=None):
+    prompts_dict = markdown_to_dict(PROMPT_PATH)
+    system_prompt = prompts_dict['describe_game_state']
+    user_prompt = ''
+
+    if text_input == "take_action":
+        user_prompt = prompts_dict['take_action']
+    elif text_input == "describe_game_state":
+        user_prompt = prompts_dict['describe_game_state']
+    else:
+        user_prompt = text_input
+
     if config.selected_model == "gpt-4o":
         base64_image = base64.b64encode(image).decode('utf-8')
-        stream = await model.generate_response_async(base64_image)
+        stream = await model.generate_response_async(base64_image, user_prompt, system_prompt)
         return stream
     elif config.selected_model == "gpt-3.5":
         return await model.generate_waste_async(text_input)
@@ -136,13 +148,12 @@ with gr.Blocks() as demo:
             chatbot = gr.Chatbot(render=False)            
             chat_input = gr.ChatInterface(
                 fn=chatbox_callback,
-                examples=["what do yo see", {"text": "hola"}, {"text": "merhaba"}],
+                examples=["take_action", "describe_game_state"],
                 chatbot=chatbot,
                 retry_btn=None,
                 undo_btn=None,
-                # clear_btn=None,
+                clear_btn=None,
             )
-
 
             with gr.Row():
                 model_select = gr.Dropdown(value="gpt-4o", choices=["gpt-4o", "gpt4-vision",'llava-1.6',"gpt-3.5"], label="Select model")
@@ -157,6 +168,8 @@ with gr.Blocks() as demo:
                 auto_execute_checkbox.change(fn=lambda x: setattr(config, 'is_auto_execute', x), inputs=[auto_execute_checkbox], outputs=[])
 
                 execute_btn.click(fn=execute_btn_callback, inputs=[chatbot], outputs=[])
+
+       
 
         # object detection output
         with gr.Tab("Object Detection"):
