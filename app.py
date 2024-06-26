@@ -28,11 +28,6 @@ class GameData:
 config = GameData()
 
 
-def post_screenshot_callback(image, content):
-    print("Post screenshot callback executed")
-    # Add any additional logic you want to execute after the screenshot is taken
-    return image, content
-
 async def get_bboxes(image_array, text_input):
 
     print("text_input:", text_input)
@@ -45,26 +40,6 @@ async def get_bboxes(image_array, text_input):
     results = bbox_model.run_example(image, task_prompt, text_input=text_input)
     bbox_image = bbox_model.get_bbox_image(image, results['<CAPTION_TO_PHRASE_GROUNDING>'])
     return bbox_image
-
-async def single_game_screenshot(dummy_call=True):
-    game_screenshot = gc.get_screenshot()
-    print("Got game screenshot")
-    img = Image.open(BytesIO(game_screenshot))
-
-    if dummy_call:
-        content = {"action": "move_player", "direction": "forward", "reason": "testing"}
-
-    else:
-        # call model
-        base64_image = base64.b64encode(game_screenshot).decode('utf-8')
-        response = await model.generate_response(base64_image)
-        content = response.choices[0].message.content
-        content = json.loads(content)
-
-    await do_action(content["action"], content["direction"])
-    content = f"Action: {content['action']}, Direction: {content['direction']}, Reason: {content['reason']}"
-
-    return np.array(img), content
 
 async def save_image_and_response(image_array, response):
     # Create a directory with the current date and time
@@ -84,19 +59,6 @@ async def save_image_and_response(image_array, response):
     
     print(f"Saved image and response in {directory_path}")
 
-async def stream_game_screenshot():
-    while True:
-        game_screenshot = gc.get_screenshot()
-        img = Image.open(BytesIO(game_screenshot))
-
-        # call model
-        base64_image = base64.b64encode(game_screenshot).decode('utf-8')
-        response = await model.generate_response(base64_image)
-        content = response.choices[0].message.content
-
-        # content = "Hello"
-        await asyncio.sleep(0.01) #ms
-        yield np.array(img), content
 
 async def do_action(action, direction=None):
     if action == "move_player":
@@ -168,11 +130,6 @@ def object_detection_callback(name, selv):
         
 with gr.Blocks() as demo:
     gr.Markdown("# Game Screenshot and Response")
-    # with gr.Row():
-    #     with gr.Tab("VLM Input"):
-    #         vlm_input = gr.Image(show_label=False)
-    #     with gr.Tab("Bounding Boxes"):
-    #         bbox_output = gr.Image(show_label=False)
 
     with gr.Column():
         with gr.Tab("Chatbot"):
@@ -237,10 +194,6 @@ with gr.Blocks() as demo:
 
                     pause_button.click(fn=gc.pause_game)
                     resume_button.click(fn=gc.resume_game)
-
-    # .then(
-    #     fn=save_image_and_response, inputs=[vlm_input, code_output]
-    # )
 
 if __name__ == "__main__":
     demo.launch()
