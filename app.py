@@ -98,13 +98,18 @@ async def stream_game_screenshot():
         await asyncio.sleep(0.01) #ms
         yield np.array(img), content
 
-async def do_action(action, direction):
+async def do_action(action, direction=None):
     if action == "move_player":
         gc.move_player(direction)
     elif action == "orbit_camera":
         gc.orbit_camera(direction)
-    elif action == "collect_treasure":
-        gc.collect_treasure(direction)
+    elif action == "throw_hat":
+        gc.special_action(action)
+    elif action == "jump":
+        gc.special_action(action)
+    else:
+        print(f"Invalid action: {action}")
+        return
     print(f"Doing action: {action}, direction: {direction}")
 
 def update_direction_options(action):
@@ -216,13 +221,15 @@ with gr.Blocks() as demo:
         with gr.Tab("Manual Action"):
             with gr.Column():
                 gr.Markdown("## Select action manually")
-                action_select = gr.Radio(["move_player", "orbit_camera", "collect_treasure"], label="Select action")
+                action_select = gr.Radio(["move_player", "orbit_camera", "throw_hat", "jump"], label="Select action")
 
                 direction_select = gr.Radio(["forward", "backward", "left", "right"], label="Select direction")
 
                 action_button = gr.Button("Do action")
-                action_button.click(fn=do_action, inputs=[action_select, direction_select])
                 action_select.change(fn=update_direction_options, inputs=[action_select], outputs=[direction_select])
+
+                action_button.click(fn=do_action, inputs=[action_select, direction_select])    
+                
 
                 with gr.Row():
                     pause_button = gr.Button("Pause game")
