@@ -87,15 +87,18 @@ def update_direction_options(action):
 
 async def call_model(text_input, image=None):
     prompts_dict = markdown_to_dict(PROMPT_PATH)
-    system_prompt = prompts_dict['describe_game_state']
+    system_prompt = prompts_dict['system_prompt']
+    print(system_prompt)
     user_prompt = ''
 
-    if text_input == "take_action":
-        user_prompt = prompts_dict['take_action']
+    if text_input == "take_action_1_step":
+        user_prompt = prompts_dict['take_action_1_step']
+    elif text_input == "take_action_3_steps":
+        user_prompt = prompts_dict['take_action_3_steps']
     elif text_input == "describe_game_state":
         user_prompt = prompts_dict['describe_game_state']
     else:
-        user_prompt = text_input
+        user_prompt = text_input + prompts_dict['custom_prompt_extension']
 
     if config.selected_model == "gpt-4o":
         base64_image = base64.b64encode(image).decode('utf-8')
@@ -110,7 +113,7 @@ async def call_model(text_input, image=None):
 async def chatbox_callback(message, history, dummy_call=True):
 
     # pause game
-    gc.pause_game()
+    # gc.pause_game()
     game_screenshot = gc.get_screenshot()
 
     # call model
@@ -148,7 +151,7 @@ with gr.Blocks() as demo:
             chatbot = gr.Chatbot(render=False)            
             chat_input = gr.ChatInterface(
                 fn=chatbox_callback,
-                examples=["take_action", "describe_game_state"],
+                examples=["take_action_1_step", "take_action_3_steps", "describe_game_state"],
                 chatbot=chatbot,
                 retry_btn=None,
                 undo_btn=None,
