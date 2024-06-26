@@ -11,36 +11,20 @@ class GPTModels:
             api_key=os.environ.get("OPENAI_API_KEY"),
         )
         self.chat_history = [{"role": "system", "content": system_prompt}]
-        
-    async def single_img_response(self, base64_image, user_prompt, system_prompt):
-        stream = await self.client.chat.completions.create(
-            model=self.MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": [
-                    {"type": "text", "text": user_prompt},
-                    {"type": "image_url", "image_url": {
-                        "url": f"data:image/png;base64,{base64_image}"}
-                    }
-                ]}
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.0,
-        )
-        return stream
 
-    async def single_img_response_async(self, base64_image, user_prompt, system_prompt):
-        stream = await self.client.chat.completions.create(
-            model=self.MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": [
+    async def single_img_response_async(self, base64_image, user_prompt):
+        current_msg = {"role": "user", "content": [
                     {"type": "text", "text": user_prompt},
                     {"type": "image_url", "image_url": {
                         "url": f"data:image/png;base64,{base64_image}"}
                     }
                 ]}
-            ],
+
+        self.chat_history.append(current_msg)
+
+        stream = await self.client.chat.completions.create(
+            model=self.MODEL,
+            messages=self.chat_history,
             stream=True,
             response_format={"type": "json_object"},
             temperature=0.0,

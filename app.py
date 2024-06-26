@@ -4,7 +4,7 @@ from PIL import Image
 import requests
 from io import BytesIO
 from game_control import GameController
-from models import GPT4OModel, Florence2Model, markdown_to_dict
+from models import GPTModels, Florence2Model, markdown_to_dict
 import base64
 import asyncio
 import datetime
@@ -14,16 +14,18 @@ import time
 
 URL = "http://localhost:8086/screenshot"
 PROMPT_PATH = "prompts/mario-odessey.md"
+prompts_dict = markdown_to_dict(PROMPT_PATH)
+system_prompt = prompts_dict['system_prompt']
 
 gc = GameController()
-model = GPT4OModel()
+model = GPTModels(system_prompt)
 bbox_model = Florence2Model()
 
 from dataclasses import dataclass
 
 @dataclass
 class GameData:
-    selected_model: str = "gpt-4o"
+    selected_model: str = "gpt-4o-img"
     is_auto_execute: bool = False
 
 config = GameData()
@@ -87,8 +89,8 @@ def update_direction_options(action):
 
 async def call_model(text_input, image=None):
     prompts_dict = markdown_to_dict(PROMPT_PATH)
-    system_prompt = prompts_dict['system_prompt']
-    print(system_prompt)
+    # system_prompt = prompts_dict['system_prompt']
+    # print(system_prompt)
     user_prompt = ''
 
     if text_input == "take_action_1_step":
@@ -102,10 +104,10 @@ async def call_model(text_input, image=None):
 
     if config.selected_model == "gpt-4o-img":
         base64_image = base64.b64encode(image).decode('utf-8')
-        stream = await model.single_img_response_async(base64_image, user_prompt, system_prompt)
+        stream = await model.single_img_response_async(base64_image, user_prompt)
         return stream
     elif config.selected_model == "gpt-3.5":
-        return await model.generate_waste_async(text_input)
+        return await model.generate_waste_async(user_prompt)
     else:
         print("Model not supported")
         return None
@@ -118,6 +120,8 @@ async def chatbox_callback(message, history, dummy_call=True):
 
     # call model
     stream = await call_model(message, game_screenshot )
+    if stream is None:
+        return
     
     # print response
     response = ""
@@ -125,6 +129,9 @@ async def chatbox_callback(message, history, dummy_call=True):
         content = chunk.choices[0].delta.content or ""
         response += content
         yield response
+
+    model.add_response_to_history(response)
+    print(model.chat_history)
 
     response_json = json.loads(response)
 
@@ -155,7 +162,7 @@ with gr.Blocks() as demo:
                 chatbot=chatbot,
                 retry_btn=None,
                 undo_btn=None,
-                clear_btn=None,
+                # clear_btn=None,
             )
 
             with gr.Row():
