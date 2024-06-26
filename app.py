@@ -19,7 +19,8 @@ system_prompt = prompts_dict['system_prompt']
 
 gc = GameController()
 model = GPTModels(system_prompt)
-bbox_model = Florence2Model()
+
+florence_model = Florence2Model()
 
 from dataclasses import dataclass
 
@@ -27,7 +28,6 @@ from dataclasses import dataclass
 class GameData:
     selected_model: str = "gpt-4o-img"
     is_auto_execute: bool = False
-
 config = GameData()
 
 
@@ -131,8 +131,6 @@ async def chatbox_callback(message, history, dummy_call=True):
         yield response
 
     model.add_response_to_history(response)
-    print(model.chat_history)
-
     response_json = json.loads(response)
 
     # take action if auto execute is true
@@ -144,11 +142,23 @@ def execute_btn_callback(chat_input):
     response_json = json.loads(response)
     print(response_json["action"], response_json["direction/target"])
 
-def object_detection_callback(name, selv):
+def object_detection_callback(model, text_input):
     img = gc.get_screenshot()
     img = Image.open(BytesIO(img))
+
+    if model == "florence_2":
+        task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
+        results = florence_model.run_example(img, task_prompt, text_input=text_input)
+        bbox_image = florence_model.get_bbox_image(img, results['<CAPTION_TO_PHRASE_GROUNDING>'])
+        return bbox_image, "selv"
+    else:
+        return img, "Unsupported model"
     
-    return img, "Hello " + name + "!"
+    # bbox_image = model.get_bbox_image(image, results['<CAPTION_TO_PHRASE_GROUNDING>'])
+    # plt.imshow(bbox_image)
+    #     return img, "Hello " + name + "!"
+    # else:
+    #     return img, "Hello " + name + "!"
         
 with gr.Blocks() as demo:
     gr.Markdown("# Game Screenshot and Response")
@@ -191,13 +201,13 @@ with gr.Blocks() as demo:
                 with gr.Column():
                     text_input = gr.Textbox(label="Text input", placeholder="Enter a text input")
                 
-                    dropdown = gr.Dropdown(value="florence_2", choices=["grounding_dino", "florence_2"], label="Select model")
+                    obj_detection_dropdown = gr.Dropdown(value="florence_2", choices=["grounding_dino", "florence_2"], label="Select model")
                     submit_button = gr.Button("Submit")
 
                 with gr.Column():
-                    text_output = gr.Textbox(label="Model output")
+                    obj_detection_output = gr.Textbox(label="Model output")
 
-            submit_button.click(fn=object_detection_callback, inputs=[text_input, dropdown], outputs=[vlm_input, text_output])
+                submit_button.click(fn=object_detection_callback, inputs=[obj_detection_dropdown, text_input], outputs=[vlm_input, obj_detection_output])
 
         with gr.Tab("Manual Action"):
             with gr.Column():
