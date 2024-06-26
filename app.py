@@ -144,14 +144,16 @@ async def chatbox_callback(message, history, dummy_call=True):
         response += content
         yield response
 
-    print(response)
-
     response_json = json.loads(response)
-    print(response_json)
-    
+
     # take action if auto execute is true
     if config.is_auto_execute:
         await do_action(response_json["action"], response_json["direction"])
+
+def execute_btn_callback(chat_input):
+    response = chat_input[-1][-1]
+    response_json = json.loads(response)
+    print(response_json["action"], response_json["direction/target"])
 
 def object_detection_callback(name, selv):
     img = gc.get_screenshot()
@@ -183,11 +185,16 @@ with gr.Blocks() as demo:
             with gr.Row():
                 model_select = gr.Dropdown(value="gpt-4o", choices=["gpt-4o", "gpt4-vision",'llava-1.6',"gpt-3.5"], label="Select model")
 
-                auto_execute_checkbox = gr.Checkbox(label="Auto execute")
+                with gr.Column():
+                    execute_btn = gr.Button("Execute")
+                    auto_execute_checkbox = gr.Checkbox(label="Auto execute")
+                    
                 
                 model_select.change(fn=lambda x: setattr(config, 'selected_model', x), inputs=[model_select], outputs=[])
 
                 auto_execute_checkbox.change(fn=lambda x: setattr(config, 'is_auto_execute', x), inputs=[auto_execute_checkbox], outputs=[])
+
+                execute_btn.click(fn=execute_btn_callback, inputs=[chatbot], outputs=[])
 
         # object detection output
         with gr.Tab("Object Detection"):
