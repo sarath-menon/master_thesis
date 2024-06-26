@@ -100,9 +100,9 @@ async def call_model(text_input, image=None):
     else:
         user_prompt = text_input + prompts_dict['custom_prompt_extension']
 
-    if config.selected_model == "gpt-4o":
+    if config.selected_model == "gpt-4o-img":
         base64_image = base64.b64encode(image).decode('utf-8')
-        stream = await model.generate_response_async(base64_image, user_prompt, system_prompt)
+        stream = await model.single_img_response_async(base64_image, user_prompt, system_prompt)
         return stream
     elif config.selected_model == "gpt-3.5":
         return await model.generate_waste_async(text_input)
@@ -159,7 +159,8 @@ with gr.Blocks() as demo:
             )
 
             with gr.Row():
-                model_select = gr.Dropdown(value="gpt-4o", choices=["gpt-4o", "gpt4-vision",'llava-1.6',"gpt-3.5"], label="Select model")
+                model_select = gr.Dropdown(value="gpt-4o-img", choices=["gpt-4o-img", "gpt-4o-video",
+                "gpt4-vision",'llava-1.6',"gpt-3.5"], label="Select model")
 
                 with gr.Column():
                     execute_btn = gr.Button("Execute")
