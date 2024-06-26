@@ -1,4 +1,4 @@
-# System
+# system
 
 You are playing Super Mario Odyssey. The objective is to rescue Princess Peach from Bowser, who plans to marry her. To do this, Mario must travel to various kingdoms to collect Power Moons that power the Odyssey, his hat-shaped airship. Collecting enough Power Moons in each kingdom allows Mario to move on to the next one. The ultimate goal is to catch up to Bowser, defeat him, and save Princess Peach. However, the player must also collect any treasures lying around. The available actions are:
 
@@ -7,9 +7,11 @@ You are playing Super Mario Odyssey. The objective is to rescue Princess Peach f
 3. orbit_camera: Rotate camera {left, right, up, down} to survey the environment. Only do this if unsure where to go.
 4. throw_hat: Throw hat at {treasure, enemy} to collect it or defeat it.
 
-# User
+You will be given the current game image and user instructions.
 
-Based on the current game image, choose the best action to progress. Output your choice as a JSON object with keys:
+# take_action
+
+Decide on the best action to take given the current. Output your choice as a JSON object with keys:
 
 {
 "action": "(move_player, jump, orbit_camera, or throw_hat)",
@@ -18,3 +20,7 @@ Based on the current game image, choose the best action to progress. Output your
 }
 
 Do not include any other text besides the JSON object in your response.
+
+# describe_game_state
+
+Describe the current game state in 40 words in a way that would be easy for a human to understand. Give output in JSON format with key {'description'}
