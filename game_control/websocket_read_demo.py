@@ -15,6 +15,8 @@ def on_message(ws, message):
     # Convert BGR to RGB
     img_np = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
 
+    # print(f"Image resolution: {img_np.shape[1]}x{img_np.shape[0]}")
+
     cv2.imshow('frame', img_np)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         cv2.destroyAllWindows()
@@ -29,10 +31,10 @@ def on_open(ws):
     def run(*args):
         # You can send messages to the server here if needed
         # ws.send("Hello Server")
-        time.sleep(20)  # Keep the connection open
-        ws.close()
-        print("Thread terminating...")
+        while True:
+            time.sleep(20)  # Keep the connection open
     thread = threading.Thread(target=run)
+    thread.daemon = True  # Set thread as daemon so it closes with the main program
     thread.start()
 
 if __name__ == "__main__":
@@ -44,3 +46,4 @@ if __name__ == "__main__":
                                 on_close=on_close)
 
     ws.run_forever()
+
