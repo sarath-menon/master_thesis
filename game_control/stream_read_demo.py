@@ -10,6 +10,9 @@ def process_frame(frame_data):
     image = Image.open(BytesIO(frame_data))
     image.show()  # Display the image using the default image viewer
 
+import cv2
+import numpy as np
+
 def stream_frames(url):
     """
     Connect to the server and stream frames continuously.
@@ -43,7 +46,11 @@ def stream_frames(url):
                 
                 # Extract the frame data
                 frame_data = buffer[header_end_index + 4:next_boundary_index]
-                process_frame(frame_data)
+                nparr = np.frombuffer(frame_data, np.uint8)
+                img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                cv2.imshow('frame', img_np)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
                 
                 # Remove the processed frame from the buffer
                 buffer = buffer[next_boundary_index:]
