@@ -11,22 +11,25 @@ start_time = time.time()
 
 # Example variables - replace these with actual values
 image_data = b'...'  # This should be your _imageByte data
-width = 3840        # Replace with actual image width
-height = 2160        # Replace with actual image height
+width = 1920      # Replace with actual image width
+height = 1080        # Replace with actual image height
 
 def on_message(ws, message):
     global frame_count, start_time
 
-    # Create an image from the byte data
+       # Create an image from the byte data
     image = Image.frombytes(mode='RGBA', size=(width, height), data=message)
 
-    # Convert the image to a numpy array
+    # Convert the image to a numpy array only if necessary
     img_np = np.array(image)
     img_np = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
 
-    # Show the image using cv2
+
+    # Show the image using cv2, consider reducing frequency of imshow if possible
     cv2.imshow('Image', img_np)
-    cv2.waitKey(1)
+    if cv2.waitKey(1) & 0xFF == ord('q'):  # Allow for a quit option
+        cv2.destroyAllWindows()
+        raise SystemExit("User requested exit.")
 
     frame_count += 1
     elapsed_time = time.time() - start_time
