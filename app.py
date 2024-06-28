@@ -117,10 +117,15 @@ async def chatbox_callback(message, history, dummy_call=True):
 
     # pause game
     # gc.pause_game()
-    game_screenshot = gc.get_screenshot()
+    img = gc.get_screenshot()
+
+    # convert PIl img to bytes
+    buffered = BytesIO()
+    img.save(buffered, format="JPEG")
+    img_bytes = buffered.getvalue()
 
     # call model
-    stream = await call_model(message, game_screenshot )
+    stream = await call_model(message, img_bytes)
     if stream is None:
         return
     
@@ -145,17 +150,16 @@ def execute_btn_callback(chat_input):
 
 def object_detection_callback(model, text_input):
     img = gc.get_screenshot()
-    return img, "selv"
 
-    # if model == "florence_2":
-    #     task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
-    #     results = florence_model.run_example(img, task_prompt, text_input=text_input)
-    #     bbox_image = florence_model.get_bbox_image(img, results['<CAPTION_TO_PHRASE_GROUNDING>'])
-    #     return bbox_image, results['<CAPTION_TO_PHRASE_GROUNDING>']['labels']
-    # elif model == "grounding_dino":
-    #     return img, "selv"
-    # else:
-    #     return img, "Unsupported model"
+    if model == "florence_2":
+        task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
+        results = florence_model.run_example(img, task_prompt, text_input=text_input)
+        bbox_image = florence_model.get_bbox_image(img, results['<CAPTION_TO_PHRASE_GROUNDING>'])
+        return bbox_image, results['<CAPTION_TO_PHRASE_GROUNDING>']['labels']
+    elif model == "grounding_dino":
+        return img, "selv"
+    else:
+        return img, "Unsupported model"
 
 with gr.Blocks() as demo:
     gr.Markdown("# Game Screenshot and Response")
