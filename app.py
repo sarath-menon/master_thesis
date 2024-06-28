@@ -31,6 +31,11 @@ class GameData:
     is_auto_execute: bool = False
 config = GameData()
 
+def image_to_base64(pil_image):
+    # Convert PIL Image to bytes directly
+    buffered = BytesIO()
+    pil_image.save(buffered, format="JPEG")
+    return base64.b64encode(buffered.getvalue()).decode('utf-8')
 
 async def get_bboxes(image_array, text_input):
 
@@ -87,7 +92,7 @@ def update_direction_options(action):
         return gr.update(choices=["forward", "backward", "left", "right"])
     return gr.update(choices=[])
 
-
+# Image should be PIL image
 async def call_model(text_input, image=None):
     prompts_dict = markdown_to_dict(PROMPT_PATH)
     # system_prompt = prompts_dict['system_prompt']
@@ -104,7 +109,7 @@ async def call_model(text_input, image=None):
         user_prompt = text_input + prompts_dict['custom_prompt_extension']
 
     if config.selected_model == "gpt-4o-img":
-        base64_image = base64.b64encode(image).decode('utf-8')
+        base64_image = image_to_base64(image)
         stream = await model.single_img_response_async(base64_image, user_prompt)
         return stream
     elif config.selected_model == "gpt-3.5":
@@ -119,13 +124,8 @@ async def chatbox_callback(message, history, dummy_call=True):
     # gc.pause_game()
     img = gc.get_screenshot()
 
-    # convert PIl img to bytes
-    buffered = BytesIO()
-    img.save(buffered, format="JPEG")
-    img_bytes = buffered.getvalue()
-
     # call model
-    stream = await call_model(message, img_bytes)
+    stream = await call_model(message, img)
     if stream is None:
         return
     
