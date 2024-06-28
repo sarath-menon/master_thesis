@@ -2,3 +2,4 @@
 *.cpython*
 /logs
 **/.DS_Store
+/models/extracted_frames
