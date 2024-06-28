@@ -11,6 +11,7 @@ import datetime
 import os
 import json
 import time
+import cv2
 
 URL = "http://localhost:8086/screenshot"
 PROMPT_PATH = "prompts/mario-odessey.md"
@@ -40,8 +41,8 @@ async def get_bboxes(image_array, text_input):
 
     # phrase grounded detection
     task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
-    results = bbox_model.run_example(image, task_prompt, text_input=text_input)
-    bbox_image = bbox_model.get_bbox_image(image, results['<CAPTION_TO_PHRASE_GROUNDING>'])
+    results = florence_model.run_example(image, task_prompt, text_input=text_input)
+    bbox_image = florence_model.get_bbox_image(image, results['<CAPTION_TO_PHRASE_GROUNDING>'])
     return bbox_image
 
 async def save_image_and_response(image_array, response):
@@ -144,22 +145,18 @@ def execute_btn_callback(chat_input):
 
 def object_detection_callback(model, text_input):
     img = gc.get_screenshot()
-    img = Image.open(BytesIO(img))
+    return img, "selv"
 
-    if model == "florence_2":
-        task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
-        results = florence_model.run_example(img, task_prompt, text_input=text_input)
-        bbox_image = florence_model.get_bbox_image(img, results['<CAPTION_TO_PHRASE_GROUNDING>'])
-        return bbox_image, "selv"
-    else:
-        return img, "Unsupported model"
-    
-    # bbox_image = model.get_bbox_image(image, results['<CAPTION_TO_PHRASE_GROUNDING>'])
-    # plt.imshow(bbox_image)
-    #     return img, "Hello " + name + "!"
+    # if model == "florence_2":
+    #     task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
+    #     results = florence_model.run_example(img, task_prompt, text_input=text_input)
+    #     bbox_image = florence_model.get_bbox_image(img, results['<CAPTION_TO_PHRASE_GROUNDING>'])
+    #     return bbox_image, results['<CAPTION_TO_PHRASE_GROUNDING>']['labels']
+    # elif model == "grounding_dino":
+    #     return img, "selv"
     # else:
-    #     return img, "Hello " + name + "!"
-        
+    #     return img, "Unsupported model"
+
 with gr.Blocks() as demo:
     gr.Markdown("# Game Screenshot and Response")
 
