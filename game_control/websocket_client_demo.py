@@ -5,6 +5,7 @@ import io
 from PIL import Image
 import cv2
 import numpy as np
+import json
 
 frame_count = 0
 start_time = time.time()
@@ -46,10 +47,12 @@ def on_close(ws, close_status_code, close_msg):
 
 def on_open(ws):
     def run(*args):
-        # You can send messages to the server here if needed
-        # ws.send("Hello Server")
-        while True:
-            time.sleep(20)  # Keep the connection open
+        message = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+        ws.send(json.dumps(message))
+
     thread = threading.Thread(target=run)
     thread.daemon = True  # Set thread as daemon so it closes with the main program
     thread.start()

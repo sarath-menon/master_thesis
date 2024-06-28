@@ -69,8 +69,8 @@ class WebSocketClient:
         def run(*args):
             # You can send messages to the server here if needed
             # ws.send("Hello Server")
-            while True:
-                time.sleep(20)  # Keep the connection open
+            pass
+
         thread = threading.Thread(target=run)
         thread.daemon = True  # Set thread as daemon so it closes with the main program
         thread.start()
