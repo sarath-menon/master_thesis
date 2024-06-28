@@ -50,7 +50,7 @@ if __name__ == "__main__":
     websocket.enableTrace(False)
     ws = websocket.WebSocket()
     ws.connect("ws://localhost:8086/stream_websocket")
-    # ws.settimeout(2)# Set the timeout to 2 seconds 
+    ws.settimeout(2)# Set the timeout to 2 seconds 
 
     n_frames = 100
     main(ws, n_frames)
