@@ -6,9 +6,6 @@ from PIL import Image
 import cv2
 import numpy as np
 import json
-import queue
-
-image_queue = queue.Queue(maxsize=100)
 
 frame_count = 0
 start_time = time.time()
@@ -17,15 +14,6 @@ start_time = time.time()
 image_data = b'...'  # This should be your _imageByte data
 width = 1920      # Replace with actual image width
 height = 1080        # Replace with actual image height
-
-def display_images():
-    while True:
-        if not image_queue.empty():
-            img_np = image_queue.get()
-            cv2.imshow('Image', img_np)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                cv2.destroyAllWindows()
-                raise SystemExit("User requested exit.")
 
 def on_image_message(ws, message):
     global frame_count, start_time
@@ -104,7 +92,6 @@ if __name__ == "__main__":
     try:
         threading.Thread(target=ws_image.run_forever).start()
         threading.Thread(target=ws_keypress.run_forever).start()
-        # display_images()
     except KeyboardInterrupt:
         print("Interrupted by user, stopping...")
         ws_image.close()
