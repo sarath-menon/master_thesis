@@ -6,14 +6,24 @@ from PIL import Image
 import cv2
 import numpy as np
 import json
+import queue
 
 frame_count = 0
 start_time = time.time()
+image_queue = queue.Queue(maxsize=100)
 
 # Example variables - replace these with actual values
 image_data = b'...'  # This should be your _imageByte data
 width = 1920      # Replace with actual image width
 height = 1080        # Replace with actual image height
+
+def main_thread():
+    while True:
+        if image_queue.qsize() > 0:
+            image = image_queue.get()
+            cv2.imshow('image', image)
+            cv2.waitKey(1)
+            time.sleep(0.001)
 
 def on_image_message(ws, message):
     global frame_count, start_time
@@ -25,6 +35,11 @@ def on_image_message(ws, message):
     img_np = np.array(image)
     img_np = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
 
+    if image_queue.full():
+        image_queue.queue.clear()
+    else:
+        image_queue.put(img_np)
+
     frame_count += 1
     elapsed_time = time.time() - start_time
     if elapsed_time > 1:  # Update FPS every second
@@ -33,8 +48,8 @@ def on_image_message(ws, message):
         frame_count = 0
         start_time = time.time()
 
-    if frame_count % 10 == 0:
-        cv2.imwrite(f'image_{int(time.time())}.png', img_np)
+    # if frame_count % 10 == 0:
+    #     cv2.imwrite(f'image_{int(time.time())}.png', img_np)
 
 def on_keypress_open(ws):
     def run(*args):
@@ -90,8 +105,11 @@ if __name__ == "__main__":
 
 
     try:
-        threading.Thread(target=ws_image.run_forever).start()
-        threading.Thread(target=ws_keypress.run_forever).start()
+        image_thread = threading.Thread(target=ws_image.run_forever)
+        keypress_thread = threading.Thread(target=ws_keypress.run_forever)
+        image_thread.start()
+        keypress_thread.start()
+        main_thread()
     except KeyboardInterrupt:
         print("Interrupted by user, stopping...")
         ws_image.close()
