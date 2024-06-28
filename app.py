@@ -34,7 +34,7 @@ config = GameData()
 def image_to_base64(pil_image):
     # Convert PIL Image to bytes directly
     buffered = BytesIO()
-    pil_image.save(buffered, format="JPEG")
+    pil_image.save(buffered, format="WEBP")
     return base64.b64encode(buffered.getvalue()).decode('utf-8')
 
 async def get_bboxes(image_array, text_input):
