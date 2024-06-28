@@ -67,8 +67,8 @@ class WebSocketClient:
 
     def on_image_open(self, ws):
         def run(*args):
-            message = {"action": "request_frames", "count": 2000}
-            ws.send(json.dumps(message))
+            # message = {"action": "request_frames", "count": 1000}
+            # ws.send(json.dumps(message))
             pass
 
         thread = threading.Thread(target=run)
