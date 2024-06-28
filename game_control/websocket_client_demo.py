@@ -47,10 +47,7 @@ def on_close(ws, close_status_code, close_msg):
 
 def on_open(ws):
     def run(*args):
-        message = {
-            "key1": "value1",
-            "key2": "value2"
-        }
+        message = {"action": "request_frames", "count": 100}
         ws.send(json.dumps(message))
 
     thread = threading.Thread(target=run)
