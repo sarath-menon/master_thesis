@@ -34,28 +34,36 @@ class GameController:
         self.width = 1600  # for Mario
         self.height = 900
 
-        # Create a separate WebSocket for receiving images
-        self.ws = websocket.WebSocket()
-        self.ws.connect("ws://localhost:8086/stream_websocket")
-        self.ws.settimeout(2)# Set websocket timeout to 2 seconds 
+        # for receiving images (observations)
+        self.obs_ws = websocket.WebSocket()
+        self.obs_ws.connect("ws://localhost:8086/stream_websocket")
+        self.obs_ws.settimeout(2)# Set websocket timeout to 2 seconds 
+
+        # for sending actions (keypresses)
+        self.action_ws = websocket.WebSocket()
+        self.action_ws.connect("ws://localhost:8086/keypress_websocket")
+        # self.action_ws.settimeout(2)# Set websocket timeout to 2 seconds 
 
         # Register the cleanup function
         atexit.register(self.close_websocket)
 
     def close_websocket(self):
-        if self.ws:
-            self.ws.close()
-            print("WebSocket closed")
+        if self.obs_ws:
+            self.obs_ws.close()
+        if self.action_ws:
+            self.action_ws.close()
 
     def keypress(self, key, duration):
+        msg = { "action": "keypress",
+                "key": key,
+                "duration": duration
+                }
         try:
-            response = requests.post(self.game_url + '/keypress', json={'key': key, 'duration': duration})
-            response.raise_for_status()  
-            return response.status_code
-        except requests.RequestException as e:
-            print(f"Error fetching game data: {e}")
-            return None 
-    
+            self.action_ws.send(json.dumps(msg))
+            print(f"Sent message: {msg}")
+        except websocket.WebSocketException as e:
+            print(f"Failed to send message: {e}")
+
     def move_player(self, direction, duration=3000):
         key = None
         if direction == "forward":
@@ -76,10 +84,10 @@ class GameController:
     def get_screenshot(self):
 
         message = {"action": "request_frames", "count": 1}
-        self.ws.send(json.dumps(message))
+        self.obs_ws.send(json.dumps(message))
 
         try:
-            message = self.ws.recv()
+            message = self.obs_ws.recv()
         except websocket.WebSocketTimeoutException:
             print("Timeout occurred while waiting for a message")
             return
