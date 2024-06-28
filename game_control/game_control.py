@@ -58,7 +58,7 @@ class GameController:
 
     def pause_game(self):
         try:
-            response = requests.post(self.game_url + '/pause')
+            response = requests.post(self.game_url + '/pause_game')
             response.raise_for_status()  
             return response.status_code
         except requests.RequestException as e:
@@ -66,7 +66,7 @@ class GameController:
 
     def resume_game(self):
         try:
-            response = requests.post(self.game_url + '/resume')
+            response = requests.post(self.game_url + '/resume_game')
             response.raise_for_status()  
             return response.status_code
         except requests.RequestException as e:
