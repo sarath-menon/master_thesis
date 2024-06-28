@@ -82,6 +82,8 @@ class GameController:
             return
         
         image = Image.frombytes(mode='RGBA', size=(self.width, self.height), data=message)
+        # Remove alpha channel from image
+        image = image.convert("RGB")
         return image
 
     def click_center(self):
