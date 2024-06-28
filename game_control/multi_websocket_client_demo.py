@@ -10,7 +10,7 @@ import queue
 
 frame_count = 0
 start_time = time.time()
-image_queue = queue.Queue(maxsize=100)
+image_queue = queue.LifoQueue(maxsize=100)
 
 # Example variables - replace these with actual values
 image_data = b'...'  # This should be your _imageByte data
@@ -22,8 +22,9 @@ def main_thread():
         if image_queue.qsize() > 0:
             image = image_queue.get()
             cv2.imshow('image', image)
-            cv2.waitKey(1)
             time.sleep(0.001)
+            if cv2.waitKey(1) & 0xFF == ord('q'):  
+                break
 
 def on_image_message(ws, message):
     global frame_count, start_time
@@ -35,16 +36,16 @@ def on_image_message(ws, message):
     img_np = np.array(image)
     img_np = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
 
-    if image_queue.full():
-        image_queue.queue.clear()
-    else:
+    if not image_queue.full():
         image_queue.put(img_np)
+    else:
+        image_queue.queue.clear()
 
     frame_count += 1
     elapsed_time = time.time() - start_time
     if elapsed_time > 1:  # Update FPS every second
         fps = frame_count / elapsed_time
-        print(f"FPS: {fps:.2f}")
+        print(f"Receiver FPS: {fps:.2f}")
         frame_count = 0
         start_time = time.time()
 
