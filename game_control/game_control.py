@@ -92,7 +92,7 @@ class GameController:
 
     def get_screenshot(self):
 
-        message = {"action": "request_frames", "count": 1}
+        message = {"duration": 0, "fps": 0, "screenshot": "True"}
         self.obs_ws.send(json.dumps(message))
 
         try:
