@@ -36,22 +36,31 @@ class GameController:
 
         # for receiving images (observations)
         self.obs_ws = websocket.WebSocket()
-        self.obs_ws.connect("ws://localhost:8086/stream_websocket")
-        self.obs_ws.settimeout(2)# Set websocket timeout to 2 seconds 
-
         # for sending actions (keypresses)
         self.action_ws = websocket.WebSocket()
-        self.action_ws.connect("ws://localhost:8086/keypress_websocket")
-        # self.action_ws.settimeout(2)# Set websocket timeout to 2 seconds 
 
         # Register the cleanup function
-        atexit.register(self.close_websocket)
+        atexit.register(self.close_websockets)
 
-    def close_websocket(self):
-        if self.obs_ws:
-            self.obs_ws.close()
-        if self.action_ws:
-            self.action_ws.close()
+    def connect_websockets(self):
+        try:    
+            if not self.obs_ws.connected:
+                self.obs_ws.connect("ws://localhost:8086/stream_websocket")
+            if not self.action_ws.connected:
+                self.action_ws.connect("ws://localhost:8086/keypress_websocket")
+
+            self.obs_ws.settimeout(2)# Set websocket timeout to 2 seconds 
+            self.action_ws.settimeout(2)# Set websocket timeout to 2 seconds 
+        except websocket.WebSocketException as e:
+            print(f"Failed to connect to websockets: {e}")
+            return
+
+    def close_websockets(self):
+        try:
+            if self.obs_ws: self.obs_ws.close()
+            if self.action_ws: self.action_ws.close()
+        except websocket.WebSocketException as e:
+            print(f"Failed to close websockets: {e}")
 
     def keypress(self, key, duration):
         msg = { "action": "keypress",

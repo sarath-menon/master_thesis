@@ -223,12 +223,20 @@ with gr.Blocks() as demo:
                 action_button.click(fn=do_action, inputs=[action_select, direction_select])    
                 
 
-                with gr.Row():
-                    pause_button = gr.Button("Pause game")
-                    resume_button = gr.Button("Resume game")
+        with gr.Row():
+            pause_button = gr.Button("Pause game")
+            resume_button = gr.Button("Resume game")
+            connect_emulator_btn = gr.Button("Connect emulator")
+            disconnect_emulator_btn = gr.Button("Disconnect emulator")
 
-                    pause_button.click(fn=gc.pause_game)
-                    resume_button.click(fn=gc.resume_game)
+            pause_button.click(fn=gc.pause_game)
+            resume_button.click(fn=gc.resume_game)
+            connect_emulator_btn.click(fn=gc.connect_websockets)
+            disconnect_emulator_btn.click(fn=gc.close_websockets)
+
+            def connect_emulator_btn_callback():
+                gc.connect_websockets()
+                return
 
 if __name__ == "__main__":
     demo.launch()
