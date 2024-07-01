@@ -31,6 +31,8 @@ class GameData:
     is_auto_execute: bool = False
 config = GameData()
 
+images_list = [{"files": ["/Users/sarathmenon/Documents/master_thesis/datasets/game_dataset/raw/fortnite/1.jpg"], "text": "Please pay attention to the movement of the object from the first image to the second image, then write a HTML code to show this movement."}]
+
 def image_to_base64(pil_image):
     # Convert PIL Image to bytes directly
     buffered = BytesIO()
@@ -161,6 +163,19 @@ def object_detection_callback(model, text_input):
     else:
         return img, "Unsupported model"
 
+philosophy_quotes = [
+    ["I think therefore I am."],
+    ["The unexamined life is not worth living."]
+]
+
+startup_quotes = [
+    ["Ideas are easy. Implementation is hard"],
+    ["Make mistakes faster."]
+]
+
+def predict(im):
+    return im["composite"]
+
 with gr.Blocks() as demo:
     gr.Markdown("# Game Screenshot and Response")
 
@@ -221,6 +236,28 @@ with gr.Blocks() as demo:
                 action_select.change(fn=update_direction_options, inputs=[action_select], outputs=[direction_select])
 
                 action_button.click(fn=do_action, inputs=[action_select, direction_select])    
+        
+        with gr.Tab("Dataset"):
+
+            with gr.Row():
+                im = gr.ImageEditor(
+                    type="numpy",
+                    crop_size="1:1",
+                )
+                im_preview = gr.Image()
+            n_upload = gr.Number(0, label="Number of upload events", step=1)
+            n_change = gr.Number(0, label="Number of change events", step=1)
+            n_input = gr.Number(0, label="Number of input events", step=1)
+
+            im.upload(lambda x: x + 1, outputs=n_upload, inputs=n_upload)
+            im.change(lambda x: x + 1, outputs=n_change, inputs=n_change)
+            im.input(lambda x: x + 1, outputs=n_input, inputs=n_input)
+            im.change(predict, outputs=im_preview, inputs=im, show_progress="hidden")
+
+            with gr.Column():
+                chat_input = gr.MultimodalTextbox(interactive=True, file_types=["image","video"], placeholder="Enter message or upload file...", show_label=False)
+
+                gr.Examples(examples=[images_list], inputs=[chat_input], label="Compare images: ")
                 
 
         with gr.Row():
