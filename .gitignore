@@ -3,3 +3,4 @@
 /logs
 **/.DS_Store
 /models/extracted_frames
+/datasets/raw_media
