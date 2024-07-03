@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 
 # Define the label values
-label_values = ["door", "window", "sword", "treasure", "bush", "tree", "pillow", "book", "box", "sphere", "bird", "barrel", "painting", "stick", "moon", "lamp", "instrument", "table", "chair", "skull", "telescope", "globe", "mirror", "vase", "hat", "pillar", "crate", "coin", "watertank", "ring", "cannon", "fire_hydrant", "cap", "car", "plant", "flag", "watertank", "can"]
+label_values = ["door", "window", "sword", "treasure", "bush", "tree", "pillow", "book", "box", "sphere", "bird", "barrel", "painting", "stick", "moon", "lamp", "instrument", "table", "chair", "skull", "telescope", "globe", "mirror", "vase", "hat", "pillar", "crate", "coin", "watertank", "ring", "cannon", "fire_hydrant", "cap", "car", "plant", "flag", "can", "computer", "television", "bag", "ball", "refrigerator", "cabinet", "trash can", "oven"]
 
 import random
 
