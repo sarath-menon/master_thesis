@@ -1,0 +1,2781 @@
+[
+  {
+    "id": 1,
+    "annotations": [
+      {
+        "id": 1,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [44.429447052686484, 56.61971830985916],
+                [44.70257889932186, 73.23943661971832],
+                [55.354720918101194, 77.04225352112675],
+                [59.542742566510164, 68.02816901408451],
+                [59.997962310902444, 53.52112676056338],
+                [50.71147952529994, 50.985915492957744]
+              ],
+              "closed": true,
+              "polygonlabels": ["crate"]
+            },
+            "id": "uxSQUhSsby",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [7.003661717495987, 35.23274478330658],
+                [9.390094599013137, 54.97592295345104],
+                [15.667450656916948, 56.581059390048146],
+                [23.2936600826348, 54.3338683788122],
+                [25.783850915522265, 51.84590690208668],
+                [24.383118572023065, 33.22632423756019],
+                [15.044902948695082, 22.953451043338685]
+              ],
+              "closed": true,
+              "polygonlabels": ["watertank"]
+            },
+            "id": "oSllPVt4V7",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [45.238466797455565, 82.90529695024077],
+                [45.18658782177041, 88.84430176565007],
+                [46.79483606801023, 89.64686998394865],
+                [48.403084314250044, 88.52327447833066],
+                [48.4549632899352, 82.98555377207063],
+                [47.36550480054694, 81.54093097913324],
+                [45.96477245704774, 81.78170144462278]
+              ],
+              "closed": true,
+              "polygonlabels": ["can"]
+            },
+            "id": "IXTgVv40z5",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [42.54076006182748, 62.35955056179775],
+                [42.54076006182748, 65.8908507223114],
+                [43.57833957553059, 66.45264847512038],
+                [44.408403186493075, 66.37239165329053],
+                [44.408403186493075, 62.11878009630819],
+                [43.73397650258605, 61.39646869983949]
+              ],
+              "closed": true,
+              "polygonlabels": ["can"]
+            },
+            "id": "iAoC6Z1nbp",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.488129Z",
+        "updated_at": "2024-07-03T16:47:06.488152Z",
+        "draft_created_at": null,
+        "lead_time": 153.094,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "c3e1e9e8-c9a1-460f-9bdb-dcbba639800b",
+        "import_id": 1,
+        "last_action": null,
+        "task": 1,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/9.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.479336Z",
+    "updated_at": "2024-07-03T16:47:06.479378Z",
+    "inner_id": 1,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 2,
+    "annotations": [
+      {
+        "id": 2,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [44.70257889932186, 34.22535211267605],
+                [46.2503260302556, 35.352112676056336],
+                [49.34582029212311, 33.38028169014085],
+                [49.9831279342723, 29.718309859154928],
+                [47.25180946791862, 27.042253521126764],
+                [47.79807316118935, 24.788732394366196],
+                [52.35027060511215, 26.056338028169012],
+                [55.354720918101194, 31.26760563380282],
+                [54.62636932707354, 37.605633802816904],
+                [51.34878716744914, 41.12676056338028],
+                [47.980161058946265, 40.42253521126761],
+                [45.33988654147104, 37.183098591549296],
+                [43.792139410537295, 36.47887323943662]
+              ],
+              "closed": true,
+              "polygonlabels": ["moon"]
+            },
+            "id": "GvcZ5x94uB",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.488243Z",
+        "updated_at": "2024-07-03T16:47:06.488254Z",
+        "draft_created_at": null,
+        "lead_time": 1760.987,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "347ca9d3-1089-4fbb-bfb4-5d8cc70c723d",
+        "import_id": 2,
+        "last_action": null,
+        "task": 2,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/14.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.479432Z",
+    "updated_at": "2024-07-03T16:47:06.479446Z",
+    "inner_id": 2,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 3,
+    "annotations": [
+      {
+        "id": 3,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [52.805490349504424, 26.338028169014084],
+                [50.89356742305685, 27.1830985915493],
+                [46.70554577464788, 28.30985915492958],
+                [44.33840310380803, 33.23943661971831],
+                [44.24735915492957, 39.154929577464785],
+                [45.88615023474178, 43.38028169014084],
+                [49.9831279342723, 45.91549295774649],
+                [53.26071009389671, 44.225352112676056],
+                [56.90246804903495, 39.29577464788731],
+                [56.1741164580073, 37.32394366197183],
+                [54.353237480438175, 39.57746478873239],
+                [51.621919014084504, 37.74647887323944],
+                [49.89208398539384, 33.66197183098591],
+                [51.25774321857068, 28.87323943661972],
+                [52.98757824726133, 29.43661971830986]
+              ],
+              "closed": true,
+              "polygonlabels": ["moon"]
+            },
+            "id": "nIoc2bTL0_",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.488328Z",
+        "updated_at": "2024-07-03T16:47:06.488339Z",
+        "draft_created_at": null,
+        "lead_time": 45.887,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "32a76e2d-5871-41a2-9346-d9b0a05dc702",
+        "import_id": 3,
+        "last_action": null,
+        "task": 3,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/12.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.479485Z",
+    "updated_at": "2024-07-03T16:47:06.479498Z",
+    "inner_id": 3,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 4,
+    "annotations": [
+      {
+        "id": 4,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [59.349548183817845, 25.441412520064205],
+                [57.11875222935616, 26.003210272873194],
+                [55.92553578859759, 28.170144462279296],
+                [55.510503983116344, 32.02247191011236],
+                [56.807478375245225, 34.91171749598716],
+                [59.14203228107723, 35.39325842696629],
+                [61.52846516259438, 32.6645264847512],
+                [61.16531233279828, 31.13964686998395],
+                [60.07585384341002, 32.02247191011236],
+                [58.98639535402176, 29.69502407704655],
+                [58.934516378336596, 27.046548956661315],
+                [59.71270101361393, 27.36757624398074],
+                [60.28336974615065, 26.64526484751204]
+              ],
+              "closed": true,
+              "polygonlabels": ["moon"]
+            },
+            "id": "B72bh23YlN",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.488405Z",
+        "updated_at": "2024-07-03T16:47:06.488415Z",
+        "draft_created_at": null,
+        "lead_time": 28.817,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "e007aa75-65b2-49b9-a88c-f7295d00706c",
+        "import_id": 10043,
+        "last_action": null,
+        "task": 4,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/0.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.479535Z",
+    "updated_at": "2024-07-03T16:47:06.479549Z",
+    "inner_id": 4,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 5,
+    "annotations": [
+      {
+        "id": 5,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [59.24579023244754, 47.110754414125196],
+                [61.269070284168606, 46.22792937399679],
+                [63.55174521431544, 47.43178170144463],
+                [64.32992984959277, 49.59871589085072],
+                [63.96677701979668, 53.29052969502408],
+                [61.58034413827953, 54.25361155698234],
+                [59.81645896498424, 52.96950240770465],
+                [58.72700047559598, 50.24077046548957]
+              ],
+              "closed": true,
+              "polygonlabels": ["plant"]
+            },
+            "id": "EXORdpcp9X",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.488472Z",
+        "updated_at": "2024-07-03T16:47:06.488482Z",
+        "draft_created_at": null,
+        "lead_time": 20.972,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "d063595e-5dd7-4df8-8443-fafcb7e32b28",
+        "import_id": 10044,
+        "last_action": null,
+        "task": 5,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/1.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.479589Z",
+    "updated_at": "2024-07-03T16:47:06.479601Z",
+    "inner_id": 5,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 6,
+    "annotations": [
+      {
+        "id": 6,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [59.920216916354555, 40.048154093097914],
+                [59.764579989299094, 47.59229534510433],
+                [64.84871960644433, 47.512038523274484],
+                [65.83442014446229, 40.77046548956662]
+              ],
+              "closed": true,
+              "polygonlabels": ["flag"]
+            },
+            "id": "B4ISK-yPRR",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.488530Z",
+        "updated_at": "2024-07-03T16:47:06.488541Z",
+        "draft_created_at": null,
+        "lead_time": 22.517,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "5c57e5cb-a814-4e67-a6af-3df146507e06",
+        "import_id": 10045,
+        "last_action": null,
+        "task": 6,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/8.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.479637Z",
+    "updated_at": "2024-07-03T16:47:06.479649Z",
+    "inner_id": 6,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 7,
+    "annotations": [
+      {
+        "id": 7,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [54.6285613964687, 41.25200642054575],
+                [48.973753046786754, 43.258426966292134],
+                [49.8556956334344, 49.43820224719101],
+                [54.88795627489448, 49.2776886035313]
+              ],
+              "closed": true,
+              "polygonlabels": ["flag"]
+            },
+            "id": "dtrlQaPR7C",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.488590Z",
+        "updated_at": "2024-07-03T16:47:06.488601Z",
+        "draft_created_at": null,
+        "lead_time": 12.551,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "f7c8062b-feac-4404-b443-6b91a5ffabdf",
+        "import_id": 10046,
+        "last_action": null,
+        "task": 7,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/13.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.479686Z",
+    "updated_at": "2024-07-03T16:47:06.479699Z",
+    "inner_id": 7,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 8,
+    "annotations": [
+      {
+        "id": 8,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [50.16521583202921, 36.760563380281695],
+                [37.692194835680745, 38.59154929577465],
+                [37.96532668231612, 40.563380281690144],
+                [50.16521583202921, 38.309859154929576]
+              ],
+              "closed": true,
+              "polygonlabels": ["stick"]
+            },
+            "id": "c-hVbJQT8b",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [57.357687793427225, 60.56338028169014],
+                [40.059337506520606, 64.36619718309859],
+                [40.15038145539906, 66.90140845070422],
+                [57.63081964006259, 62.53521126760564]
+              ],
+              "closed": true,
+              "polygonlabels": ["stick"]
+            },
+            "id": "_i6na1p0tS",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.488665Z",
+        "updated_at": "2024-07-03T16:47:06.488675Z",
+        "draft_created_at": null,
+        "lead_time": 64.747,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "8194301d-78d3-4268-8fda-f196e55f37fc",
+        "import_id": 4,
+        "last_action": null,
+        "task": 8,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/11.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.479735Z",
+    "updated_at": "2024-07-03T16:47:06.479746Z",
+    "inner_id": 8,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 9,
+    "annotations": [
+      {
+        "id": 9,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [48.79955659885237, 40.140845070422536],
+                [51.621919014084504, 41.54929577464789],
+                [52.53235850286906, 44.36619718309859],
+                [50.52939162754303, 47.04225352112675],
+                [48.526424752217004, 46.19718309859155],
+                [47.524941314553985, 44.7887323943662],
+                [49.80104003651538, 44.225352112676056],
+                [49.89208398539384, 41.690140845070424]
+              ],
+              "closed": true,
+              "polygonlabels": ["moon"]
+            },
+            "id": "Ec3bTbKerL",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.488728Z",
+        "updated_at": "2024-07-03T16:47:06.488738Z",
+        "draft_created_at": null,
+        "lead_time": 26.544,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "2bcf045f-4cd7-4258-b344-027d168ef694",
+        "import_id": 5,
+        "last_action": null,
+        "task": 9,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/10.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.479782Z",
+    "updated_at": "2024-07-03T16:47:06.479794Z",
+    "inner_id": 9,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 10,
+    "annotations": [
+      {
+        "id": 10,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [64.09494001043296, 42.112676056338024],
+                [69.64862089201877, 36.33802816901409],
+                [72.4709833072509, 41.267605633802816],
+                [72.4709833072509, 44.7887323943662],
+                [70.37697248304642, 47.46478873239436],
+                [68.46504955659884, 46.478873239436616],
+                [65.46059924360979, 47.32394366197183]
+              ],
+              "closed": true,
+              "polygonlabels": ["cannon"]
+            },
+            "id": "W7vX5345Tz",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.488793Z",
+        "updated_at": "2024-07-03T16:47:06.488804Z",
+        "draft_created_at": null,
+        "lead_time": 44.159,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "930a3781-0348-42f9-9526-6e602d61d7f1",
+        "import_id": 6,
+        "last_action": null,
+        "task": 10,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/4.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.479831Z",
+    "updated_at": "2024-07-03T16:47:06.479843Z",
+    "inner_id": 10,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 11,
+    "annotations": [
+      {
+        "id": 11,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [10.470054121022427, 51.549295774647874],
+                [15.932691053729783, 38.87323943661972],
+                [25.58334963484611, 38.87323943661972],
+                [27.85944835680751, 43.239436619718305],
+                [28.769887845592066, 57.74647887323944],
+                [11.289449660928533, 59.29577464788732],
+                [9.923790427751694, 55.21126760563381]
+              ],
+              "closed": true,
+              "polygonlabels": ["car"]
+            },
+            "id": "HEpYruzol3",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [70.92323617631715, 53.38028169014084],
+                [73.38142279603547, 53.52112676056338],
+                [73.29037884715702, 46.33802816901408],
+                [72.19785146061554, 44.50704225352113],
+                [71.10532407407408, 46.61971830985915],
+                [71.56054381846634, 48.45070422535211],
+                [70.65010432968178, 49.014084507042256],
+                [70.65010432968178, 50.84507042253521],
+                [71.46949986958789, 51.267605633802816]
+              ],
+              "closed": true,
+              "polygonlabels": ["fire_hydrant"]
+            },
+            "id": "3bN1vGC1E7",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.488881Z",
+        "updated_at": "2024-07-03T16:47:06.488891Z",
+        "draft_created_at": null,
+        "lead_time": 126.982,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "37b5fd15-6f0c-479c-91e0-c894bd8ed834",
+        "import_id": 7,
+        "last_action": null,
+        "task": 11,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/5.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.479879Z",
+    "updated_at": "2024-07-03T16:47:06.479890Z",
+    "inner_id": 11,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 12,
+    "annotations": [
+      {
+        "id": 12,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [43.61005151278039, 29.295774647887324],
+                [45.88615023474178, 30.985915492957744],
+                [48.79955659885237, 29.718309859154928],
+                [50.43834767866458, 24.084507042253524],
+                [49.16373239436619, 20.56338028169014],
+                [46.61450182576943, 20],
+                [47.433897365675534, 17.183098591549296],
+                [53.35175404277517, 19.295774647887324],
+                [56.08307250912884, 25.915492957746476],
+                [54.99054512258738, 33.943661971830984],
+                [51.16669926969222, 37.46478873239437],
+                [46.79658972352634, 36.61971830985916],
+                [44.884666797078765, 32.67605633802817],
+                [42.881699921752734, 31.690140845070424]
+              ],
+              "closed": true,
+              "polygonlabels": ["moon"]
+            },
+            "id": "-ZfLns1PSW",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.488959Z",
+        "updated_at": "2024-07-03T16:47:06.488968Z",
+        "draft_created_at": null,
+        "lead_time": 30.418,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "98a9753e-de9f-4b0b-b7cc-8d5d6679b9f2",
+        "import_id": 8,
+        "last_action": null,
+        "task": 12,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/7.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.479926Z",
+    "updated_at": "2024-07-03T16:47:06.479937Z",
+    "inner_id": 12,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 13,
+    "annotations": [
+      {
+        "id": 13,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [57.812907537819505, 53.52112676056338],
+                [66.55312663015127, 56.760563380281695],
+                [75.83960941575377, 55.35211267605634],
+                [74.01873043818466, 42.67605633802817],
+                [69.01131324986957, 37.183098591549296],
+                [61.545709441836195, 39.859154929577464]
+              ],
+              "closed": true,
+              "polygonlabels": ["bush"]
+            },
+            "id": "i7i-DbqBtz",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.489018Z",
+        "updated_at": "2024-07-03T16:47:06.489028Z",
+        "draft_created_at": null,
+        "lead_time": 43.883,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "c19520f8-6e3b-4f38-a6c7-eab51354dee5",
+        "import_id": 9,
+        "last_action": null,
+        "task": 13,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/6.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.479973Z",
+    "updated_at": "2024-07-03T16:47:06.479985Z",
+    "inner_id": 13,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 14,
+    "annotations": [
+      {
+        "id": 14,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [45.61301838810641, 49.859154929577464],
+                [46.79658972352634, 50.563380281690144],
+                [48.25329290558164, 53.239436619718305],
+                [51.439831116327596, 53.80281690140845],
+                [54.353237480438175, 50],
+                [54.44428142931663, 45.2112676056338],
+                [51.89505086071987, 40.985915492957744],
+                [48.16224895670318, 40.563380281690144],
+                [47.980161058946265, 42.53521126760563],
+                [49.709996087636924, 42.25352112676056],
+                [50.16521583202921, 46.478873239436616],
+                [48.435380803338546, 49.57746478873239],
+                [46.432413928012515, 47.88732394366197]
+              ],
+              "closed": true,
+              "polygonlabels": ["moon"]
+            },
+            "id": "l180Q75_FR",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.489091Z",
+        "updated_at": "2024-07-03T16:47:06.489101Z",
+        "draft_created_at": null,
+        "lead_time": 26.495,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "72afc43f-8834-414e-b93f-d58e187b8bce",
+        "import_id": 10,
+        "last_action": null,
+        "task": 14,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/2.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480020Z",
+    "updated_at": "2024-07-03T16:47:06.480032Z",
+    "inner_id": 14,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 15,
+    "annotations": [
+      {
+        "id": 15,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [27.040052816901404, 44.225352112676056],
+                [39.87724960876369, 43.38028169014084],
+                [40.33246935315597, 61.69014084507042],
+                [27.586316510172143, 63.66197183098592]
+              ],
+              "closed": true,
+              "polygonlabels": ["pillar"]
+            },
+            "id": "7zQpRYixGi",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.489150Z",
+        "updated_at": "2024-07-03T16:47:06.489159Z",
+        "draft_created_at": null,
+        "lead_time": 21.121,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "ab2706d7-64c8-4b4e-92a4-40e8d7c63c34",
+        "import_id": 11,
+        "last_action": null,
+        "task": 15,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/mario_odessey/3.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480070Z",
+    "updated_at": "2024-07-03T16:47:06.480081Z",
+    "inner_id": 15,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 16,
+    "annotations": [
+      {
+        "id": 16,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [37.891440501043846, 25.514211007339593],
+                [37.995824634655534, 15.825270118476459],
+                [40.24008350730689, 8.316340929607527],
+                [66.9624217118998, 8.800787974050683],
+                [69.10229645093946, 21.55789347772048],
+                [68.42379958246346, 70.64852731462705],
+                [44.88517745302714, 70.81000966277476],
+                [42.01461377870564, 58.133645333178826],
+                [40.65762004175365, 56.59956302577549],
+                [40.60542797494781, 53.36991606282111],
+                [41.23173277661795, 51.02842201467919],
+                [40.292275574112736, 46.991363310986216],
+                [38.36116910229645, 46.18395157024762]
+              ],
+              "closed": true,
+              "polygonlabels": ["door"]
+            },
+            "id": "TN5J1lvx61",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.489229Z",
+        "updated_at": "2024-07-03T16:47:06.489239Z",
+        "draft_created_at": null,
+        "lead_time": 138.67299999999997,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "e38277b4-3e0d-43d5-a4d6-9f4f8b4d70bc",
+        "import_id": 12,
+        "last_action": null,
+        "task": 16,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/8.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480117Z",
+    "updated_at": "2024-07-03T16:47:06.480128Z",
+    "inner_id": 16,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 17,
+    "annotations": [
+      {
+        "id": 17,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [42.849686847599166, 40.4513282110036],
+                [43.684759916492695, 35.04166954805502],
+                [46.71189979123173, 31.40831671473134],
+                [51.40918580375783, 31.731281411026774],
+                [53.5490605427975, 34.79944602583343],
+                [54.69728601252609, 41.177998777668336],
+                [53.60125260960334, 45.860986873952186],
+                [50.31315240083507, 48.12173974802025],
+                [45.72025052192067, 47.96025739987253],
+                [43.99791231732777, 45.05357513321359]
+              ],
+              "closed": true,
+              "polygonlabels": ["sphere"]
+            },
+            "id": "tiypdp73h2",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.489301Z",
+        "updated_at": "2024-07-03T16:47:06.489311Z",
+        "draft_created_at": null,
+        "lead_time": 28.321,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "b2720c99-8709-4f76-9420-a7717ae961de",
+        "import_id": 13,
+        "last_action": null,
+        "task": 17,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/9.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480168Z",
+    "updated_at": "2024-07-03T16:47:06.480191Z",
+    "inner_id": 17,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 18,
+    "annotations": [
+      {
+        "id": 18,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [49.16492693110647, 42.146892866554644],
+                [51.617954070981206, 54.177327803559706],
+                [49.947807933194156, 58.61809237762198],
+                [55.219206680584556, 68.06480974426354],
+                [60.490605427974955, 67.82258622204196],
+                [64.14405010438414, 70.81000966277476],
+                [70.72025052192068, 69.27592735537144],
+                [74.58246346555325, 65.1581274776046],
+                [76.40918580375782, 57.48771594058795],
+                [71.29436325678496, 50.786198492457615],
+                [65.34446764091858, 46.10321039617376],
+                [61.48225469728601, 45.45728100358289],
+                [56.419624217119, 34.557222503611854],
+                [53.07933194154488, 32.37721080361765],
+                [49.373695198329855, 35.84908128879361]
+              ],
+              "closed": true,
+              "polygonlabels": ["bird"]
+            },
+            "id": "ivQuRTQQO4",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.489384Z",
+        "updated_at": "2024-07-03T16:47:06.489394Z",
+        "draft_created_at": null,
+        "lead_time": 82.446,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "1b932321-4037-4a37-a9e6-65ca6e4a1b2e",
+        "import_id": 14,
+        "last_action": null,
+        "task": 18,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/14.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480227Z",
+    "updated_at": "2024-07-03T16:47:06.480238Z",
+    "inner_id": 18,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 19,
+    "annotations": [
+      {
+        "id": 19,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [44.31106471816284, 61.60551581835478],
+                [46.34655532359081, 59.183280596139],
+                [49.217118997912316, 58.86031589984356],
+                [49.89561586638831, 56.43808067762778],
+                [52.087682672233825, 54.823257196150585],
+                [56.68058455114823, 57.084010070218646],
+                [60.75156576200418, 60.95958642576391],
+                [61.37787056367432, 65.72331569612162],
+                [56.78496868475992, 64.7544216072353],
+                [56.10647181628392, 66.44998626278635],
+                [45.19832985386221, 66.77295095908178],
+                [44.46764091858037, 65.64257452204775]
+              ],
+              "closed": true,
+              "polygonlabels": ["pillow"]
+            },
+            "id": "C0KAyP0vzb",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [49.32150313152401, 56.68030419984935],
+                [48.90396659707724, 50.70545731838375],
+                [49.634655532359076, 41.420222299889915],
+                [56.73277661795407, 41.58170464803763],
+                [57.6722338204593, 50.94768084060534],
+                [57.20250521920668, 57.32623359244023],
+                [52.4008350730689, 54.74251602207673]
+              ],
+              "closed": true,
+              "polygonlabels": ["barrel"]
+            },
+            "id": "4APgFZ49K8",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [50.31315240083507, 35.04166954805502],
+                [49.79123173277662, 38.67502238137869],
+                [50.26096033402923, 40.69355173322518],
+                [56.158663883089766, 40.774292907299035],
+                [56.471816283924845, 38.43279885915712],
+                [55.84551148225469, 35.36463424435045]
+              ],
+              "closed": true,
+              "polygonlabels": ["barrel"]
+            },
+            "id": "ohcxLM80X_",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.489501Z",
+        "updated_at": "2024-07-03T16:47:06.489511Z",
+        "draft_created_at": null,
+        "lead_time": 106.21100000000001,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "85311e73-b917-4ae6-84b0-23e41631038b",
+        "import_id": 15,
+        "last_action": null,
+        "task": 19,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/15.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480273Z",
+    "updated_at": "2024-07-03T16:47:06.480285Z",
+    "inner_id": 19,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 20,
+    "annotations": [
+      {
+        "id": 20,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [39.24843423799583, 35.92982246286746],
+                [38.88308977035491, 53.12769254059953],
+                [39.822546972860124, 58.133645333178826],
+                [45.92901878914405, 57.64919828873567],
+                [46.81628392484342, 41.25873995174219],
+                [45.61586638830898, 36.495010681384485],
+                [43.78914405010438, 32.61943432583923],
+                [43.684759916492695, 30.52016379991888],
+                [46.5553235908142, 27.77496388140766],
+                [47.45534143013495, 24.93794651690575],
+                [46.71189979123173, 19.377881777726273],
+                [42.79610796669382, 17.896845446506447],
+                [39.300626304801675, 20.266034692538728],
+                [38.67432150313152, 26.240881574004334],
+                [40.60542797494781, 29.632010885106432],
+                [42.4321503131524, 30.197199103623447],
+                [42.379958246346554, 33.02314019620853]
+              ],
+              "closed": true,
+              "polygonlabels": ["lamp"]
+            },
+            "id": "TLUonBQzhK",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.489585Z",
+        "updated_at": "2024-07-03T16:47:06.489595Z",
+        "draft_created_at": null,
+        "lead_time": 40.48,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "bcbab4ab-f899-443f-95e7-a006fc56c4b4",
+        "import_id": 16,
+        "last_action": null,
+        "task": 20,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/17.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480321Z",
+    "updated_at": "2024-07-03T16:47:06.480332Z",
+    "inner_id": 20,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 21,
+    "annotations": [
+      {
+        "id": 21,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [51.51356993736952, 29.30904618881099],
+                [50.626304801670145, 31.40831671473134],
+                [50.52192066805845, 33.91129311102098],
+                [51.51356993736952, 33.346104892503966],
+                [53.07933194154488, 33.02314019620853],
+                [53.496868475991654, 35.687598940645884],
+                [55.062630480167016, 36.81797537767992],
+                [56.26304801670147, 35.92982246286746],
+                [57.35908141962421, 36.01056363694133],
+                [57.776617954070986, 34.39574015546414],
+                [56.889352818371606, 33.26536371843011],
+                [56.83716075156576, 30.92386967028818],
+                [55.37578288100209, 28.501634448072394],
+                [54.27974947807933, 29.066822666589413],
+                [54.1231732776618, 30.600904973992744],
+                [53.23590814196242, 31.731281411026774],
+                [52.609603340292274, 31.569799062879056]
+              ],
+              "closed": true,
+              "polygonlabels": ["instrument"]
+            },
+            "id": "9U533HDnIJ",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.489667Z",
+        "updated_at": "2024-07-03T16:47:06.489676Z",
+        "draft_created_at": null,
+        "lead_time": 29.277,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "c433a1e0-fd5e-47be-9486-5416e4d91596",
+        "import_id": 17,
+        "last_action": null,
+        "task": 21,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/16.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480382Z",
+    "updated_at": "2024-07-03T16:47:06.480394Z",
+    "inner_id": 21,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 22,
+    "annotations": [
+      {
+        "id": 22,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [34.18580375782881, 40.20910468878202],
+                [37.108559498956154, 38.83650472952641],
+                [40.81419624217119, 38.755763555452546],
+                [43.84133611691023, 39.72465764433886],
+                [43.84133611691023, 41.33948112581605],
+                [42.90187891440501, 43.51949282581026],
+                [40.135699373695196, 44.64986926284429],
+                [40.50104384133611, 47.233586833207795],
+                [42.693110647181626, 48.767669140611126],
+                [42.17118997912318, 51.27064553690077],
+                [39.50939457202505, 51.75509258134393],
+                [39.300626304801675, 49.898045577645156],
+                [37.317327766179545, 51.02842201467919],
+                [36.586638830897705, 50.70545731838375],
+                [36.27348643006263, 49.33285735912814],
+                [38.36116910229645, 47.79877505172481],
+                [38.25678496868476, 44.569128088770434],
+                [35.020876826722336, 43.923198696179554]
+              ],
+              "closed": true,
+              "polygonlabels": ["table"]
+            },
+            "id": "aTro2n-hf3",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [44.57202505219207, 42.06615169248079],
+                [47.02505219206681, 37.867610640640095],
+                [46.972860125260965, 30.197199103623444],
+                [49.06054279749478, 26.725328618447485],
+                [51.09603340292276, 30.439422625845026],
+                [50.78288100208769, 45.05357513321359],
+                [49.947807933194156, 46.58765744061692],
+                [44.57202505219207, 46.18395157024762]
+              ],
+              "closed": true,
+              "polygonlabels": ["chair"]
+            },
+            "id": "api7roohJG",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.489761Z",
+        "updated_at": "2024-07-03T16:47:06.489770Z",
+        "draft_created_at": null,
+        "lead_time": 70.054,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "194ac820-580c-48ad-8291-e0b7550dd5b7",
+        "import_id": 18,
+        "last_action": null,
+        "task": 22,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/12.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480430Z",
+    "updated_at": "2024-07-03T16:47:06.480441Z",
+    "inner_id": 22,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 23,
+    "annotations": [
+      {
+        "id": 23,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [59.65553235908142, 41.66244582211149],
+                [59.2901878914405, 35.687598940645884],
+                [59.707724425887264, 34.314998981390275],
+                [58.92484342379958, 33.184622544356245],
+                [60.490605427974955, 29.551269711032567],
+                [61.79540709812108, 28.98608149251556],
+                [63.100208768267215, 29.632010885106432],
+                [63.51774530271399, 32.457951977691515],
+                [62.78705636743215, 33.6690695887994],
+                [63.51774530271399, 36.17204598508905],
+                [62.160751565762006, 37.94835181471395],
+                [62.21294363256785, 39.72465764433886],
+                [61.691022964509386, 41.98541051840693]
+              ],
+              "closed": true,
+              "polygonlabels": ["skull"]
+            },
+            "id": "xpDU-sZK5Z",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.489826Z",
+        "updated_at": "2024-07-03T16:47:06.489834Z",
+        "draft_created_at": null,
+        "lead_time": 28.425,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "af236a84-9095-46af-adf1-941a56adbc68",
+        "import_id": 19,
+        "last_action": null,
+        "task": 23,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/13.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480478Z",
+    "updated_at": "2024-07-03T16:47:06.480490Z",
+    "inner_id": 23,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 24,
+    "annotations": [
+      {
+        "id": 24,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [14.509394572025053, 26.563846270299766],
+                [16.022964509394573, 23.737905177714687],
+                [18.580375782881003, 24.222352222157845],
+                [19.467640918580376, 25.67569335548732],
+                [20.45929018789144, 26.64458744437363],
+                [20.041753653444676, 30.681646148066598],
+                [18.632567849686847, 32.13498728139607],
+                [16.649269311064717, 32.13498728139607],
+                [14.979123173277662, 29.38978736288485]
+              ],
+              "closed": true,
+              "polygonlabels": ["globe"]
+            },
+            "id": "rlIZnpeSID",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [66.91022964509395, 35.52611659249817],
+                [75.46972860125261, 39.48243412211728],
+                [75.62630480167014, 40.93577525544676],
+                [78.34029227557411, 41.98541051840693],
+                [78.18371607515657, 43.11578695544096],
+                [75.36534446764091, 42.71208108507166],
+                [66.12734864300627, 39.643916470265005],
+                [66.02296450939458, 37.625387118418516]
+              ],
+              "closed": true,
+              "polygonlabels": ["telescope"]
+            },
+            "id": "q8sp7A8REe",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.489898Z",
+        "updated_at": "2024-07-03T16:47:06.489906Z",
+        "draft_created_at": null,
+        "lead_time": 33.035,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "81e947bd-c92b-4e5e-bc40-e5d4d8ae18ce",
+        "import_id": 20,
+        "last_action": null,
+        "task": 24,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/11.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480525Z",
+    "updated_at": "2024-07-03T16:47:06.480536Z",
+    "inner_id": 24,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 25,
+    "annotations": [
+      {
+        "id": 25,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [14.30062630480167, 64.26997456279214],
+                [18.789144050104383, 64.91590395538303],
+                [20.250521920668056, 63.05885695168425],
+                [26.931106471816285, 64.51219808501372],
+                [29.331941544885176, 66.85369213315565],
+                [21.60751565762004, 74.28188014795072],
+                [13.72651356993737, 74.84706836646774]
+              ],
+              "closed": true,
+              "polygonlabels": ["pillow"]
+            },
+            "id": "cxPbsvlY7S",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [32.881002087682674, 51.35138671097464],
+                [34.23799582463465, 54.01584545541199],
+                [33.1419624217119, 64.91590395538303],
+                [34.18580375782881, 66.44998626278635],
+                [37.05636743215031, 66.20776274056477],
+                [39.091858037578284, 66.12702156649092],
+                [40.86638830897704, 64.91590395538303],
+                [40.81419624217119, 63.543303996127406],
+                [39.35281837160752, 63.704786344275135],
+                [39.92693110647181, 49.33285735912814],
+                [38.93528183716075, 42.954304607293246],
+                [36.012526096033405, 42.71208108507166],
+                [34.81210855949895, 46.50691626654306],
+                [35.699373695198325, 49.17137501098042],
+                [35.281837160751564, 50.94768084060534]
+              ],
+              "closed": true,
+              "polygonlabels": ["book"]
+            },
+            "id": "dDtlV78eR7",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.489984Z",
+        "updated_at": "2024-07-03T16:47:06.489993Z",
+        "draft_created_at": null,
+        "lead_time": 55.089,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "4fe987db-e4d2-4cb0-b09e-6137765f282c",
+        "import_id": 21,
+        "last_action": null,
+        "task": 25,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/10.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480571Z",
+    "updated_at": "2024-07-03T16:47:06.480582Z",
+    "inner_id": 25,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 26,
+    "annotations": [
+      {
+        "id": 26,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [21.50313152400835, 40.8550340813729],
+                [23.01670146137787, 40.28984586285588],
+                [25, 36.737234203606064],
+                [35.281837160751564, 39.96688116656044],
+                [46.5553235908142, 68.79148031092828],
+                [43.73695198329854, 73.15150371091669],
+                [33.037578288100214, 66.69220978500793]
+              ],
+              "closed": true,
+              "polygonlabels": ["book"]
+            },
+            "id": "fwSzRzCjHy",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.490046Z",
+        "updated_at": "2024-07-03T16:47:06.490055Z",
+        "draft_created_at": null,
+        "lead_time": 36.713,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "17f04641-53e5-4af0-bee5-29707d35dee6",
+        "import_id": 23,
+        "last_action": null,
+        "task": 26,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/18.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480620Z",
+    "updated_at": "2024-07-03T16:47:06.480631Z",
+    "inner_id": 26,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 27,
+    "annotations": [
+      {
+        "id": 27,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [44.676409185803756, 41.420222299889915],
+                [49.941297498894535, 38.804179009428694],
+                [55.219206680584556, 41.98541051840693],
+                [55.636743215031316, 62.251445210945654],
+                [44.57202505219207, 61.92848051465022]
+              ],
+              "closed": true,
+              "polygonlabels": ["mirror"]
+            },
+            "id": "c7ik-dERzY",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.490101Z",
+        "updated_at": "2024-07-03T16:47:06.490109Z",
+        "draft_created_at": null,
+        "lead_time": 24.183,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "750dc449-4482-45fa-87a3-3787f558c453",
+        "import_id": 24,
+        "last_action": null,
+        "task": 27,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/19.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480673Z",
+    "updated_at": "2024-07-03T16:47:06.480685Z",
+    "inner_id": 27,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 28,
+    "annotations": [
+      {
+        "id": 28,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [47.07724425887265, 28.420893273998537],
+                [48.90396659707724, 27.855705055481522],
+                [48.53862212943633, 23.57642282956697],
+                [51.56576200417536, 23.818646351788548],
+                [50.99164926931107, 27.6942227073338],
+                [52.92275574112735, 28.340152099924676],
+                [53.07933194154488, 29.470528536958714],
+                [50.10438413361169, 30.197199103623447],
+                [47.02505219206681, 29.87423440732801]
+              ],
+              "closed": true,
+              "polygonlabels": ["lamp"]
+            },
+            "id": "1iDutY03kb",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.490159Z",
+        "updated_at": "2024-07-03T16:47:06.490168Z",
+        "draft_created_at": null,
+        "lead_time": 21.587,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "57fcf2de-a659-4ce4-8cd0-9fa288baa36f",
+        "import_id": 25,
+        "last_action": null,
+        "task": 28,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/4.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480726Z",
+    "updated_at": "2024-07-03T16:47:06.480738Z",
+    "inner_id": 28,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 29,
+    "annotations": [
+      {
+        "id": 29,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [45.14613778705637, 24.949022788822578],
+                [43.684759916492695, 94.79013836271103],
+                [80.32359081419625, 95.67829127752348],
+                [76.1482254697286, 23.737905177714687],
+                [72.74727160333589, 16.334305360293005],
+                [69.258872651357, 10.90005849997103],
+                [59.603340292275576, 9.769682062936996],
+                [53.34029227557411, 12.676364329595938],
+                [48.55299126021965, 18.181756564803056]
+              ],
+              "closed": true,
+              "polygonlabels": ["door"]
+            },
+            "id": "Xq_3cm9lr7",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.490219Z",
+        "updated_at": "2024-07-03T16:47:06.490227Z",
+        "draft_created_at": null,
+        "lead_time": 30.202,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "1b8fb10c-f038-467f-aaf8-6f9742e2ce23",
+        "import_id": 26,
+        "last_action": null,
+        "task": 29,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/5.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480772Z",
+    "updated_at": "2024-07-03T16:47:06.480784Z",
+    "inner_id": 29,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 30,
+    "annotations": [
+      {
+        "id": 30,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [62.682672233820455, 59.66772764058216],
+                [65.44885177453027, 48.04099857394639],
+                [70.25052192066806, 45.699504525804464],
+                [76.25260960334029, 46.991363310986216],
+                [80.42797494780794, 49.252116185054284],
+                [81.73277661795407, 58.45661002947426],
+                [80.1670146137787, 77.83449180720054],
+                [75, 81.54858581459807],
+                [64.19624217118998, 77.99597415534826],
+                [62.78705636743215, 69.03370383314986]
+              ],
+              "closed": true,
+              "polygonlabels": ["barrel"]
+            },
+            "id": "hdbDw_YGxA",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.490276Z",
+        "updated_at": "2024-07-03T16:47:06.490284Z",
+        "draft_created_at": null,
+        "lead_time": 28.744,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "a2da0a8f-baea-449c-9c2f-6bc6da21391f",
+        "import_id": 27,
+        "last_action": null,
+        "task": 30,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/7.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480818Z",
+    "updated_at": "2024-07-03T16:47:06.480829Z",
+    "inner_id": 30,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 31,
+    "annotations": [
+      {
+        "id": 31,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [19.31106471816284, 63.301080473905834],
+                [18.684759916492695, 67.09591565537723],
+                [20.302713987473904, 69.19518618129757],
+                [86.32567849686848, 40.047622340634305],
+                [86.06471816283926, 38.83650472952641]
+              ],
+              "closed": true,
+              "polygonlabels": ["stick"]
+            },
+            "id": "TELA4QRtSs",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.490324Z",
+        "updated_at": "2024-07-03T16:47:06.490332Z",
+        "draft_created_at": null,
+        "lead_time": 32.293,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "79bb785b-5652-42fa-977b-0e0aee8b7fa5",
+        "import_id": 28,
+        "last_action": null,
+        "task": 31,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/6.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480863Z",
+    "updated_at": "2024-07-03T16:47:06.480875Z",
+    "inner_id": 31,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 32,
+    "annotations": [
+      {
+        "id": 32,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [16.17954070981211, 36.41426950731063],
+                [19.363256784968684, 34.79944602583343],
+                [30.010438413361168, 37.30242242212308],
+                [39.718162839248436, 34.960928373981154],
+                [42.11899791231733, 37.0601988999015],
+                [50.10438413361169, 52.48176314800867],
+                [37.94363256784969, 56.68030419984935],
+                [35.38622129436326, 56.841786547997074],
+                [22.80793319415449, 54.50029249985515]
+              ],
+              "closed": true,
+              "polygonlabels": ["book"]
+            },
+            "id": "tLT1OZHrHC",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.490381Z",
+        "updated_at": "2024-07-03T16:47:06.490389Z",
+        "draft_created_at": null,
+        "lead_time": 20.54,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "116bd875-17bf-4481-99ca-3f3a3010f8ed",
+        "import_id": 29,
+        "last_action": null,
+        "task": 32,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/2.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480909Z",
+    "updated_at": "2024-07-03T16:47:06.480920Z",
+    "inner_id": 32,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 33,
+    "annotations": [
+      {
+        "id": 33,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [39.77035490605428, 59.90995116280373],
+                [42.17118997912318, 57.72993946280953],
+                [46.764091858037574, 57.084010070218646],
+                [51.04384133611691, 57.89142181095725],
+                [52.661795407098126, 61.121068773911624],
+                [53.5490605427975, 64.83516278130917],
+                [52.55741127348643, 70.56778614055318],
+                [51.356993736951985, 73.47446840721213],
+                [51.46137787056367, 75.08929188868932],
+                [49.947807933194156, 77.9152329812744],
+                [46.39874739039666, 78.64190354793912],
+                [42.693110647181626, 77.83449180720054],
+                [41.64926931106472, 75.81596245535405],
+                [41.75365344467641, 74.36262132202458],
+                [39.50939457202505, 69.11444500722371],
+                [39.300626304801675, 65.23886865167846],
+                [39.77035490605428, 62.08996286279794]
+              ],
+              "closed": true,
+              "polygonlabels": ["vase"]
+            },
+            "id": "Vtw9qmS3pt",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.490449Z",
+        "updated_at": "2024-07-03T16:47:06.490458Z",
+        "draft_created_at": null,
+        "lead_time": 44.457,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "0bd49a0a-0eb5-4a08-a276-a8ea08aed2a4",
+        "import_id": 30,
+        "last_action": null,
+        "task": 33,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/3.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480954Z",
+    "updated_at": "2024-07-03T16:47:06.480966Z",
+    "inner_id": 33,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 34,
+    "annotations": [
+      {
+        "id": 34,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [67.01461377870564, 58.7795747257697],
+                [69.8329853862213, 45.860986873952186],
+                [74.32150313152401, 58.29512768132654]
+              ],
+              "closed": true,
+              "polygonlabels": ["hat"]
+            },
+            "id": "k7BfvBL8NQ",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.490495Z",
+        "updated_at": "2024-07-03T16:47:06.490504Z",
+        "draft_created_at": null,
+        "lead_time": 15.92,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "d83b4715-db48-4662-8ee3-f3243b3e3f5b",
+        "import_id": 31,
+        "last_action": null,
+        "task": 34,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/1.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.480999Z",
+    "updated_at": "2024-07-03T16:47:06.481011Z",
+    "inner_id": 34,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  },
+  {
+    "id": 35,
+    "annotations": [
+      {
+        "id": 35,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 1728,
+            "original_height": 1117,
+            "image_rotation": 0,
+            "value": {
+              "points": [
+                [9.551148225469728, 61.363292296133196],
+                [66.80584551148226, 37.14094007397536],
+                [99.84342379958247, 64.35071573686601],
+                [99.68684759916493, 99.55386763306873],
+                [17.01461377870564, 99.6346088071426],
+                [11.691022964509393, 76.94633889238808]
+              ],
+              "closed": true,
+              "polygonlabels": ["book"]
+            },
+            "id": "f7fF-fkiXV",
+            "from_name": "poly_label",
+            "to_name": "image",
+            "type": "polygonlabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-07-03T16:47:06.490557Z",
+        "updated_at": "2024-07-03T16:47:06.490565Z",
+        "draft_created_at": null,
+        "lead_time": 77.05799999999999,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "1b55e1b6-73ce-4ca2-8423-3b85f285094d",
+        "import_id": 32,
+        "last_action": null,
+        "task": 35,
+        "project": 1,
+        "updated_by": null,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "4dcba059-Project_1_at_2024-07-0.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "img": "/data/local-files/?d=../datasets/resized_media/gameplay_images/hogwarts_legacy/0.jpg"
+    },
+    "meta": {},
+    "created_at": "2024-07-03T16:47:06.481045Z",
+    "updated_at": "2024-07-03T16:47:06.481057Z",
+    "inner_id": 35,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": null,
+    "comment_authors": []
+  }
+]
