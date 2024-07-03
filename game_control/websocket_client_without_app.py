@@ -9,16 +9,16 @@ import json
 
 # Example variables - replace these with actual values
 image_data = b'...'  # This should be your _imageByte data
-width = 1920      # Replace with actual image width
-height = 1080        # Replace with actual image height
+# width = 1920      # Replace with actual image width
+# height = 1080        # Replace with actual image height
 
+width = 1600      # Replace with actual image width
+height = 900        # Replace with actual image height
 
+def main(ws, duration_ms, fps):
+    message = {"duration": duration_ms, "fps": fps}
+    n_frames = round(duration_ms / (1000 / fps))
 
-def main(ws, n_frames):
-
-    global frame_count, start_time
-
-    message = {"action": "request_frames", "count": n_frames}
     try:
         ws.send(json.dumps(message))
     except websocket.WebSocketException as e:
@@ -52,8 +52,9 @@ if __name__ == "__main__":
     ws.connect("ws://localhost:8086/stream_websocket")
     ws.settimeout(2)# Set the timeout to 2 seconds 
 
-    n_frames = 100
-    main(ws, n_frames)
+    duration_ms = 1000
+    fps = 10
+    main(ws, duration_ms, fps)
 
     # Close the WebSocket connection gracefully
     if ws and ws.connected:
