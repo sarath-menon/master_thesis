@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 
 # Define the label values
-label_values = ["door", "window", "sword", "treasure", "bush", "tree", "pillow", "book", "box", "sphere", "bird", "barrel", "painting", "stick", "moon", "lamp", "instrument", "table", "chair", "skull"]
+label_values = ["door", "window", "sword", "treasure", "bush", "tree", "pillow", "book", "box", "sphere", "bird", "barrel", "painting", "stick", "moon", "lamp", "instrument", "table", "chair", "skull", "telescope", "globe", "mirror", "lamp", "vase", "hat", "moon", "pillar", "crate", "coin"]
 
 # Create the root element
 root = ET.Element("View")
@@ -30,16 +30,16 @@ for label_value in label_values:
     label.set("value", label_value)
     label.set("background", "#FFA39E")  # You can change the background color here
 
-# Add the RectangleLabels element
-rectangle_labels = ET.SubElement(root, "RectangleLabels")
-rectangle_labels.set("name", "rect_label")
-rectangle_labels.set("toName", "image")
+# # Add the RectangleLabels element
+# rectangle_labels = ET.SubElement(root, "RectangleLabels")
+# rectangle_labels.set("name", "rect_label")
+# rectangle_labels.set("toName", "image")
 
-# Add the Label elements
-for label_value in label_values:
-    label = ET.SubElement(rectangle_labels, "Label")
-    label.set("value", label_value)
-    label.set("background", "#FFA39E")  # You can change the background color here
+# # Add the Label elements
+# for label_value in label_values:
+#     label = ET.SubElement(rectangle_labels, "Label")
+#     label.set("value", label_value)
+#     label.set("background", "#FFA39E")  # You can change the background color here
 
 
 # Create the tree and write it to a file
