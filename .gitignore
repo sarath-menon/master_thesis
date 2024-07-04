@@ -6,3 +6,4 @@
 /datasets/raw_media
 /datasets/resized_media
 /datasets/label_studio_gen/coco_dataset
+.env
