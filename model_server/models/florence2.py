@@ -40,13 +40,18 @@ class Florence2Model(BaseClickingModel):
         num_beams=3,
         )
         generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
-        parsed_answer = self.processor.post_process_generation(
+
+        result = self.processor.post_process_generation(
             generated_text,
             task=task_prompt,
             image_size=(image.width, image.height)
         )
 
-        return parsed_answer 
+        response = {
+            "bboxes": result[task_prompt]["bboxes"],
+            "labels": result[task_prompt]["labels"]
+        }
+        return response
 
 ## For profiling
 
