@@ -7,10 +7,9 @@ import base64
 from models.florence2 import Florence2Model
 import time
 
-
 app = Robyn(__file__)
+PORT = 8082
 model = Florence2Model()
-
 
 @app.get("/")
 async def h(request):
@@ -25,16 +24,13 @@ async def detection(req):
 
     image = Image.open(io.BytesIO(base64.b64decode(base64_image)))
 
+    # run inference and measure execution time
     start_time = time.time()
-    results = model.run_inference(image, task_prompt, text_input=text_input)
+    response = model.run_inference(image, task_prompt, text_input=text_input)
     end_time = time.time()
     inference_time = end_time - start_time
 
-    response = {
-        "bboxes": results[task_prompt]['bboxes'],
-        "labels": results[task_prompt]['labels'],
-        "inference_time": inference_time
-    }
+    response['inference_time'] = inference_time
     return response
 
-app.start(port=8082)
+app.start(port=PORT)
