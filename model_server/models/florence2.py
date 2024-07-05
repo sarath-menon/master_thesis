@@ -3,8 +3,9 @@ from PIL import Image
 import os
 import numpy as np
 from transformers.dynamic_module_utils import get_imports
+from .clicking_model import BaseClickingModel
 
-class Florence2Model:
+class Florence2Model(BaseClickingModel):
     def __init__(self, model_id='microsoft/Florence-2-base-ft'):
         self.model, self.processor = self.load_model(model_id)
 
@@ -24,7 +25,7 @@ class Florence2Model:
             processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
         return model, processor
 
-    def run_example(self, image, task_prompt, text_input=None):
+    def run_inference(self, image, task_prompt, text_input=None):
         if text_input is None:
             prompt = task_prompt
         else:
@@ -57,7 +58,7 @@ class Florence2Model:
 #     # phrase grounded detection
 #     prompt = 'sword.'
 #     task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
-#     results = model.run_example(image, task_prompt, text_input=prompt)
+#     results = model.run_inference(image, task_prompt, text_input=prompt)
 #     print(results)
 
 # import cProfile
