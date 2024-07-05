@@ -21,7 +21,12 @@ class Request(BaseModel):
     text_input: str
     task_prompt: str
 
-@app.get("/detection")
+class Response(BaseModel):
+    bboxes: list
+    labels: list
+    inference_time: float
+
+@app.get("/detection", response_model=Response)
 async def detection(req: Request):
     base64_image = req.image
     text_input = req.text_input
@@ -36,5 +41,4 @@ async def detection(req: Request):
     inference_time = end_time - start_time
 
     response['inference_time'] = inference_time
-    return response
-
+    return response   
