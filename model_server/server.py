@@ -9,7 +9,7 @@ import time
 
 
 app = Robyn(__file__)
-model_ = Florence2Model()
+model = Florence2Model()
 
 
 @app.get("/")
@@ -26,7 +26,7 @@ async def detection(req):
     image = Image.open(io.BytesIO(base64.b64decode(base64_image)))
 
     start_time = time.time()
-    results = model_.run_example(image, task_prompt, text_input=text_input)
+    results = model.run_inference(image, task_prompt, text_input=text_input)
     end_time = time.time()
     inference_time = end_time - start_time
 
