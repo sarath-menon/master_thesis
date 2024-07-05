@@ -1,4 +1,11 @@
 from abc import ABC, abstractmethod
+from typing import List
+from pydantic import BaseModel
+
+class InferenceResult(BaseModel):
+    bboxes: List[List[float]]
+    labels: List[str]   
+    inference_time: float
 
 class BaseClickingModel(ABC):
     def __init__(self, model_id):
@@ -9,5 +16,5 @@ class BaseClickingModel(ABC):
         pass
 
     @abstractmethod
-    def run_inference(self, image, task_prompt, text_input=None):
+    def run_inference(self, image, task_prompt, text_input=None) -> InferenceResult:
         pass
