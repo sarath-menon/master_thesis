@@ -4,6 +4,7 @@ from transformers import AutoProcessor, AutoModelForCausalLM
 from PIL import Image
 import io
 import base64
+from models.florence2 import Florence2Model
 
 def load_model(model_id):
     from transformers.dynamic_module_utils import get_imports
@@ -45,6 +46,7 @@ def run_example( image, task_prompt, text_input=None):
     return parsed_answer
 
 app = Robyn(__file__)
+model_ = Florence2Model()
 model, processor = load_model('microsoft/Florence-2-base-ft')
 
 @app.get("/")
@@ -59,6 +61,8 @@ async def detection(req):
     task_prompt = req_json['task_prompt']
 
     image = Image.open(io.BytesIO(base64.b64decode(base64_image)))
+
+    
     results = run_example(image, task_prompt, text_input=text_input)
 
     response = {
