@@ -5,17 +5,8 @@ import numpy as np
 from transformers.dynamic_module_utils import get_imports
 
 class Florence2Model:
-    _instance = None  # Class variable to hold the single instance
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(Florence2Model, cls).__new__(cls)
-            cls._instance.init_model()
-        return cls._instance
-
-    def init_model(self):
-        self.MODEL = 'microsoft/Florence-2-large-ft'
-        self.model, self.processor = self.load_model(self.MODEL)
+    def __init__(self, model_id='microsoft/Florence-2-base-ft'):
+        self.model, self.processor = self.load_model(model_id)
 
     def load_model(self, model_id):
         from transformers.dynamic_module_utils import get_imports
@@ -56,22 +47,24 @@ class Florence2Model:
 
         return parsed_answer 
 
-def main():
-    model = Florence2Model()
-    image = Image.open("/Users/sarathmenon/Documents/master_thesis/datasets/resized_media/gameplay_images/hogwarts_legacy/0.jpg")
+## For profiling
+
+# def main():
+#     model = Florence2Model()
+#     image = Image.open("/Users/sarathmenon/Documents/master_thesis/datasets/resized_media/gameplay_images/hogwarts_legacy/0.jpg")
 
 
-    # phrase grounded detection
-    prompt = 'sword.'
-    task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
-    results = model.run_example(image, task_prompt, text_input=prompt)
-    print(results)
+#     # phrase grounded detection
+#     prompt = 'sword.'
+#     task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
+#     results = model.run_example(image, task_prompt, text_input=prompt)
+#     print(results)
 
-import cProfile
-import pstats
-if __name__ == "__main__":
-    # main()
-    cProfile.run('main()', filename='profile_results.prof')
-    stats = pstats.Stats('profile_results.prof')
-    stats.sort_stats('cumulative')
-    stats.print_stats(10)  # Print the top 10 results
+# import cProfile
+# import pstats
+# if __name__ == "__main__":
+#     # main()
+#     cProfile.run('main()', filename='profile_results.prof')
+#     stats = pstats.Stats('profile_results.prof')
+#     stats.sort_stats('cumulative')
+#     stats.print_stats(10)  # Print the top 10 results
