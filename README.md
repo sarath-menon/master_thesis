@@ -18,11 +18,6 @@ python -m robyn model_server/server.py --dev
 ## Port forwarding
 
 1. start local server
-
-```
-uvicorn main:app --reload
-```
-
 2. start ngrok port forwarding
 
 ```
