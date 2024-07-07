@@ -71,7 +71,7 @@ def show(image, annotations, click_point=None, show_segmentation=True):
 
     if click_point:
         for point in click_point:
-            color = 'yellow' if point['valid'] else 'red'
+            color = 'yellow' if point['valid'] else 'blue'
             shape = '*' if point['valid'] else 'x'
             plt.plot(point['x'], point['y'], shape, color=color, markersize=10)
     
@@ -87,27 +87,29 @@ def create_text_input(annotations):
     return text_input
 
 ## Check if predicted click point lies within the bounding boxes
-def check_click_points(annotations, click_points):
+def check_click_points(annotations, click_points, verbose=True):
 
     for annotation in annotations:
         class_label = class_labels[annotation['category_id']]
         
         # Filter click points matching the current class label
         matching_click_points = [cp for cp in click_points if cp['label'] == class_label]
-
-        print(f"matching_click_points: {matching_click_points}")
         
         # Check if the click point is within the polygon of the annotation
         for click_point in matching_click_points:
             if check_point_in_polygon(annotation, click_point):
-                # valid_click_points.append(click_point)
                 click_point['valid'] = True
             else:
-                print(f"Point lies outside the polygon for label: {class_label}")
                 click_point['valid'] = False
-
         if len(matching_click_points) == 0:
             print(f"No click points found for label: {class_label}")
+
+    # printing
+    if verbose:
+        valid_click_points = [cp['label'] for cp in click_points if cp['valid']]
+        invalid_click_points = [cp['label'] for cp in click_points if not cp['valid']]
+        print(f"valid click points: {valid_click_points}")
+        print(f"invalid click points: {invalid_click_points}")
 
     return click_points
     
@@ -136,7 +138,7 @@ def get_click_point(bboxes, labels):
 def get_model_prediction(image, text_input, task_prompt, url):
     # Convert PIL image to base64
     buffered = io.BytesIO()
-    image.save(buffered, format="webp")
+    image.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
     # Prepare JSON payload
@@ -152,7 +154,7 @@ def get_model_prediction(image, text_input, task_prompt, url):
 
 ## Inference
 # In[37]:
-index = 4
+index = 33
 MODEL_SERVER_URL = "http://127.0.0.1:8082/detection"
 
 image, annotations = coco_dataset[index]
@@ -162,10 +164,7 @@ print(f"text input: {text_input}")
 # convert pytorch tensor to PIL image
 to_pil = transforms.ToPILImage()
 image = to_pil(image.mul(255).byte())
-
 task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
-# results = run_example(task_prompt, text_input=text_input)
-# click_points = get_click_point(results['<CAPTION_TO_PHRASE_GROUNDING>'])
 
 results = get_model_prediction(image, text_input, task_prompt, url=MODEL_SERVER_URL)
 click_points = get_click_point(results['bboxes'], results['labels'])
@@ -173,4 +172,4 @@ print(f"Inference time: {results['inference_time']:.2f} s")
 
 click_points = check_click_points(annotations, click_points)
 show(image, annotations, click_point=click_points, show_segmentation=True)
-
+# %%
