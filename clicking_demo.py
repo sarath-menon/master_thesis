@@ -97,10 +97,16 @@ def check_click_points(annotations, click_points, verbose=True):
         
         # Check if the click point is within the polygon of the annotation
         for click_point in matching_click_points:
+
+            # if the click point is already valid, then skip it since its the correct click point of another object
+            if 'valid' in click_point and click_point['valid']:
+                continue
+
             if check_point_in_polygon(annotation, click_point):
                 click_point['valid'] = True
             else:
                 click_point['valid'] = False
+
         if len(matching_click_points) == 0:
             print(f"No click points found for label: {class_label}")
 
@@ -154,7 +160,7 @@ def get_model_prediction(image, text_input, task_prompt, url):
 
 ## Inference
 # In[37]:
-index = 33
+index = 39
 MODEL_SERVER_URL = "http://127.0.0.1:8082/detection"
 
 image, annotations = coco_dataset[index]
