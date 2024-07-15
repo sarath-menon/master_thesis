@@ -111,10 +111,10 @@ client = OpenAI(
 system_prompt = "You are a helpful assistant and an identifying objects in videogame images."
 
 def generate_user_prompt(object_label: str):
-    return f"""Consider the object labelled as {object_label} in the image. How should the label saying '{object_label}' be shifted from its current position such that the top left corner of the label falls in the geometric center of the {object_label} ? Give distance and direction to be shifted, where the unit of distance is the width of the label and the vertical unit of distance is the height of the label. Choose the top left corner of the label as the reference point. Choose the direction from one of the following: up, down, left, right. . Also give a reason why you chose the distance in 20 words. Give the output in json format with the following keys: x, x_direction, x_reason, y, y_direction, y_reason.
+    return f"""Consider the object labelled as {object_label} in the image. How should the label saying '{object_label}' be shifted from its current position such that the top left corner of the label falls in the geometric center of the {object_label} ? Give distance and direction to be shifted, where the unit of distance is the width of the label and the vertical unit of distance is the height of the label. Choose the top left corner of the label as the reference point. Choose the direction from one of the following: up, down, left, right. Also give a reason for choosing the direction. Give the output in json format with the following keys: x, x_direction, x_reason, y, y_direction, y_reason.
 """
 
-index = 5
+index = 2
 img, annotations = coco_dataset[index]
 LABEL = class_labels[annotations[0]['category_id']]
 print(LABEL)
