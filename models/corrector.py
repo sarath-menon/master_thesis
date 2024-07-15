@@ -86,21 +86,22 @@ def get_shifted_point(img, annotations, response):
     img_height = img.shape[2]
 
     distances = json.loads(response.choices[0].message.content)
-    x_shift = float(distances['x']) * img_width
-    y_shift = float(distances['y']) * img_height
     print("Distance: ", distances)
+
+    # x_shift = float(distances['x']) * img_width
+    # y_shift = float(distances['y']) * img_height
     # print(f"img_width: {img_width}, img_height: {img_height}")
     # print(f"x_shift: {x_shift}, y_shift: {y_shift}")
 
-    click_points = []
+    # click_points = []
     
-    for annotation in annotations:
-        # plot class label
-        class_label_x = annotation['segmentation'][0][0]
-        class_label_y = annotation['segmentation'][0][1] 
-        click_points.append({'x': class_label_x - x_shift, 'y': class_label_y - y_shift})
+    # for annotation in annotations:
+    #     # plot class label
+    #     class_label_x = annotation['segmentation'][0][0]
+    #     class_label_y = annotation['segmentation'][0][1] 
+    #     click_points.append({'x': class_label_x - x_shift, 'y': class_label_y - y_shift})
             
-    return click_points
+    # return click_points
 
 
 MODEL = "gpt-4o"
@@ -111,7 +112,7 @@ client = OpenAI(
 system_prompt = "You are a helpful assistant and an identifying objects in videogame images."
 
 def generate_user_prompt(object_label: str):
-    return f"""Consider the object labelled as {object_label} in the image. How should the label saying '{object_label}' be shifted from its current position such that the top left corner of the label falls in the geometric center of the {object_label} ? Give distance and direction to be shifted, where the unit of distance is the width of the label and the vertical unit of distance is the height of the label. Choose the top left corner of the label as the reference point. Choose the direction from one of the following: up, down, left, right. Also give a reason for choosing the direction. Give the output in json format with the following keys: x, x_direction, x_reason, y, y_direction, y_reason.
+    return f"""Consider the object labelled as {object_label} in the image. First, find the geometric center of the {object_label} and the first letter of the text label saying '{object_label}'. Then, how should the label be shifted from its current position such that the top left corner of the text label falls in the geometric center of the {object_label} ? Give distance and direction to be shifted, where the horizontal unit of distance is the width of the label and the vertical unit of distance is the height of the label. Choose the top left corner of the label as the reference point. Choose the direction from one of the following: up, down, left, right. Also give a reason for choosing the direction. Give the output in json format with the following keys: x_distance, x_direction, y_direction, y_distance, reason.
 """
 
 index = 2
