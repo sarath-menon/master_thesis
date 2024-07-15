@@ -89,7 +89,6 @@ def get_shifted_point(img, annotations, response):
     x_shift = float(distances['x']) * img_width
     y_shift = float(distances['y']) * img_height
     print("Distance: ", distances)
-
     # print(f"img_width: {img_width}, img_height: {img_height}")
     # print(f"x_shift: {x_shift}, y_shift: {y_shift}")
 
@@ -112,9 +111,10 @@ client = OpenAI(
 system_prompt = "You are a helpful assistant and an identifying objects in videogame images."
 
 def generate_user_prompt(object_label: str):
-    return f"""Consider the object labelled as {object_label} in the image. How should the label saying '{object_label}' be shifted from its current position such that the first letter of the label falls in the geometric center of the {object_label} ? Give distance to be shifted, where the horizontal unit of distance is the width of the label and the vertical unit of distance is the height of the label. Also give a reason why you chose the distance in 20 words. Give the output in json format with the following keys: x, y, reason
+    return f"""Consider the object labelled as {object_label} in the image. How should the label saying '{object_label}' be shifted from its current position such that the top left corner of the label falls in the geometric center of the {object_label} ? Give distance and direction to be shifted, where the unit of distance is the width of the label and the vertical unit of distance is the height of the label. Choose the top left corner of the label as the reference point. Choose the direction from one of the following: up, down, left, right. . Also give a reason why you chose the distance in 20 words. Give the output in json format with the following keys: x, x_direction, x_reason, y, y_direction, y_reason.
 """
-index = 2
+
+index = 5
 img, annotations = coco_dataset[index]
 LABEL = class_labels[annotations[0]['category_id']]
 print(LABEL)
@@ -139,7 +139,6 @@ response = client.chat.completions.create(
 
 
 shifted_click_points = get_shifted_point(img, annotations, response)
-print(shifted_click_points)
 # plot_click_point(img, shifted_click_points, annotations)
 plot_click_point(img, [], annotations)
 # %%
