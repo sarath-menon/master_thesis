@@ -73,17 +73,24 @@ import io
 import torchvision.transforms as transforms
 import base64
 
+# def image_to_base64(img):
+#     to_pil = transforms.ToPILImage()
+#     img_pil = to_pil(img.mul(255).byte())
+#     buffered = io.BytesIO()
+#     img_pil.save(buffered, format="PNG")
+#     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+#     return img_str
+
 def image_to_base64(img):
-    to_pil = transforms.ToPILImage()
-    img_pil = to_pil(img.mul(255).byte())
     buffered = io.BytesIO()
-    img_pil.save(buffered, format="PNG")
+    img.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 
+
 def get_shifted_point(img, annotations, response):
-    img_width = img.shape[1]
-    img_height = img.shape[2]
+    # img_width = img.shape[1]
+    # img_height = img.shape[2]
 
     distances = json.loads(response.choices[0].message.content)
     print("Distance: ", distances)
@@ -105,6 +112,7 @@ def get_shifted_point(img, annotations, response):
 
 
 MODEL = "gpt-4o"
+#MODEL = "gpt-4-turbo"
 client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
 )
@@ -112,15 +120,19 @@ client = OpenAI(
 system_prompt = "You are a helpful assistant and an identifying objects in videogame images."
 
 def generate_user_prompt(object_label: str):
-    return f"""Consider the object labelled as {object_label} in the image. First, find the geometric center of the {object_label} and the first letter of the text label saying '{object_label}'. Then, how should the label be shifted from its current position such that the top left corner of the text label falls in the geometric center of the {object_label} ? Give distance and direction to be shifted, where the horizontal unit of distance is the width of the label and the vertical unit of distance is the height of the label. Choose the top left corner of the label as the reference point. Choose the direction from one of the following: up, down, left, right. Also give a reason for choosing the direction. Give the output in json format with the following keys: x_distance, x_direction, y_direction, y_distance, reason.
-"""
+    return f"""Consider the {object_label} in the image. First, find the geometric center of the {object_label} and the first letter of the text label saying '{object_label}'. Then, how should the label be shifted from its current position such that the top left corner of the text label falls in the geometric center of the {object_label} ? Give distance and direction to be shifted, where the horizontal unit of distance is the width of the label and the vertical unit of distance is the height of the label. Choose the bottom left corner of the label as the reference point. Choose the direction from one of the following: up, down, left, right. Also give a reason for choosing the direction. Give the output in json format with the following keys: x_distance, x_direction, y_direction, y_distance, reason.
+    """
+    # return f"""Consider the {object_label} in the image. Is it to the left/right and up/down of the label that says '{object_label}'. ALso give a reason for choosing the direction. Give the output in json format with the following keys: left/right, up/down, reason.
+    # """
 
-index = 2
+index = 3
 img, annotations = coco_dataset[index]
 LABEL = class_labels[annotations[0]['category_id']]
 print(LABEL)
 user_prompt = generate_user_prompt(LABEL)
-base64_image = image_to_base64(img)
+
+labelled_image = get_image_with_label(img, annotations)
+base64_image = image_to_base64(labelled_image)
 
 response = client.chat.completions.create(
     model=MODEL,
@@ -139,7 +151,47 @@ response = client.chat.completions.create(
 )
 
 
-shifted_click_points = get_shifted_point(img, annotations, response)
+plt.imshow(labelled_image)
+plt.axis('off')
+plt.grid(False)
+plt.show()
+shifted_click_points = get_shifted_point(labelled_image, annotations, response)
 # plot_click_point(img, shifted_click_points, annotations)
-plot_click_point(img, [], annotations)
+# plot_click_point(labelled_image, [], annotations)
+# %%
+   # Create a drawing context
+from PIL import ImageDraw, ImageFont
+import matplotlib.pyplot as plt
+
+def get_image_with_label(image, annotations):
+    import numpy as np
+    from PIL import Image
+
+    # Convert tensor image to numpy array
+    image_np = image.permute(1, 2, 0).numpy()
+    image_np = (image_np * 255).astype(np.uint8)
+
+    # Convert numpy array to PIL Image
+    pil_image = Image.fromarray(image_np)
+
+    # Create a drawing context
+    from PIL import ImageDraw, ImageFont
+    draw = ImageDraw.Draw(pil_image)
+    font = ImageFont.truetype("./models/arial.ttf",52)
+
+    for annotation in annotations:
+        # plot class label
+        class_label = class_labels[annotation['category_id']]
+        class_label_x = annotation['segmentation'][0][0]
+        class_label_y = annotation['segmentation'][0][1]
+        draw.text((class_label_x, class_label_y), class_label, font=font, fill='yellow')
+
+    return pil_image
+
+label_image = get_image_with_label(img, annotations)
+# show the image
+plt.imshow(label_image)
+plt.axis('off')
+plt.grid(False)
+plt.show()
 # %%
