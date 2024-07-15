@@ -120,10 +120,15 @@ client = OpenAI(
 system_prompt = "You are a helpful assistant and an identifying objects in videogame images."
 
 def generate_user_prompt(object_label: str):
-    return f"""Consider the {object_label} in the image. First, find the geometric center of the {object_label} and the first letter of the text label saying '{object_label}'. Then, how should the label be shifted from its current position such that the top left corner of the text label falls in the geometric center of the {object_label} ? Give distance and direction to be shifted, where the horizontal unit of distance is the width of the label and the vertical unit of distance is the height of the label. Choose the bottom left corner of the label as the reference point. Choose the direction from one of the following: up, down, left, right. Also give a reason for choosing the direction. Give the output in json format with the following keys: x_distance, x_direction, y_direction, y_distance, reason.
-    """
-    # return f"""Consider the {object_label} in the image. Is it to the left/right and up/down of the label that says '{object_label}'. ALso give a reason for choosing the direction. Give the output in json format with the following keys: left/right, up/down, reason.
+    # return f"""Consider the {object_label} in the image. First, find the geometric center of the {object_label} and the first letter of the text label saying '{object_label}'. Then, how should the label be shifted from its current position such that the top left corner of the text label falls in the geometric center of the {object_label} ? Give distance and direction to be shifted, where the horizontal unit of distance is the width of the label and the vertical unit of distance is the height of the label. Choose the bottom left corner of the label as the reference point. Choose the direction from one of the following: up, down, left, right. Also give a reason for choosing the direction. Give the output in json format with the following keys: x_distance, x_direction, y_direction, y_distance, reason.
     # """
+    return f"""Assess the position of the label '{object_label}' relative to the {object_label} in the image. Respond with:
+    - 'is_overlayed': yes/no depending on whether the label is directly on the {object_label}.
+    - 'left/right': position of the label if not overlayed.
+    - 'up/down': vertical position of the label if not overlayed.
+    - 'reason': explanation for the positional choice.
+    Output should be in JSON format.
+    """
 
 index = 3
 img, annotations = coco_dataset[index]
