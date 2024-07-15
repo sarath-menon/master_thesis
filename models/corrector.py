@@ -122,7 +122,7 @@ system_prompt = "You are a helpful assistant and an identifying objects in video
 def generate_user_prompt(object_label: str):
     # return f"""Consider the {object_label} in the image. First, find the geometric center of the {object_label} and the first letter of the text label saying '{object_label}'. Then, how should the label be shifted from its current position such that the top left corner of the text label falls in the geometric center of the {object_label} ? Give distance and direction to be shifted, where the horizontal unit of distance is the width of the label and the vertical unit of distance is the height of the label. Choose the bottom left corner of the label as the reference point. Choose the direction from one of the following: up, down, left, right. Also give a reason for choosing the direction. Give the output in json format with the following keys: x_distance, x_direction, y_direction, y_distance, reason.
     # """
-    return f"""Assess the position of the label '{object_label}' relative to the {object_label} in the image. Respond with:
+    return f"""Assess the position of the label 'm' relative to the {object_label} in the image. Respond with:
     - 'is_overlayed': yes/no depending on whether the label is directly on the {object_label}.
     - 'left/right': position of the label if not overlayed.
     - 'up/down': vertical position of the label if not overlayed.
@@ -130,13 +130,13 @@ def generate_user_prompt(object_label: str):
     Output should be in JSON format.
     """
 
-index = 3
+index = 1
 img, annotations = coco_dataset[index]
 LABEL = class_labels[annotations[0]['category_id']]
 print(LABEL)
 user_prompt = generate_user_prompt(LABEL)
 
-labelled_image = get_image_with_label(img, annotations)
+labelled_image = get_image_with_label(img, annotations, x_offset=-60, y_offset=0)
 base64_image = image_to_base64(labelled_image)
 
 response = client.chat.completions.create(
@@ -168,7 +168,7 @@ shifted_click_points = get_shifted_point(labelled_image, annotations, response)
 from PIL import ImageDraw, ImageFont
 import matplotlib.pyplot as plt
 
-def get_image_with_label(image, annotations):
+def get_image_with_label(image, annotations, x_offset=0, y_offset=0):
     import numpy as np
     from PIL import Image
 
@@ -182,18 +182,19 @@ def get_image_with_label(image, annotations):
     # Create a drawing context
     from PIL import ImageDraw, ImageFont
     draw = ImageDraw.Draw(pil_image)
-    font = ImageFont.truetype("./models/arial.ttf",52)
+    font = ImageFont.truetype("./models/arial.ttf",32)
 
     for annotation in annotations:
         # plot class label
-        class_label = class_labels[annotation['category_id']]
-        class_label_x = annotation['segmentation'][0][0]
-        class_label_y = annotation['segmentation'][0][1]
-        draw.text((class_label_x, class_label_y), class_label, font=font, fill='yellow')
+        # class_label = class_labels[annotation['category_id']]
+        class_label = 'm'
+        class_label_x = annotation['segmentation'][0][0] + x_offset
+        class_label_y = annotation['segmentation'][0][1] + y_offset
+        draw.text((class_label_x, class_label_y), class_label, font=font, fill='red')
 
     return pil_image
 
-label_image = get_image_with_label(img, annotations)
+label_image = get_image_with_label(img, annotations, x_offset=-40, y_offset=0)
 # show the image
 plt.imshow(label_image)
 plt.axis('off')
