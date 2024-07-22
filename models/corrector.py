@@ -3,7 +3,7 @@
 import numpy as np
 import os
 import glob
-from PIL import Image
+from PIL import ImageDraw, ImageFont
 import csv
 import json
 
@@ -120,27 +120,27 @@ client = OpenAI(
 system_prompt = "You are a helpful assistant and an identifying objects in videogame images."
 
 def generate_user_prompt(object_label: str):
-    return f"""Consider the label 'm' relative to the {object_label} in the image. Specify how the label should be shifted to overlay it on the {object_label}. Provide:
-    - 'x_distance' and 'x_direction' (left or right) based on the label's width,
-    - 'y_distance' and 'y_direction' (up or down) based on the label's height,
-    - 'reason' for the chosen direction.
-    Output should be in JSON format with the keys: x_distance, x_direction, y_distance, y_direction, reason.
-    """
-    # return f"""Assess the position of the label 'm' relative to the {object_label} in the image. Respond with:
-    # - 'is_overlayed': yes/no depending on whether the label is directly on the {object_label}.
-    # - 'left/right': position of the label if not overlayed.
-    # - 'up/down': vertical position of the label if not overlayed.
-    # - 'reason': explanation for the positional choice.
-    # Output should be in JSON format.
+    # return f"""Consider the label 'm' relative to the {object_label} in the image. Specify how the label should be shifted to overlay it on the {object_label}. Provide:
+    # - 'x_distance' and 'x_direction' (left or right) based on the label's width,
+    # - 'y_distance' and 'y_direction' (up or down) based on the label's height,
+    # - 'reason' for the chosen direction.
+    # Output should be in JSON format with the keys: x_distance, x_direction, y_distance, y_direction, reason.
     # """
-
+    return f"""Assess the position of the yellow star relative to the {object_label} in the image. Respond with:
+    - 'is_overlayed': yes/no depending on whether the label is directly on the {object_label}.
+    - 'left/right': position of the label if not overlayed.
+    - 'up/down': vertical position of the label if not overlayed.
+    - 'reason': explanation for the positional choice.
+    Output should be in JSON format.
+    """
+ 
 index = 1
 img, annotations = coco_dataset[index]
 LABEL = class_labels[annotations[0]['category_id']]
 print(LABEL)
 user_prompt = generate_user_prompt(LABEL)
 
-labelled_image = get_image_with_label(img, annotations, x_offset=-60, y_offset=0)
+labelled_image = get_image_with_label(img, annotations, x_offset=-40, y_offset=0)
 base64_image = image_to_base64(labelled_image)
 
 response = client.chat.completions.create(
@@ -183,18 +183,32 @@ def get_image_with_label(image, annotations, x_offset=0, y_offset=0):
     # Convert numpy array to PIL Image
     pil_image = Image.fromarray(image_np)
 
-    # Create a drawing context
-    from PIL import ImageDraw, ImageFont
     draw = ImageDraw.Draw(pil_image)
-    font = ImageFont.truetype("./models/arial.ttf",32)
+    font = ImageFont.truetype("./models/arial.ttf",52)
 
     for annotation in annotations:
         # plot class label
         # class_label = class_labels[annotation['category_id']]
-        class_label = 'm'
+        class_label = 'y'
         class_label_x = annotation['segmentation'][0][0] + x_offset
         class_label_y = annotation['segmentation'][0][1] + y_offset
-        draw.text((class_label_x, class_label_y), class_label, font=font, fill='red')
+        # draw.text((class_label_x, class_label_y), class_label, font=font, fill='red')
+         # Define the points for a star shape
+        star_size = 20  # Variable to set star size
+        star_points = [
+            (class_label_x, class_label_y - star_size),  # Top point
+            (class_label_x + star_size * 0.3, class_label_y - star_size * 0.3),
+            (class_label_x + star_size, class_label_y - star_size * 0.3),
+            (class_label_x + star_size * 0.5, class_label_y + star_size * 0.2),
+            (class_label_x + star_size * 0.6, class_label_y + star_size),
+            (class_label_x, class_label_y + star_size * 0.5),
+            (class_label_x - star_size * 0.6, class_label_y + star_size),
+            (class_label_x - star_size * 0.5, class_label_y + star_size * 0.2),
+            (class_label_x - star_size, class_label_y - star_size * 0.3),
+            (class_label_x - star_size * 0.3, class_label_y - star_size * 0.3)
+        ]
+        draw.polygon(star_points, outline='yellow', fill='yellow')
+        break
 
     return pil_image
 
