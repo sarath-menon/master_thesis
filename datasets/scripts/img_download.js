@@ -3,10 +3,13 @@ let images = document.querySelectorAll('#galleryOverlay img[src$=".jpg"]');
 
 let img = images[2];
 if (img) {
-    // Create a link and set the href to the image source
     var link = document.createElement('a');
-    link.href = img.src; // Use the actual image source
-    link.download = `downloaded-image-0.jpg`; // Names files with an index
+    link.href = img.src;
+
+    // Extract the filename from the image source
+    var filename = img.src.split('/').pop(); // Get the last segment after the last slash
+    link.download = filename; // Use the actual image filename
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
