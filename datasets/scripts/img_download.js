@@ -4,8 +4,12 @@
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    let download_count = 40;
-    let cache_count = 10;
+    function removeUUID(filename) {
+        return filename.slice(0, -25);
+    }
+    
+    let download_count = 1000;
+    let cache_count = download_count;
     let prev_filenames = [];
 
     for (let i = 0; i < download_count; i++) {
@@ -31,10 +35,12 @@
 
                 // Extract the filename from the image source
                 let filename = img.src.split('/').pop(); // Get the last segment after the last slash
+                // filename = removeUUID(filename);
 
                 
                 if (prev_filenames.includes(filename)) {
-                    // console.log("Same filename as last time");
+                    console.log("Same filename as last time");
+                    console.log("Duplicate filename: " + filename);
                     break;
                 }
 
