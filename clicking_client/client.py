@@ -184,6 +184,7 @@ class ClickingAPI:
         centroids = []
         for mask in masks:
             centroid = center_of_mass(mask)
+            centroid = (centroid[1], centroid[0])
             centroids.append(centroid)
         return centroids
 
@@ -212,3 +213,4 @@ results = api.get_segmentation_prediction(image, input_boxes)
 masks = np.array(results['masks'])
 centroids = api.get_mask_centroid(masks)
 show_segmentation_prediction(image, masks, input_boxes, centroids)
+#%%
