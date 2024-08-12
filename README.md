@@ -5,7 +5,7 @@
 To run fastapi server with hot reloading
 
 ```
-cd model_server
+cd clicking_server
 uvicorn main:app --reload --port 8082
 ```
 
@@ -33,3 +33,16 @@ Using command line
 gcloud storage cp -r /Users/sarathmenon/Documents/master_thesis/datasets/resized_media/gameplay_images gs://clicking_dataset/
 ```
 -n to not overwrite existing files
+
+```
+# Virtual env
+
+## Activation
+
+In cloud instance
+
+```
+source /root/master_thesis-1/thesis_env/bin/activate
+pip install jupyter
+python -m ipykernel install --user --name=thesis_env
+```
