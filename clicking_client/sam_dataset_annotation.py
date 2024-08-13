@@ -191,7 +191,7 @@ class ClickingAPI:
         centroids = []
         for mask in masks:
             centroid = center_of_mass(mask)
-            centroid = (centroid[1], centroid[0])
+            centroid = (centroid[2], centroid[1])
             centroids.append(centroid)
         return centroids
 
@@ -242,7 +242,7 @@ def get_chat_response(user_prompt,image):
     return response
 #%%
 
-index = 8
+index = 4
 image_tensor, annotations = coco_dataset[index]
 to_pil = transforms.ToPILImage()
 image = to_pil(image_tensor.mul(255).byte())
@@ -266,11 +266,12 @@ for item in response_json['objects']:
 print(text_input)
 
 #%% Localization
-text_input = "moon"
+text_input = "plant"
 
 response = api.get_localization_prediction(image, text_input, type='open_vocabulary')
 show_localization_prediction(image, response)
 response
+
 #%% Segmentation
 input_boxes = response['bboxes']
 results = api.get_segmentation_prediction(image, input_boxes)
@@ -287,3 +288,5 @@ plt.imshow(masks[0].squeeze(), cmap='gray')
 plt.axis('off')
 plt.title('Mask 0')
 plt.show()
+#%%
+centroids
