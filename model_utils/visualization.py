@@ -78,7 +78,10 @@ def show_segmentation_prediction(image, masks, input_boxes, centroids):
     plt.figure(figsize=(10, 10))
     plt.imshow(image)
     for mask, centroid in zip(masks, centroids):
-        show_mask(mask, plt.gca(), random_color=True, centroid_point=centroid)
+        if mask.shape[0] > 1:
+            mask = mask[0]
+
+        show_mask(mask.squeeze(), plt.gca(), random_color=True, centroid_point=centroid)
     for box in input_boxes:
         show_box(box, plt.gca())
     plt.axis('off')
