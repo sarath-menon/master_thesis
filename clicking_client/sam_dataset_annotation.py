@@ -208,7 +208,7 @@ def image_to_base64(img):
     return img_str
 
 MODEL = "gpt-4o"
-client = OpenAI(
+ = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
 )
 
@@ -217,7 +217,7 @@ def get_chat_response(user_prompt,image):
 
     base64_image = image_to_base64(image)
 
-    response = client.chat.completions.create(
+    response = .chat.completions.create(
         model=MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
@@ -234,22 +234,25 @@ def get_chat_response(user_prompt,image):
     )
     return response
 
-#%%
+
 index = 4
 image_tensor, annotations = coco_dataset[index]
 to_pil = transforms.ToPILImage()
 image = to_pil(image_tensor)
+plt.imshow(image)
+plt.axis('off')
 
-user_prompt = "What is in the image?. Explain in 10 words or less. Give the answer as JSON code with the key 'description'"
+#%% get class labels for annotation
+
+user_prompt = """Identify the five key objects in this video game screenshot that are crucial for semantic segmentation data annotation. Explain why each object is significant in 20 words or less. Select only objects that belog to the following categories: 'game user interface', 'game object'. The label should be a single word. Omiy the player and background while labeling. Format your response as JSON with the keys:{label, category, reason}. 
+"""
+
 response = get_chat_response(user_prompt, image)
 print(response.choices[0].message.content)
-
+#%%
 
 #%% Localization
-index = 4
-image_tensor, annotations = coco_dataset[index]
-to_pil = transforms.ToPILImage()
-image = to_pil(image_tensor)
+
 text_input = create_text_input(annotations)
 response = api.get_localization_prediction(image, text_input)
 show_localization_prediction(image, response)
