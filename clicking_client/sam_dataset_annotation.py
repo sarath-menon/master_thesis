@@ -169,8 +169,15 @@ class ClickingAPI:
         image.save(buffered, format="PNG")
         return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-    def get_localization_prediction(self, image, text_input):
-        task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
+    def get_localization_prediction(self, image, text_input, type='caption_to_phrase'):
+        
+        if type == 'open_vocabulary':
+            task_prompt = '<OPEN_VOCABULARY_DETECTION>'
+        elif type == 'caption_to_phrase':
+            task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>' 
+        else:
+            raise ValueError(f"Invalid type: {type}")
+            
         img_str = self._encode_image_to_base64(image)
         payload = {
             "image": img_str,
@@ -208,7 +215,7 @@ def image_to_base64(img):
     return img_str
 
 MODEL = "gpt-4o"
- = OpenAI(
+client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
 )
 
@@ -217,7 +224,7 @@ def get_chat_response(user_prompt,image):
 
     base64_image = image_to_base64(image)
 
-    response = .chat.completions.create(
+    response = client.chat.completions.create(
         model=MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
@@ -233,30 +240,37 @@ def get_chat_response(user_prompt,image):
         temperature=0.0,
     )
     return response
+#%%
 
-
-index = 4
+index = 6
 image_tensor, annotations = coco_dataset[index]
 to_pil = transforms.ToPILImage()
-image = to_pil(image_tensor)
+image = to_pil(image_tensor.mul(255).byte())
 plt.imshow(image)
 plt.axis('off')
 
 #%% get class labels for annotation
+import json
 
-user_prompt = """Identify the five key objects in this video game screenshot that are crucial for semantic segmentation data annotation. Explain why each object is significant in 20 words or less. Select only objects that belog to the following categories: 'game user interface', 'game object'. The label should be a single word. Omiy the player and background while labeling. Format your response as JSON with the keys:{label, category, reason}. 
+user_prompt = """Identify the three key objects in this video game screenshot that are crucial for semantic segmentation data annotation. Explain why each object is significant in 20 words or less. Select only objects that belog to the following categories: 'game user interface', 'game object'. Omit the player and background while labeling. Format your response as JSON with the keys:{label, category, reason}. 
 """
 
 response = get_chat_response(user_prompt, image)
-print(response.choices[0].message.content)
+response_json = json.loads(response.choices[0].message.content)
+print(response_json)
 #%%
 
+text_input = ""
+for item in response_json['objects']:
+    text_input += f"{item['label']}. "
+print(text_input)
+
 #%% Localization
+text_input = "a flag"
 
-text_input = create_text_input(annotations)
-response = api.get_localization_prediction(image, text_input)
+response = api.get_localization_prediction(image, text_input, type='open_vocabulary')
 show_localization_prediction(image, response)
-
+response
 #%% Segmentation
 input_boxes = response['bboxes']
 results = api.get_segmentation_prediction(image, input_boxes)
