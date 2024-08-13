@@ -242,7 +242,7 @@ def get_chat_response(user_prompt,image):
     return response
 #%%
 
-index = 6
+index = 8
 image_tensor, annotations = coco_dataset[index]
 to_pil = transforms.ToPILImage()
 image = to_pil(image_tensor.mul(255).byte())
@@ -266,7 +266,7 @@ for item in response_json['objects']:
 print(text_input)
 
 #%% Localization
-text_input = "a flag"
+text_input = "moon"
 
 response = api.get_localization_prediction(image, text_input, type='open_vocabulary')
 show_localization_prediction(image, response)
@@ -275,6 +275,15 @@ response
 input_boxes = response['bboxes']
 results = api.get_segmentation_prediction(image, input_boxes)
 masks = np.array(results['masks'])
+
+# Ensure each mask has a batch dimension
+masks = [np.expand_dims(mask, axis=0) if mask.ndim == 2 else mask for mask in masks]
 centroids = api.get_mask_centroid(masks)
 show_segmentation_prediction(image, masks, input_boxes, centroids)
 #%%
+# Plot the first mask
+plt.figure(figsize=(10, 8))
+plt.imshow(masks[0].squeeze(), cmap='gray')
+plt.axis('off')
+plt.title('Mask 0')
+plt.show()
