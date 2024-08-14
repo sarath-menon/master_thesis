@@ -6,6 +6,7 @@ import requests
 from PIL import Image, ImageDraw, ImageFont
 from scipy.ndimage import center_of_mass
 from clicking.visualization.core import show_localization_prediction, show_segmentation_prediction
+from clicking.pipeline.core import Clicker
 import matplotlib.pyplot as plt
 from transformers import AutoProcessor, AutoModelForCausalLM
 import copy
@@ -141,69 +142,16 @@ def get_click_point(bboxes, labels):
 
     return click_points
 
-# def get_model_prediction(image, text_input, task_prompt, url):
-#     # Convert PIL image to base64
-#     buffered = io.BytesIO()
-#     image.save(buffered, format="PNG")
-#     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+#%% Create clicker object
 
-#     # Prepare JSON payload
-#     payload = {
-#         "image": img_str,
-#         "text_input": text_input,
-#         "task_prompt": task_prompt
-#     }
-    
-#     # Make API call
-#     response = requests.get(url, json=payload)
-#     return response.json()
-#%%
-class ClickingAPI:
-    def __init__(self, server_url="http://localhost:8082"):
-        self.server_url = server_url
-        self.detection_endpoint = f"{server_url}/localization"
-        self.segmentation_endpoint = f"{server_url}/segmentation"
-
-    def _encode_image_to_base64(self, image):
-        buffered = io.BytesIO()
-        image.save(buffered, format="PNG")
-        return base64.b64encode(buffered.getvalue()).decode("utf-8")
-
-    def get_localization_prediction(self, image, text_input):
-        task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
-        img_str = self._encode_image_to_base64(image)
-        payload = {
-            "image": img_str,
-            "text_input": text_input,
-            "task_prompt": task_prompt
-        }
-        response = requests.get(self.detection_endpoint, json=payload)
-        return response.json()
-
-    def get_mask_centroid(self, mask):
-        centroids = []
-        for mask in masks:
-            centroid = center_of_mass(mask)
-            centroid = (centroid[1], centroid[0])
-            centroids.append(centroid)
-        return centroids
-
-    def get_segmentation_prediction(self, image, input_boxes):
-        img_str = self._encode_image_to_base64(image)
-        payload = {
-            "image": img_str,
-            "input_boxes": input_boxes
-        }
-        response = requests.get(self.segmentation_endpoint, json=payload)
-        return response.json()
-
-api = ClickingAPI()
+api = Clicker()
 #%% Localization
 index = 4
 image_tensor, annotations = coco_dataset[index]
 to_pil = transforms.ToPILImage()
 image = to_pil(image_tensor)
 text_input = create_text_input(annotations)
+print(text_input)
 response = api.get_localization_prediction(image, text_input)
 show_localization_prediction(image, response)
 

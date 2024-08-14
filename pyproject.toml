@@ -7,11 +7,12 @@ readme = "README.md"
 # package-mode = false
 
 packages = [
-    { include = "clicking/server", from = "bases" },
+    { include = "clicking/api", from = "bases" },
     { include = "clicking/segmentation", from = "components" },
     { include = "clicking/localization", from = "components" },
     { include = "clicking/visualization", from = "components" },
-    { include = "projects/auto_annotation", from = "components" },
+    { include = "clicking/auto_annotation", from = "components" },
+    { include = "clicking/pipeline", from = "components" },
 ]
 
 [tool.poetry.dependencies]
@@ -27,6 +28,7 @@ scipy = "^1.14.0"
 pycocotools = "^2.0.8"
 fastapi = "^0.112.0"
 uvicorn = "^0.30.6"
+gradio = "^4.41.0"
 
 
 [tool.poetry.group.dev.dependencies]

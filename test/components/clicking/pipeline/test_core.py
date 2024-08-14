@@ -1,4 +1,4 @@
-from clicking.api import core
+from clicking.pipeline import core
 
 
 def test_sample():

@@ -21,6 +21,8 @@ from shapely.geometry import Point, Polygon
 if 'get_ipython' in globals():
     get_ipython().run_line_magic('matplotlib', 'inline')
 
+
+
 #%%
 # Define the path to the COCO dataset
 data_dir = './datasets/label_studio_gen/coco_dataset/images'
@@ -158,51 +160,51 @@ def get_click_point(bboxes, labels):
 #     response = requests.get(url, json=payload)
 #     return response.json()
 #%%
-class ClickingAPI:
-    def __init__(self, server_url="http://localhost:8082"):
-        self.server_url = server_url
-        self.detection_endpoint = f"{server_url}/localization"
-        self.segmentation_endpoint = f"{server_url}/segmentation"
+# class ClickingAPI:
+#     def __init__(self, server_url="http://localhost:8082"):
+#         self.server_url = server_url
+#         self.detection_endpoint = f"{server_url}/localization"
+#         self.segmentation_endpoint = f"{server_url}/segmentation"
 
-    def _encode_image_to_base64(self, image):
-        buffered = io.BytesIO()
-        image.save(buffered, format="PNG")
-        return base64.b64encode(buffered.getvalue()).decode("utf-8")
+#     def _encode_image_to_base64(self, image):
+#         buffered = io.BytesIO()
+#         image.save(buffered, format="PNG")
+#         return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-    def get_localization_prediction(self, image, text_input, type='caption_to_phrase'):
+#     def get_localization_prediction(self, image, text_input, type='caption_to_phrase'):
         
-        if type == 'open_vocabulary':
-            task_prompt = '<OPEN_VOCABULARY_DETECTION>'
-        elif type == 'caption_to_phrase':
-            task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>' 
-        else:
-            raise ValueError(f"Invalid type: {type}")
+#         if type == 'open_vocabulary':
+#             task_prompt = '<OPEN_VOCABULARY_DETECTION>'
+#         elif type == 'caption_to_phrase':
+#             task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>' 
+#         else:
+#             raise ValueError(f"Invalid type: {type}")
             
-        img_str = self._encode_image_to_base64(image)
-        payload = {
-            "image": img_str,
-            "text_input": text_input,
-            "task_prompt": task_prompt
-        }
-        response = requests.get(self.detection_endpoint, json=payload)
-        return response.json()
+#         img_str = self._encode_image_to_base64(image)
+#         payload = {
+#             "image": img_str,
+#             "text_input": text_input,
+#             "task_prompt": task_prompt
+#         }
+#         response = requests.get(self.detection_endpoint, json=payload)
+#         return response.json()
 
-    def get_mask_centroid(self, mask):
-        centroids = []
-        for mask in masks:
-            centroid = center_of_mass(mask)
-            centroid = (centroid[2], centroid[1])
-            centroids.append(centroid)
-        return centroids
+#     def get_mask_centroid(self, mask):
+#         centroids = []
+#         for mask in masks:
+#             centroid = center_of_mass(mask)
+#             centroid = (centroid[2], centroid[1])
+#             centroids.append(centroid)
+#         return centroids
 
-    def get_segmentation_prediction(self, image, input_boxes):
-        img_str = self._encode_image_to_base64(image)
-        payload = {
-            "image": img_str,
-            "input_boxes": input_boxes
-        }
-        response = requests.get(self.segmentation_endpoint, json=payload)
-        return response.json()
+#     def get_segmentation_prediction(self, image, input_boxes):
+#         img_str = self._encode_image_to_base64(image)
+#         payload = {
+#             "image": img_str,
+#             "input_boxes": input_boxes
+#         }
+#         response = requests.get(self.segmentation_endpoint, json=payload)
+#         return response.json()
 
 api = ClickingAPI()
 #%% get class labels for annotation
