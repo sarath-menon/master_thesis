@@ -5,8 +5,8 @@
 To run fastapi server with hot reloading
 
 ```
-cd clicking_server
-uvicorn main:app --reload --port 8082
+cd bases/clicking/api
+uvicorn core:app --reload --port 8082
 ```
 
 To run robyn server with hot reloading
@@ -45,4 +45,11 @@ In cloud instance
 source /root/master_thesis-1/thesis_env/bin/activate
 pip install jupyter
 python -m ipykernel install --user --name=thesis_env
+```
+
+# Poetry
+Testing 
+
+```
+poetry run pytest
 ```

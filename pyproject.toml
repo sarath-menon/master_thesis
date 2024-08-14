@@ -6,17 +6,31 @@ authors = ["Sarath S Menon <sarathmenon.downey@gmail.com>"]
 readme = "README.md"
 # package-mode = false
 
-packages = [{ include = "clicking/segmentation", from = "components" }]
+packages = [
+    { include = "clicking/api", from = "bases" },
+    { include = "clicking/segmentation", from = "components" },
+    { include = "clicking/localization", from = "components" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
 fastapi = "^0.112.0"
 uvicorn = "^0.30.6"
+torch = "^2.4.0"
+torchvision = "^0.19.0"
+matplotlib = "^3.9.2"
+transformers = "^4.44.0"
+timm = "^1.0.8"
+einops = "^0.8.0"
+google-cloud-storage = "^2.18.2"
 
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
 ipykernel = "^6.29.5"
+
+[tool.poetry.scripts]
+init = "sh init_script.sh"
 
 [build-system]
 requires = ["poetry-core"]
