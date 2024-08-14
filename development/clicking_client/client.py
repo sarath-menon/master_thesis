@@ -1,17 +1,11 @@
 #%%
-import base64
-import io
+
 import numpy as np
-import requests
 from PIL import Image, ImageDraw, ImageFont
 from scipy.ndimage import center_of_mass
 from clicking.visualization.core import show_localization_prediction, show_segmentation_prediction
 from clicking.pipeline.core import Clicker
 import matplotlib.pyplot as plt
-from transformers import AutoProcessor, AutoModelForCausalLM
-import copy
-import os
-import random
 from torchvision import transforms, datasets
 from matplotlib.path import Path
 import matplotlib.patches as patches
@@ -154,6 +148,9 @@ text_input = create_text_input(annotations)
 print(text_input)
 response = api.get_localization_prediction(image, text_input)
 show_localization_prediction(image, response)
+
+#%%
+response
 
 #%% Segmentation
 
