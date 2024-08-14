@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "clicking_server"
+version = "0.1.0"
+description = ""
+authors = ["Sarath S Menon <sarathmenon.downey@gmail.com>"]
+license = ""
+
+packages = [
+    { include = "clicking/localization", from = "../../components" },
+    { include = "clicking/segmentation", from = "../../components" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.112.0"
+uvicorn = "^0.30.6"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
