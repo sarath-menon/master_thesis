@@ -5,7 +5,7 @@ import numpy as np
 import requests
 from PIL import Image, ImageDraw, ImageFont
 from scipy.ndimage import center_of_mass
-from model_utils.visualization import show_localization_prediction, show_segmentation_prediction
+from clicking.visualization.core import show_localization_prediction, show_segmentation_prediction
 import matplotlib.pyplot as plt
 from transformers import AutoProcessor, AutoModelForCausalLM
 import copy
@@ -15,7 +15,7 @@ from torchvision import transforms, datasets
 from matplotlib.path import Path
 import matplotlib.patches as patches
 import torch
-from shapely.geometry import Point, Polygon
+# from shapely.geometry import Point, Polygon
 
 # run this code only in notebook mode
 if 'get_ipython' in globals():
@@ -208,6 +208,7 @@ response = api.get_localization_prediction(image, text_input)
 show_localization_prediction(image, response)
 
 #%% Segmentation
+
 input_boxes = response['bboxes']
 results = api.get_segmentation_prediction(image, input_boxes)
 masks = np.array(results['masks'])
