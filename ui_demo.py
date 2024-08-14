@@ -153,7 +153,7 @@ def get_response(image, action: str):
                 {"type": "image_url", "image_url": {
                     "url": f"data:image/png;base64,{base64_image}"}
                 }
-            ]}
+            ]} 
         ],
         stream=True,
         response_format={"type": "json_object"},
@@ -169,7 +169,7 @@ def get_response(image, action: str):
     return response
 
 # %%selecting the image
-image = Image.open(images_path + "/settings/options/2.jpg").convert("RGB")
+image = Image.open(images_path + "/stats_resources/inventory/5.jpg").convert("RGB")
 plt.imshow(image)
 plt.grid(False)
 plt.axis('off')
@@ -178,7 +178,8 @@ plt.show()
 # %%
 ## Pre-processing
 
-action = "minimize the sound effects volume"
+# action = "minimize the sound effects volume"
+action = "start a new game"
 response = get_response(image, action)
 # %% OCR
 
@@ -188,7 +189,8 @@ print(results['<OCR_WITH_REGION>']['labels'])
 draw_ocr_bboxes(image, results['<OCR_WITH_REGION>'])
 # %%
 
-task_prompt = '<OCR_WITH_REGION>'
-results = run_example(task_prompt)
-print(results['<OCR_WITH_REGION>']['labels'])
-draw_ocr_bboxes(image, results['<OCR_WITH_REGION>'])
+task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
+text_input="umbrella."
+results = run_example(task_prompt, text_input=text_input)
+print(results)
+plot_bbox(image, results['<CAPTION_TO_PHRASE_GROUNDING>'])

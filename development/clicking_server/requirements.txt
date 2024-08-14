@@ -1,0 +1,14 @@
+einops
+timm
+fastapi
+pydantic
+transformers
+uvicorn
+matplotlib
+numpy
+nvitop
+supervision
+opencv-python
+pytest
+scipy
+pycocotools
