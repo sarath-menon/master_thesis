@@ -5,8 +5,17 @@ localization_router = APIRouter()
 localization_model = LocalizationModel()
 
 @localization_router.get("/prediction", response_model=PredictionResp, operation_id="get_localization_prediction")
-async def get_prediction(req: PredictionReq):
-    return await localization_model.get_localization(req)
+
+async def get_prediction(req: PredictionReq) -> PredictionResp:
+    result = await localization_model.get_localization(req.image, req.text_input, req.task_prompt)
+
+    response = PredictionResp(
+        bboxes=result['bboxes'],
+        labels=result['labels'],
+        inference_time=0.0
+    )
+
+    return response
 
 @localization_router.get("/models", response_model=GetModelsResp, operation_id="get_available_localization_models")
 async def get_models():

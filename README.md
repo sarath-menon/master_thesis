@@ -56,7 +56,7 @@ poetry run pytest
 
 # API client generation
 
-## Using openapi-generator
+## Using openapi-generator-cli
 
 Generate client
 
@@ -65,9 +65,19 @@ mkdir generated
 mkdir generated/clicking_client
 openapi-generator-cli generate \
      -i http://localhost:8082/openapi.json \
-     -g python \
+     -g python-fastapi \
      -o ./generated/clicking_client \
      -c ./configs/openapi_generator_config.json
+```
+
+Install client 
+```
+pip install -e ./generated/clicking_client
+```
+
+## Using openapi-python-client
+```
+openapi-python-client generate --url http://localhost:8082/openapi.json  --config ./configs/openapi_generator_config.json  --output-path  ./generated/clicking_client --overwrite
 ```
 
 Install client 

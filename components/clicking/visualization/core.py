@@ -4,14 +4,14 @@ import matplotlib.patches as patches
 from PIL import Image
 import numpy as np
 
-def show_localization_prediction(image, data):
+def show_localization_prediction(image, bboxes, labels):
     fig, ax = plt.subplots()
 
     # Display the image
     ax.imshow(image)
 
     # Plot each bounding box
-    for bbox, label in zip(data['bboxes'], data['labels']):
+    for bbox, label in zip(bboxes, labels):
         # Unpack the bounding box coordinates
         x1, y1, x2, y2 = bbox
         # Create a Rectangle patch

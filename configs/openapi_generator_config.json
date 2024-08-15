@@ -1,3 +1,4 @@
 {
-  "packageName": "clicking_client"
+  "project_name_override": "clicking_client",
+  "package_name_override": "clicking_client"
 }

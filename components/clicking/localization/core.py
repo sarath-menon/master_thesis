@@ -67,23 +67,18 @@ class LocalizationModel:
             models.append(model)
         return GetModelsResp(models=models) 
 
-    async def get_localization(self, req: PredictionReq):
-        base64_image = req.image
-        text_input = req.text_input
-        task_prompt = req.task_prompt
-
+    async def get_localization(self, base64_image: str, text_input: str, task_prompt: str) :
         # Convert base64 string back to image
         image = base64.b64decode(base64_image)
         image = Image.open(io.BytesIO(image))
 
         # run inference and measure execution time
         start_time = time.time()
-        response = self._model.run_inference(image, task_prompt, text_input=text_input)
+        result = self._model.run_inference(image, task_prompt, text_input=text_input)
         end_time = time.time()
         inference_time = end_time - start_time
 
-        response['inference_time'] = inference_time
-        return response   
+        return result
 
 # localization_model = LocalizationModel()
 # print('Available models:', localization_model.get_available_models())
