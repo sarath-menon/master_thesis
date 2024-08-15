@@ -60,6 +60,25 @@ def section(image, prompt_input):
 
         return (image, sections)
 
+label_creation_models = {
+    "GPT-4": "",
+    "GPT-4o": "",
+}
+
+localization_models = {
+    "Florence-2-large": "",
+    "Florence-2-base": ""
+}
+
+segmentation_models = {
+    "Sam-2-tiny": "",
+    "Sam-2-large": "",
+}
+
+pipelines = {
+    "localization + segmentation":"",
+    "localization + geometric center":"",
+}
 
 with gr.Blocks(css=css) as demo:
     gr.Markdown(DESCRIPTION)
@@ -72,22 +91,17 @@ with gr.Blocks(css=css) as demo:
 
         with gr.Row():
             with gr.Column():
-                prompt_input = gr.Textbox(label="Text prompt")
                 section_btn = gr.Button("Identify Sections")
 
-                # florence2_mode = gr.Dropdown(
-                # ["florence-2-large", "florence-2-small"], label="Model", info="Will add more models later!"
-                # )
-                with gr.Row():
-                    localization_mode = gr.Dropdown(["grounded localization", "open world localization", "OCR"], label="Label to localization")
-                    
-                    mode = gr.Dropdown(["Florence-2-large", "Florence-2-base"], label="Model")
+                prompt_input = gr.Textbox(label="Text prompt")
 
-                with gr.Row():
-                    localization_mode = gr.Dropdown(["Geometric center", "Segmentation centroid"], label="Localization to clickpoint")
-                    
-                    mode = gr.Dropdown(["Sam-2-tiny", "Sam-2-large", "Sam-2-base"], label="Model")
+                pipeline_selector = gr.Dropdown(choices=list(pipelines.keys()), label="Select pipeline")
 
+                label_creation_mode = gr.Dropdown(choices=list(label_creation_models .keys()), label="Text prompt to class label")
+
+                localization_mode = gr.Dropdown(choices=list(localization_models.keys()), label="Localization model")
+                        
+                segmentation_mode = gr.Dropdown(choices=list(segmentation_models.keys()), label="Segmentation model")
 
             with gr.Column():
                 selected_section = gr.Textbox(label="Selected Section")
