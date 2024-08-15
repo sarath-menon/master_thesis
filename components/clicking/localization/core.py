@@ -17,14 +17,21 @@ class PredictionResp(BaseModel):
     labels: list
     inference_time: float
 
-
 class ModelInfo(BaseModel):
     name: str
     variants: list
     tasks: list
 
-class ModelsResp(BaseModel):
+class GetModelsResp(BaseModel):
     models: list[ModelInfo]
+
+class GetModelResp(BaseModel):
+    name: str
+    variant: str
+
+class SetModelRequest(BaseModel):
+    name: str
+    variant: str 
 
 class LocalizationModel:
     def __init__(self):
@@ -33,30 +40,32 @@ class LocalizationModel:
             'florence2': Florence2,
         }
 
-    def get_model(self):
+    def get_model(self) -> GetModelResp:
         if self._model is None:
             raise ValueError("Model not set")
-        return self._model
+        return GetModelResp(name=self._model.name, variant=self._model.variant)
 
-    def set_model(self, model_name: str, model_variant: str):
-        if model_name not in self._available_models:
-            raise ValueError(f"Model {model_name} not supported")
+    def set_model(self, req: SetModelRequest):
+        if req.name not in self._available_models:
+            raise ValueError(f"Model {req.name} not supported")
         
-        model_handle = self._available_models[model_name]
-        if model_variant not in model_handle.variants():
-            raise ValueError(f"Variant {model_variant} not supported for model {model_name}")
+        model_handle = self._available_models[req.name]
+        if req.variant not in model_handle.variants():
+            raise ValueError(f"Variant {req.variant} not supported for model {req.name}")
         
-        self._model = model_handle(model_variant)
+        self._model = model_handle(req.variant)
 
-        print(f"Localization model set to {model_name} with variant {model_variant}.")
+        message = f"Localization model set to {req.name} with variant {req.variant}."
+        print(message)
+
 
     def get_available_models(self):
         models = []
-        for model_name in self._available_models.keys():
-            handle = self._available_models[model_name]
-            model = ModelInfo(name=model_name, variants=handle.variants(), tasks=handle.tasks())
+        for name in self._available_models.keys():
+            handle = self._available_models[name]
+            model = ModelInfo(name=name, variants=handle.variants(), tasks=handle.tasks())
             models.append(model)
-        return ModelsResp(models=models) 
+        return GetModelsResp(models=models) 
 
     async def get_localization(self, req: PredictionReq):
         base64_image = req.image

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from clicking.localization.core import PredictionReq, PredictionResp, LocalizationModel, ModelsResp, ModelInfo
+from clicking.localization.core import PredictionReq, PredictionResp, LocalizationModel, GetModelsResp, GetModelResp, SetModelRequest
 
 localization_router = APIRouter()
 localization_model = LocalizationModel()
@@ -8,24 +8,20 @@ localization_model = LocalizationModel()
 async def get_prediction(req: PredictionReq):
     return await localization_model.get_localization(req)
 
-@localization_router.get("/models", response_model=ModelsResp, operation_id="get_available_localization_models")
+@localization_router.get("/models", response_model=GetModelsResp, operation_id="get_available_localization_models")
 async def get_models():
     models = localization_model.get_available_models()
     return models
 
-@localization_router.get("/model", response_model=ModelInfo, operation_id="get_localization_model")
+@localization_router.get("/model", response_model=GetModelResp, operation_id="get_localization_model")
 async def get_model():
     model = localization_model.get_model()
-    return {"model_name": model.name,
-     "model_variant": model.variant,
-     "model_tasks": model.tasks()}
+    return model
 
 @localization_router.post("/model", operation_id="set_localization_model")
-async def set_model(req: dict):
-    model_name = req.get('model_name')
-    model_variant = req.get('model_variant')
+async def set_model(req: SetModelRequest):
     try:
-        localization_model.set_model(model_name, model_variant)
-        return {"status": "OK"}, 200
+        localization_model.set_model(req)
+        return {"status": "OK"}
     except ValueError as e:
-        return {"status": "error", "message": str(e)}, 400
+        return {"status": "error", "message": str(e)}
