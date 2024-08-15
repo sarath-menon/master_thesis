@@ -6,6 +6,11 @@ from scipy.ndimage import center_of_mass
 from clicking.visualization.core import show_localization_prediction, show_segmentation_prediction
 from clicking.pipeline.core import Clicker
 import matplotlib.pyplot as plt
+from clicking_client import Client
+from clicking_client.models import PredictionReq, PredictionResp
+from clicking_client.api.default import get_available_localization_models
+import io
+import base64
 
 clicker = Clicker()
 
@@ -65,10 +70,6 @@ label_creation_models = {
     "GPT-4o": "",
 }
 
-localization_models = {
-    "florence2": ['florence-2-large', 'florence-2-base'],
-    "grounding dino": ['dino base', 'dino large']
-}
 
 segmentation_models = {
     "Sam-2-tiny": "",
@@ -80,10 +81,19 @@ pipelines = {
     "localization + geometric center":"",
 }
 
-localization_modes = {"florence2":['grounding', 'open_vocabulary'], "grounding dino": ['grounding']}
+client = Client(base_url="http://localhost:8082")
+res = get_available_localization_models.sync(client=client)
+localization_models = res.models
 
-def localization_type_change(model):
-    return [gr.update(choices=localization_models[model], value=1), gr.update(choices=localization_modes[model], value=1)]
+def localization_type_change(model_name):
+    selected_model = next((m for m in localization_models if m.name == model_name), None)
+    if not selected_model:
+        return [gr.update(choices=[], value=None)] * 2
+    
+    return [
+        gr.update(choices=selected_model.variants, value=selected_model.variants[0] if selected_model.variants else None),
+        gr.update(choices=selected_model.tasks, value=selected_model.tasks[0] if selected_model.tasks else None)
+    ]
 
 with gr.Blocks(css=css) as demo:
     gr.Markdown(DESCRIPTION)
@@ -106,14 +116,28 @@ with gr.Blocks(css=css) as demo:
 
                 # Localization 
                 with gr.Row():
-                    options = localization_models['florence2']
-                    model = gr.Dropdown(choices=list(localization_models.keys()), label="Localization model", value="florence2")
+                    model = gr.Dropdown(
+                        choices=[m.name for m in localization_models],
+                        label="Localization model",
+                        value=localization_models[0].name if localization_models else None
+                    )
 
-                    model_variant = gr.Dropdown(choices=localization_models[model.value], label="Model variant", interactive=True, value=localization_models[model.value][0])
+                    variant = gr.Dropdown(
+                        choices=localization_models[0].variants if localization_models else [],
+                        label="Model variant",
+                        interactive=True,
+                        value=localization_models[0].variants[0] if localization_models and localization_models[0].variants else None
+                    )
 
-                    mode = gr.Dropdown(choices=localization_modes[model.value], label="Mode", interactive=True, value=localization_modes[model.value][0])
+                    mode = gr.Dropdown(
+                        choices=localization_models[0].tasks if localization_models else [],
+                        label="Mode",
+                        interactive=True,
+                        value=localization_models[0].tasks[0] if localization_models and localization_models[0].tasks else None
+                    )
 
-                    model.change(fn=localization_type_change, inputs=[model], outputs=[model_variant, mode])
+                    model.change(fn=localization_type_change, inputs=[model], outputs=[variant, mode])
+               
                         
                 segmentation_mode = gr.Dropdown(choices=list(segmentation_models.keys()), label="Segmentation model")
 
