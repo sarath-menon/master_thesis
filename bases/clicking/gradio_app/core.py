@@ -109,9 +109,9 @@ with gr.Blocks(css=css) as demo:
                     options = localization_models['florence2']
                     model = gr.Dropdown(choices=list(localization_models.keys()), label="Localization model", value="florence2")
 
-                    model_variant = gr.Dropdown(choices=localization_models['florence2'], label="Model variant", interactive=True, value=1)
+                    model_variant = gr.Dropdown(choices=localization_models[model.value], label="Model variant", interactive=True, value=localization_models[model.value][0])
 
-                    mode = gr.Dropdown(choices=localization_modes['florence2'], label="Mode", interactive=True)
+                    mode = gr.Dropdown(choices=localization_modes[model.value], label="Mode", interactive=True, value=localization_modes[model.value][0])
 
                     model.change(fn=localization_type_change, inputs=[model], outputs=[model_variant, mode])
                         
