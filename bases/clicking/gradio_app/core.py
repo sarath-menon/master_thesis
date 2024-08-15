@@ -66,8 +66,8 @@ label_creation_models = {
 }
 
 localization_models = {
-    "Florence-2-large": "",
-    "Florence-2-base": ""
+    "florence-2-large": "",
+    "florence-2-base": ""
 }
 
 segmentation_models = {
@@ -79,6 +79,13 @@ pipelines = {
     "localization + segmentation":"",
     "localization + geometric center":"",
 }
+
+
+# localization_modes = {"grounding":'<CAPTION_TO_PHRASE_GROUNDING>', "open_vocabulary": '<OPEN_VOCABULARY_DETECTION>'}
+localization_modes = {"florence-2-large":['grounding', 'open_vocabulary'], "florence-2-base": ['grounding', 'open_vocabulary']}
+
+def localization_type_change(localization_model):
+    return gr.update(choices=localization_modes[localization_model], value=None)
 
 with gr.Blocks(css=css) as demo:
     gr.Markdown(DESCRIPTION)
@@ -99,7 +106,12 @@ with gr.Blocks(css=css) as demo:
 
                 label_creation_mode = gr.Dropdown(choices=list(label_creation_models .keys()), label="Text prompt to class label")
 
-                localization_mode = gr.Dropdown(choices=list(localization_models.keys()), label="Localization model")
+                with gr.Row():
+                    localization_model = gr.Dropdown(choices=list(localization_models.keys()), label="Localization model")
+
+                    localization_type = gr.Dropdown(choices=localization_modes['florence-2-large'], label="Mode", interactive=True)
+
+                    localization_model.change(fn=localization_type_change, inputs=[localization_model], outputs=[localization_type])
                         
                 segmentation_mode = gr.Dropdown(choices=list(segmentation_models.keys()), label="Segmentation model")
 
