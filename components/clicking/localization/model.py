@@ -7,20 +7,21 @@ import torch
 from dataclasses import dataclass
 
 class Florence2():
-    def __init__(self, model_id='microsoft/Florence-2-base'):
+    def __init__(self, variant='florence-2-base'):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(f"Using device: {self.device}")
 
-        self.model_name = 'florence2'
-        self.model_id = model_id
+        self.name = 'florence2'
+        self.variant = variant
 
-        # self.model_name = 'florence'
-
-        # self.model_variants = {'florence-2-base': 'microsoft/Florence-2-base', 'florence-2-large': 'microsoft/Florence-2-large'}
+        self.variant_to_id = {
+            'florence-2-base': "microsoft/Florence-2-base",
+            'florence-2-large': "microsoft/Florence-2-large"
+        }
 
         self.task_prompts = {'caption_to_phrase_grounding': '<CAPTION_TO_PHRASE_GROUNDING>', 'open_vocab': '<OPEN_VOCABULARY_DETECTION>', 'object_detection': '<OD>', 'more_detailed_caption': '<MORE_DETAILED_CAPTION>'}
 
-        self.model, self.processor = self.load_model(self.model_id)
+        self.model, self.processor = self.load_model(self.variant_to_id[self.variant])
         
     def load_model_gpu(self, model_id):
         model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, torch_dtype='auto').eval().to(self.device)

@@ -22,7 +22,7 @@ async def localization(req: LocalizationRequest):
 @app.get("/localization/model")
 async def get_localization_model():
     model = localization_model.get_model()
-    return {"model_name": model.model_name, "model_variant": model.model_id}
+    return {"model_name": model.name, "model_variant": model.variant}
 
 @app.post("/localization/model")
 async def set_localization_model(req: dict):

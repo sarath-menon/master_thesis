@@ -31,11 +31,6 @@ class LocalizationModel:
             # Add more models here as needed
         }
 
-        self.model_variants_map = {
-            'florence-2-base': "microsoft/Florence-2-base",
-            'florence-2-large': "microsoft/Florence-2-large"
-        }
-
     def get_model(self):
         if self._model is None:
             raise ValueError("Model not set")
@@ -49,7 +44,7 @@ class LocalizationModel:
         if model_variant not in model_info.variants:
             raise ValueError(f"Variant {model_variant} not supported for model {model_name}")
         
-        self._model = model_info.class_(self.model_variants_map[model_variant])
+        self._model = model_info.class_(model_variant)
 
         print(f"Localization model set to {model_name} with variant {model_variant}.")
 
