@@ -3,16 +3,13 @@ import numpy as np
 import random
 from PIL import Image, ImageDraw, ImageFont
 from scipy.ndimage import center_of_mass
-from clicking.visualization.core import show_localization_prediction, show_segmentation_prediction
-from clicking.pipeline.core import Clicker
 import matplotlib.pyplot as plt
 from clicking_client import Client
 from clicking_client.models import PredictionReq, PredictionResp
-from clicking_client.api.default import get_available_localization_models
+from clicking_client.api.default import get_available_localization_models, get_localization_prediction
 import io
 import base64
 
-clicker = Clicker()
 
 section_labels = [
     "apple",
@@ -39,17 +36,24 @@ DESCRIPTION = "# [Florence-2 Demo](https://huggingface.co/microsoft/Florence-2-l
 def select_section(evt: gr.SelectData):
         return section_labels[evt.index]
 
-def section(image, prompt_input):
+def image_to_base64(img):
+    buffered = io.BytesIO()
+    img.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    return img_str
+
+def section(image, text_input):
         sections = []
-        print(prompt_input)
-        
+
         # convert numpy array to PIL image
         image = Image.fromarray(image)
 
-        response = clicker.get_localization_prediction(image, prompt_input)
+        request = PredictionReq(image=image_to_base64(image), text_input=text_input, task_prompt='<CAPTION_TO_PHRASE_GROUNDING>')
+
+        response = get_localization_prediction.sync(client=client, body=request)
 
         sections = []
-        for i, bbox in enumerate(response['bboxes']):
+        for i, bbox in enumerate(response.bboxes):
             x1,y1,w,h = map(int, bbox)
             sections.append(((x1,y1,w,h), section_labels[i]))
 
