@@ -53,3 +53,31 @@ Testing
 ```
 poetry run pytest
 ```
+
+# API client generation
+
+## Using openapi-generator
+
+Generate client
+
+```
+mkdir generated
+mkdir generated/clicking_client
+openapi-generator-cli generate \
+     -i http://localhost:8082/openapi.json \
+     -g python \
+     -o ./generated/clicking_client \
+     -c ./configs/openapi_generator_config.json
+```
+
+Install client 
+```
+pip install -e ./generated/clicking_client
+```
+
+## Using kiota
+Doesn't work with OpenAPI specification version '3.1.0' 
+
+```
+kiota generate --language python --openapi http://localhost:8082/openapi.json -o ./generated_client --namespace-name clicking_client_kiota
+```
