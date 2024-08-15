@@ -4,16 +4,22 @@ import os
 import numpy as np
 from transformers.dynamic_module_utils import get_imports
 import torch
-from enum import Enum
+from dataclasses import dataclass
 
-class Florence2Model():
-    class TaskPrompt(Enum):
-        CAPTION_TO_PHRASE_GROUNDING ='<CAPTION_TO_PHRASE_GROUNDING>'
-        OPEN_VOCABULARY_DETECTION='<OPEN_VOCABULARY_DETECTION>'
-        OBJECT_DETECTION = '<OD>'
-        DETAILED_CAPTION = '<MORE_DETAILED_CAPTION>'
-        
-    def __init__(self, model_id='microsoft/Florence-2-base'):
+class Florence2():
+    @dataclass
+    class TaskPrompt:
+        caption_to_phrase_grounding: str = '<CAPTION_TO_PHRASE_GROUNDING>'
+        open_vocab: str = '<OPEN_VOCABULARY_DETECTION>'
+        object_detection: str = '<OD>'
+        more_detailed_caption: str = '<MORE_DETAILED_CAPTION>'
+
+    @dataclass
+    class ModelVariants():
+        florence_2_base: str = 'microsoft/Florence-2-base'
+        florence_2_large: str = 'microsoft/Florence-2-large'
+
+    def __init__(self, model_id=ModelVariants.florence_2_base):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(f"Using device: {self.device}")
 
