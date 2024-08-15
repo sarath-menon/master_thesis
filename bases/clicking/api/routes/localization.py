@@ -7,12 +7,12 @@ localization_model = LocalizationModel()
 @localization_router.get("/prediction", response_model=PredictionResp, operation_id="get_localization_prediction")
 
 async def get_prediction(req: PredictionReq) -> PredictionResp:
-    result = await localization_model.get_localization(req.image, req.text_input, req.task_prompt)
+    result, inference_time = await localization_model.get_localization(req.image, req.text_input, req.task_prompt)
 
     response = PredictionResp(
         bboxes=result['bboxes'],
         labels=result['labels'],
-        inference_time=0.0
+        inference_time=inference_time
     )
 
     return response

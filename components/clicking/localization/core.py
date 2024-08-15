@@ -78,7 +78,7 @@ class LocalizationModel:
         end_time = time.time()
         inference_time = end_time - start_time
 
-        return result
+        return (result, inference_time)
 
 # localization_model = LocalizationModel()
 # print('Available models:', localization_model.get_available_models())
