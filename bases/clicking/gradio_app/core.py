@@ -31,24 +31,10 @@ css = """
 """
 DESCRIPTION = "# [Florence-2 Demo](https://huggingface.co/microsoft/Florence-2-large)"
 
-with gr.Blocks(css=css) as demo:
-    gr.Markdown(DESCRIPTION)
-    with gr.Tab(label="Florence-2 Image Captioning"):
-        with gr.Row():
-            img_input = gr.Image()
-            img_output = gr.AnnotatedImage(
-                color_map={"banana": "#a89a00", "carrot": "#ffae00"}
-            )
+def select_section(evt: gr.SelectData):
+        return section_labels[evt.index]
 
-        with gr.Row():
-            with gr.Column():
-                prompt_input = gr.Textbox(label="Text prompt")
-                section_btn = gr.Button("Identify Sections")
-            with gr.Column():
-                selected_section = gr.Textbox(label="Selected Section")
-            
-
-    def section(image, prompt_input):
+def section(image, prompt_input):
         sections = []
         print(prompt_input)
         
@@ -74,11 +60,39 @@ with gr.Blocks(css=css) as demo:
 
         return (image, sections)
 
+
+with gr.Blocks(css=css) as demo:
+    gr.Markdown(DESCRIPTION)
+    with gr.Tab(label="Florence-2 Image Captioning"):
+        with gr.Row():
+            img_input = gr.Image()
+            img_output = gr.AnnotatedImage(
+                color_map={"banana": "#a89a00", "carrot": "#ffae00"}
+            )
+
+        with gr.Row():
+            with gr.Column():
+                prompt_input = gr.Textbox(label="Text prompt")
+                section_btn = gr.Button("Identify Sections")
+
+                # florence2_mode = gr.Dropdown(
+                # ["florence-2-large", "florence-2-small"], label="Model", info="Will add more models later!"
+                # )
+                with gr.Row():
+                    localization_mode = gr.Dropdown(["grounded localization", "open world localization", "OCR"], label="Label to localization")
+                    
+                    mode = gr.Dropdown(["Florence-2-large", "Florence-2-base"], label="Model")
+
+                with gr.Row():
+                    localization_mode = gr.Dropdown(["Geometric center", "Segmentation centroid"], label="Localization to clickpoint")
+                    
+                    mode = gr.Dropdown(["Sam-2-tiny", "Sam-2-large", "Sam-2-base"], label="Model")
+
+
+            with gr.Column():
+                selected_section = gr.Textbox(label="Selected Section")
+    
     section_btn.click(section, [img_input, prompt_input], img_output)
-
-    def select_section(evt: gr.SelectData):
-        return section_labels[evt.index]
-
     img_output.select(select_section, None, selected_section)
 
 if __name__ == "__main__":
