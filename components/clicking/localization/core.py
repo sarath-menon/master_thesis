@@ -50,7 +50,6 @@ class LocalizationModel:
             raise ValueError(f"Variant {model_variant} not supported for model {model_name}")
         
         self._model = model_info.class_(self.model_variants_map[model_variant])
-        print("Model set to", self._model)
 
         print(f"Localization model set to {model_name} with variant {model_variant}.")
 

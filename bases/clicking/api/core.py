@@ -19,14 +19,18 @@ def root() -> dict:
 async def localization(req: LocalizationRequest):
     return await localization_model.get_localization(req)   
 
-@app.post("/localization")
+@app.get("/localization/model")
+async def get_localization_model():
+    model = localization_model.get_model()
+    return {"model_name": model.model_name, "model_variant": model.model_id}
+
+@app.post("/localization/model")
 async def set_localization_model(req: dict):
     model_name = req.get('model_name')
     model_variant = req.get('model_variant')
 
     try:
         localization_model.set_model(model_name, model_variant)
-        print("Model set to", localization_model._model)
         return {"status": "OK"}, 200
     except ValueError as e:
         return {"status": "error", "message": str(e)}, 400
