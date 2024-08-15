@@ -23,7 +23,6 @@ class LocalizationModel:
         self._model = None
         self._available_models = {
             'florence2': Florence2,
-            # Add more models here as needed
         }
 
     def get_model(self):
@@ -44,7 +43,12 @@ class LocalizationModel:
         print(f"Localization model set to {model_name} with variant {model_variant}.")
 
     def get_available_models(self):
-        return {name: info.variants for name, info in self._available_models.items()}
+        models = []
+        for model_name in self._available_models.keys():
+            handle = self._available_models[model_name]
+            model = {'name': model_name, 'variants': handle.variants(), 'tasks': handle.tasks()}
+            models.append(model)
+        return models
 
     async def get_localization(self, req: LocalizationRequest):
         base64_image = req.image

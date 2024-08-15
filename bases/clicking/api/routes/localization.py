@@ -8,6 +8,12 @@ localization_model = LocalizationModel()
 async def localization(req: LocalizationRequest):
     return await localization_model.get_localization(req)
 
+
+@localization_router.get("/models")
+async def get_localization_model():
+    models = localization_model.get_available_models()
+    return models
+
 @localization_router.get("/model")
 async def get_localization_model():
     model = localization_model.get_model()
