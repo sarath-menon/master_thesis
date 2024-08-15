@@ -40,11 +40,13 @@ with gr.Blocks(css=css) as demo:
                 color_map={"banana": "#a89a00", "carrot": "#ffae00"}
             )
 
-        section_btn = gr.Button("Identify Sections")
-
-        with gr.Column():
-            selected_section = gr.Textbox(label="Selected Section")
-            prompt_input = gr.Textbox(label="Text prompt")
+        with gr.Row():
+            with gr.Column():
+                prompt_input = gr.Textbox(label="Text prompt")
+                section_btn = gr.Button("Identify Sections")
+            with gr.Column():
+                selected_section = gr.Textbox(label="Selected Section")
+            
 
     def section(image, prompt_input):
         sections = []
