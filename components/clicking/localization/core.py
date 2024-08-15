@@ -30,7 +30,6 @@ class LocalizationModel:
             'florence2': ModelInfo('florence2', ['florence-2-base','florence-2-large'], Florence2),
             # Add more models here as needed
         }
-
     def get_model(self):
         if self._model is None:
             raise ValueError("Model not set")
@@ -59,9 +58,6 @@ class LocalizationModel:
         # Convert base64 string back to image
         image = base64.b64decode(base64_image)
         image = Image.open(io.BytesIO(image))
-        
-        # images_path = "../datasets/resized_media/gameplay_images"
-        # image = Image.open(images_path + "/hogwarts_legacy/1.jpg")
 
         # run inference and measure execution time
         start_time = time.time()

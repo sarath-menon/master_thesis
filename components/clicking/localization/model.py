@@ -22,6 +22,10 @@ class Florence2():
         self.task_prompts = {'caption_to_phrase_grounding': '<CAPTION_TO_PHRASE_GROUNDING>', 'open_vocab': '<OPEN_VOCABULARY_DETECTION>', 'object_detection': '<OD>', 'more_detailed_caption': '<MORE_DETAILED_CAPTION>'}
 
         self.model, self.processor = self.load_model(self.variant_to_id[self.variant])
+
+    def get_tasks(self):
+        tasks = list(self.task_prompts.keys())
+        return tasks
         
     def load_model_gpu(self, model_id):
         model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, torch_dtype='auto').eval().to(self.device)
