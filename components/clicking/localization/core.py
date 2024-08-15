@@ -7,16 +7,24 @@ import time
 from typing import Dict, List, Type
 from dataclasses import dataclass, field
 
-class LocalizationRequest(BaseModel):  
+class PredictionReq(BaseModel):  
     image: str
     text_input: str
     task_prompt: str
 
-class LocalizationResp(BaseModel):
+class PredictionResp(BaseModel):
     bboxes: list
     labels: list
     inference_time: float
 
+
+class ModelInfo(BaseModel):
+    name: str
+    variants: list
+    tasks: list
+
+class ModelsResp(BaseModel):
+    models: list[ModelInfo]
 
 class LocalizationModel:
     def __init__(self):
@@ -46,11 +54,11 @@ class LocalizationModel:
         models = []
         for model_name in self._available_models.keys():
             handle = self._available_models[model_name]
-            model = {'name': model_name, 'variants': handle.variants(), 'tasks': handle.tasks()}
+            model = ModelInfo(name=model_name, variants=handle.variants(), tasks=handle.tasks())
             models.append(model)
-        return models
+        return ModelsResp(models=models) 
 
-    async def get_localization(self, req: LocalizationRequest):
+    async def get_localization(self, req: PredictionReq):
         base64_image = req.image
         text_input = req.text_input
         task_prompt = req.task_prompt

@@ -1,20 +1,20 @@
 from fastapi import APIRouter
-from clicking.localization.core import LocalizationRequest, LocalizationResp, LocalizationModel
+from clicking.localization.core import PredictionReq, PredictionResp, LocalizationModel, ModelsResp, ModelInfo
 
 localization_router = APIRouter()
 localization_model = LocalizationModel()
 
-@localization_router.get("/localization", response_model=LocalizationResp)
-async def localization(req: LocalizationRequest):
+@localization_router.get("/localization", response_model=PredictionResp)
+async def localization(req: PredictionReq):
     return await localization_model.get_localization(req)
 
 
-@localization_router.get("/models")
+@localization_router.get("/models", response_model=ModelsResp)
 async def get_localization_model():
     models = localization_model.get_available_models()
     return models
 
-@localization_router.get("/model")
+@localization_router.get("/model", response_model=ModelInfo)
 async def get_localization_model():
     model = localization_model.get_model()
     return {"model_name": model.name,
