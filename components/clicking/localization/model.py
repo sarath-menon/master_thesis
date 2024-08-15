@@ -7,6 +7,13 @@ import torch
 from dataclasses import dataclass
 
 class Florence2():
+    variant_to_id = {
+        'florence-2-base': "microsoft/Florence-2-base",
+        'florence-2-large': "microsoft/Florence-2-large"
+        }
+
+    task_prompts = {'caption_to_phrase_grounding': '<CAPTION_TO_PHRASE_GROUNDING>', 'open_vocab': '<OPEN_VOCABULARY_DETECTION>', 'object_detection': '<OD>', 'more_detailed_caption': '<MORE_DETAILED_CAPTION>'}
+
     def __init__(self, variant='florence-2-base'):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(f"Using device: {self.device}")
@@ -14,18 +21,22 @@ class Florence2():
         self.name = 'florence2'
         self.variant = variant
 
-        self.variant_to_id = {
-            'florence-2-base': "microsoft/Florence-2-base",
-            'florence-2-large': "microsoft/Florence-2-large"
-        }
+        # self.variant_to_id = {
+        #     'florence-2-base': "microsoft/Florence-2-base",
+        #     'florence-2-large': "microsoft/Florence-2-large"
+        # }
 
-        self.task_prompts = {'caption_to_phrase_grounding': '<CAPTION_TO_PHRASE_GROUNDING>', 'open_vocab': '<OPEN_VOCABULARY_DETECTION>', 'object_detection': '<OD>', 'more_detailed_caption': '<MORE_DETAILED_CAPTION>'}
+        # self.task_prompts = {'caption_to_phrase_grounding': '<CAPTION_TO_PHRASE_GROUNDING>', 'open_vocab': '<OPEN_VOCABULARY_DETECTION>', 'object_detection': '<OD>', 'more_detailed_caption': '<MORE_DETAILED_CAPTION>'}
 
         self.model, self.processor = self.load_model(self.variant_to_id[self.variant])
 
-    def get_tasks(self):
-        tasks = list(self.task_prompts.keys())
-        return tasks
+    @staticmethod
+    def variants():
+        return list(Florence2.variant_to_id.keys())
+    
+    @staticmethod
+    def tasks():
+        return list(Florence2.task_prompts.keys())
         
     def load_model_gpu(self, model_id):
         model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, torch_dtype='auto').eval().to(self.device)

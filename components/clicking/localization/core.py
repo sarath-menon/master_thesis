@@ -17,19 +17,15 @@ class LocalizationResp(BaseModel):
     labels: list
     inference_time: float
 
-@dataclass
-class ModelInfo:
-    name: str
-    variants: List[str]
-    class_: Type
 
 class LocalizationModel:
     def __init__(self):
         self._model = None
         self._available_models = {
-            'florence2': ModelInfo('florence2', ['florence-2-base','florence-2-large'], Florence2),
+            'florence2': Florence2,
             # Add more models here as needed
         }
+
     def get_model(self):
         if self._model is None:
             raise ValueError("Model not set")
@@ -39,11 +35,11 @@ class LocalizationModel:
         if model_name not in self._available_models:
             raise ValueError(f"Model {model_name} not supported")
         
-        model_info = self._available_models[model_name]
-        if model_variant not in model_info.variants:
+        model_handle = self._available_models[model_name]
+        if model_variant not in model_handle.variants():
             raise ValueError(f"Variant {model_variant} not supported for model {model_name}")
         
-        self._model = model_info.class_(model_variant)
+        self._model = model_handle(model_variant)
 
         print(f"Localization model set to {model_name} with variant {model_variant}.")
 

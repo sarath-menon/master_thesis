@@ -13,7 +13,7 @@ async def get_localization_model():
     model = localization_model.get_model()
     return {"model_name": model.name,
      "model_variant": model.variant,
-     "model_tasks": model.get_tasks()}
+     "model_tasks": model.tasks()}
 
 @localization_router.post("/model")
 async def set_localization_model(req: dict):
