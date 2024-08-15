@@ -9,31 +9,42 @@ import matplotlib.pyplot as plt
 
 clicker = Clicker()
 
-with gr.Blocks() as demo:
-    section_labels = [
-        "apple",
-        "banana",
-        "carrot",
-        "donut",
-        "eggplant",
-        "fish",
-        "grapes",
-        "hamburger",
-        "ice cream",
-        "juice",
-    ]
+section_labels = [
+    "apple",
+    "banana",
+    "carrot",
+    "donut",
+    "eggplant",
+    "fish",
+    "grapes",
+    "hamburger",
+    "ice cream",
+    "juice",
+]
 
-    with gr.Row():
-        img_input = gr.Image()
-        img_output = gr.AnnotatedImage(
-            color_map={"banana": "#a89a00", "carrot": "#ffae00"}
-        )
+css = """
+  #output {
+    height: 500px; 
+    overflow: auto; 
+    border: 1px solid #ccc; 
+  }
+"""
+DESCRIPTION = "# [Florence-2 Demo](https://huggingface.co/microsoft/Florence-2-large)"
 
-    section_btn = gr.Button("Identify Sections")
+with gr.Blocks(css=css) as demo:
+    gr.Markdown(DESCRIPTION)
+    with gr.Tab(label="Florence-2 Image Captioning"):
+        with gr.Row():
+            img_input = gr.Image()
+            img_output = gr.AnnotatedImage(
+                color_map={"banana": "#a89a00", "carrot": "#ffae00"}
+            )
 
-    with gr.Column():
-        selected_section = gr.Textbox(label="Selected Section")
-        prompt_input = gr.Textbox(label="Text prompt")
+        section_btn = gr.Button("Identify Sections")
+
+        with gr.Column():
+            selected_section = gr.Textbox(label="Selected Section")
+            prompt_input = gr.Textbox(label="Text prompt")
 
     def section(image, prompt_input):
         sections = []
