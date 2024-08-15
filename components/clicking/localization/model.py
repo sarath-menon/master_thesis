@@ -7,21 +7,15 @@ import torch
 from dataclasses import dataclass
 
 class Florence2():
-    @dataclass
-    class TaskPrompt:
-        caption_to_phrase_grounding: str = '<CAPTION_TO_PHRASE_GROUNDING>'
-        open_vocab: str = '<OPEN_VOCABULARY_DETECTION>'
-        object_detection: str = '<OD>'
-        more_detailed_caption: str = '<MORE_DETAILED_CAPTION>'
-
-    @dataclass
-    class ModelVariants():
-        florence_2_base: str = 'microsoft/Florence-2-base'
-        florence_2_large: str = 'microsoft/Florence-2-large'
-
-    def __init__(self, model_id=ModelVariants.florence_2_base):
+    def __init__(self, model_id='microsoft/Florence-2-base'):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(f"Using device: {self.device}")
+
+        # self.model_name = 'florence'
+
+        # self.model_variants = {'florence-2-base': 'microsoft/Florence-2-base', 'florence-2-large': 'microsoft/Florence-2-large'}
+
+        self.task_prompts = {'caption_to_phrase_grounding': '<CAPTION_TO_PHRASE_GROUNDING>', 'open_vocab': '<OPEN_VOCABULARY_DETECTION>', 'object_detection': '<OD>', 'more_detailed_caption': '<MORE_DETAILED_CAPTION>'}
 
         self.model, self.processor = self.load_model(model_id)
         
@@ -48,6 +42,7 @@ class Florence2():
         return model, processor
 
     def run_inference(self, image, task_prompt, text_input=None):
+
         if text_input is None:
             prompt = task_prompt
         else:
