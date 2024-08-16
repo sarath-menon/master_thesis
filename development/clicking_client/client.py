@@ -97,13 +97,10 @@ from clicking_client.types import File
 import io
 import json
 
-# Convert PIL Image to bytes
+# Convert PIL Image to bytes and create a File object
 image_byte_arr = io.BytesIO()
 image.save(image_byte_arr, format='JPEG')
-image_bytes = image_byte_arr.getvalue()
-
-# Create a File object
-image_file = File(file_name="image.jpg", payload=image_bytes, mime_type="image/jpeg")
+image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
 
 # Create the request object
 request = BodyGetSegmentationPrediction(
@@ -189,14 +186,12 @@ plt.show()
 # Convert PIL Image to bytes
 import time
 start_time = time.time()
+
+# Convert PIL Image to bytes and create a File object
 image_byte_arr = io.BytesIO()
 image.save(image_byte_arr, format='JPEG')
-image_bytes = image_byte_arr.getvalue()
-end_time = time.time()
-print("Time taken to convert image to bytes: ", (end_time - start_time) * 1000, "ms")
+image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
 
-# Create a File object
-start_time = time.time()
-image_file = File(file_name="image.jpg", payload=image_bytes, mime_type="image/jpeg")
+
 end_time = time.time()
 print("Time taken to create File object: ", (end_time - start_time) * 1000, "ms")
