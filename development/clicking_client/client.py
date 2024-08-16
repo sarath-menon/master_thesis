@@ -42,9 +42,15 @@ def image_to_base64(img):
     img.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
+#%% set image and text input
+index = 5
+image_tensor, annotations = coco_dataset[index]
+to_pil = transforms.ToPILImage()
+image = to_pil(image_tensor)
+text_input = create_text_input(annotations)
+print(text_input)
 
 #%%
-
 from clicking_client import Client
 from clicking_client.models import PredictionReq, SegmentationPredResp
 import io
@@ -57,22 +63,15 @@ from clicking_client.api.default import get_available_localization_models
 api_response = get_available_localization_models.sync(client=client)
 print(api_response)
 
-#%% set model
+#%% set localization model
 from clicking_client.models  import SetModelRequest
 from clicking_client.api.default import set_localization_model
 
 request = SetModelRequest(name="florence2", variant="florence-2-base")
 
 set_localization_model.sync(client=client, body=request)
-#%% 
-index = 5
-image_tensor, annotations = coco_dataset[index]
-to_pil = transforms.ToPILImage()
-image = to_pil(image_tensor)
-text_input = create_text_input(annotations)
-print(text_input)
 
-#%% Localization
+#%% get localization prediction
 
 from clicking_client.api.default import get_localization_prediction
 from clicking_client.models import PredictionReq
@@ -82,7 +81,13 @@ localization_response = get_localization_prediction.sync(client=client, body=req
 
 print(f"inference time: {localization_response.inference_time}")
 show_localization_prediction(image, localization_response.bboxes, localization_response.labels)
+#%% set segmwntation model
+from clicking_client.models  import SetModelRequest
+from clicking_client.api.default import set_segmentation_model
 
+request = SetModelRequest(name="sam2", variant="sam2_hiera_large")
+
+set_segmentation_model.sync(client=client, body=request)
 #%% Segmentation
 
 # input_boxes = response['bboxes']
@@ -110,38 +115,7 @@ request = BodyGetSegmentationPrediction(
 )
 
 segmentation_response = get_segmentation_prediction.sync(client=client, body=request)
-segmentation_response
-
-
-# import requests
-# import json
-# import io
-
-# # URL of your FastAPI server
-# url = "http://127.0.0.1:8082/segmentation/prediction"
-
-# # Convert PIL Image to JPEG bytes
-# image_byte_arr = io.BytesIO()
-# image.save(image_byte_arr, format='JPEG')
-# image_byte_arr = image_byte_arr.getvalue()
-
-# # Prepare the files and data for the request
-# files = {
-#     "image": ("image.jpg", image_byte_arr, "image/jpeg")
-# }
-# data = {
-#     "task_prompt": "bbox",
-#     "input_boxes": localization_response.bboxes
-# }
-# # Send the POST request
-# response = requests.post(url, files=files, data=data)
-
-# # Check the response
-# if response.status_code == 200:
-#     result = response.json()
-#     print("Segmentation result:", result)
-# else:
-#     print("Error:", response.status_code, response.text)
+print(f"inference time: {segmentation_response.inference_time}")
 
 # %%
 import numpy as np
