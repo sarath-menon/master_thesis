@@ -6,25 +6,61 @@ from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
 
-class SAM2Model:
-    def __init__(self, type="tiny"):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        torch.autocast(device_type="cuda", dtype=torch.bfloat16).__enter__()
-        if torch.cuda.get_device_properties(0).major >= 8:
-            torch.backends.cuda.matmul.allow_tf32 = True
-            torch.backends.cudnn.allow_tf32 = True
+class SAM2:
+    variant_to_id = {
+        "sam2_hiera_tiny": {"checkpoint": "sam2_hiera_tiny.pt", "model_cfg": "sam2_hiera_t.yaml"},
+        "sam2_hiera_base": {"checkpoint": "sam2_hiera_base.pt", "model_cfg": "sam2_hiera_b.yaml"},
+        "sam2_hiera_large": {"checkpoint": "sam2_hiera_large.pt", "model_cfg": "sam2_hiera_l.yaml"}
+    }
 
-        model_type_table = {"tiny": {"checkpoint": "sam2_hiera_tiny.pt", "model_cfg": "sam2_hiera_t.yaml"},
-                     "base": {"checkpoint": "sam2_hiera_base.pt", "model_cfg": "sam2_hiera_b.yaml"},
-                     "large": {"checkpoint": "sam2_hiera_large.pt", "model_cfg": "sam2_hiera_l.yaml"}}
+    task_prompts = {}
 
-        sam2_checkpoint = "./checkpoints/" + model_type_table[type]["checkpoint"]
-        model_cfg = model_type_table[type]["model_cfg"]
-        self.sam2_model = build_sam2(model_cfg, sam2_checkpoint, device="cuda")
+    def __init__(self, variant="sam2_hiera_tiny"):
+        self.name = 'sam2'
+        self.variant = variant
+
+        # select the device for computation
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+        else:
+            self.device = torch.device("cpu")
+        print(f"Using {self.device} for {self.name}")
+
+        if self.device.type == "cuda":
+            torch.autocast("cuda", dtype=torch.bfloat16).__enter__()
+            # turn on tfloat32 for Ampere GPUs 
+            if torch.cuda.get_device_properties(0).major >= 8:
+                torch.backends.cuda.matmul.allow_tf32 = True
+                torch.backends.cudnn.allow_tf32 = True
+        elif self.device.type == "mps":
+            print(
+                "\nSupport for MPS devices is preliminary. SAM 2 is trained with CUDA and might "
+                "give numerically different outputs and sometimes degraded performance on MPS. "
+                "See e.g. https://github.com/pytorch/pytorch/issues/84936 for a discussion."
+            )
+
+        self.checkpoint = "./checkpoints/sam2/" + self.variant_to_id[self.variant]["checkpoint"]
+        self.model_cfg = self.variant_to_id[self.variant]["model_cfg"]
+        self.sam2_model = build_sam2(self.model_cfg, self.checkpoint, device=self.device)
         self.predictor = SAM2ImagePredictor(self.sam2_model)
 
-    def load_model(self, model_cfg, checkpoint):
-        return build_sam2(model_cfg, checkpoint, device="cuda")
+    @staticmethod
+    def variants():
+        return list(SAM2.variant_to_id.keys())
+    
+    @staticmethod
+    def tasks():
+        return list(SAM2.task_prompts.keys())
+
+    def load_model(self, variant):
+        if variant not in self.variant_to_id:
+            raise ValueError(f"Invalid variant: {variant}. Please choose from: {list(self.variant_to_id.keys())}")
+
+        self.checkpoint = "./checkpoints/sam2/" + self.variant_to_id[variant]["checkpoint"]
+        self.model_cfg = self.variant_to_id[variant]["model_cfg"]
+        return build_sam2(self.model_cfg, self.checkpoint, device=self.device)
 
     def predict_with_clickpoint(self, image, input_point, input_label):
         self.predictor.set_image(image)

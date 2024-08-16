@@ -8,6 +8,7 @@ readme = "README.md"
 
 packages = [
     { include = "clicking/api", from = "bases" },
+    { include = "clicking/gradio_app", from = "bases" },
     { include = "clicking/segmentation", from = "components" },
     { include = "clicking/localization", from = "components" },
     { include = "clicking/visualization", from = "components" },

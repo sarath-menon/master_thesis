@@ -15,20 +15,16 @@ class Florence2():
     task_prompts = {'caption_to_phrase_grounding': '<CAPTION_TO_PHRASE_GROUNDING>', 'open_vocab': '<OPEN_VOCABULARY_DETECTION>', 'object_detection': '<OD>', 'more_detailed_caption': '<MORE_DETAILED_CAPTION>'}
 
     def __init__(self, variant='florence-2-base'):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        print(f"Using device: {self.device}")
-
         self.name = 'florence2'
         self.variant = variant
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-        # self.variant_to_id = {
-        #     'florence-2-base': "microsoft/Florence-2-base",
-        #     'florence-2-large': "microsoft/Florence-2-large"
-        # }
+        print(f"Using {self.device} for {self.name}")
 
-        # self.task_prompts = {'caption_to_phrase_grounding': '<CAPTION_TO_PHRASE_GROUNDING>', 'open_vocab': '<OPEN_VOCABULARY_DETECTION>', 'object_detection': '<OD>', 'more_detailed_caption': '<MORE_DETAILED_CAPTION>'}
-
-        self.model, self.processor = self.load_model(self.variant_to_id[self.variant])
+        if self.device == 'cuda':
+            self.model, self.processor = self.load_model_gpu(self.variant_to_id[self.variant])
+        elif self.device == 'cpu':
+            self.model, self.processor = self.load_model_cpu(self.variant_to_id[self.variant])
 
     @staticmethod
     def variants():
@@ -43,8 +39,7 @@ class Florence2():
         processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
         return model, processor
         
-
-    def load_model(self, model_id):
+    def load_model_cpu(self, model_id):
         from transformers.dynamic_module_utils import get_imports
         from unittest.mock import patch
 

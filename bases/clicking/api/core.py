@@ -1,14 +1,14 @@
 from fastapi import FastAPI
 from clicking.api.routes.localization import localization_router
-from clicking.segmentation import fetch_data
+from clicking.api.routes.segmentation import segmentation_router
 
 app = FastAPI()
 
 # Root endpoint
 @app.get("/")
 def root() -> dict:
-    print("The FastAPI root endpoint was called.")
-    return {"message": fetch_data()}
+    return {"message": "Clicking server is running."}
 
-# Include the localization router in the main app
+# Include the routes
 app.include_router(localization_router, prefix="/localization")
+app.include_router(segmentation_router, prefix="/segmentation")

@@ -1,3 +1,3 @@
-from clicking.segmentation.core import fetch_data
+from clicking.segmentation import core
 
-__all__ = ["fetch_data"]
+__all__ = ["core"]
