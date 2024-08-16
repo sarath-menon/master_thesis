@@ -21,10 +21,7 @@ class Florence2():
 
         print(f"Using {self.device} for {self.name}")
 
-        if self.device == 'cuda':
-            self.model, self.processor = self.load_model_gpu(self.variant_to_id[self.variant])
-        elif self.device == 'cpu':
-            self.model, self.processor = self.load_model_cpu(self.variant_to_id[self.variant])
+        self.model, self.processor = self.load_model_gpu(self.variant_to_id[self.variant])
 
     @staticmethod
     def variants():
@@ -35,25 +32,26 @@ class Florence2():
         return list(Florence2.task_prompts.keys())
         
     def load_model_gpu(self, model_id):
-        model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, torch_dtype='auto').eval().to(self.device)
-        processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
-        return model, processor
-        
-    def load_model_cpu(self, model_id):
-        from transformers.dynamic_module_utils import get_imports
-        from unittest.mock import patch
-
-        def fixed_get_imports(filename: str | os.PathLike) -> list[str]:
-            if not str(filename).endswith("/modeling_florence2.py"):
-                return get_imports(filename)
-            imports = get_imports(filename)
-            imports.remove("flash_attn")
-            return imports
-
-        with patch("transformers.dynamic_module_utils.get_imports", fixed_get_imports):
-            model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True).to(self.device).eval()
+        if self.device == 'cuda':
+            model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, torch_dtype='auto').eval().to(self.device)
             processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
-        return model, processor
+            return model, processor
+
+        else:
+            from transformers.dynamic_module_utils import get_imports
+            from unittest.mock import patch
+
+            def fixed_get_imports(filename: str | os.PathLike) -> list[str]:
+                if not str(filename).endswith("/modeling_florence2.py"):
+                    return get_imports(filename)
+                imports = get_imports(filename)
+                imports.remove("flash_attn")
+                return imports
+
+            with patch("transformers.dynamic_module_utils.get_imports", fixed_get_imports):
+                model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True).to(self.device).eval()
+                processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
+            return model, processor
 
     def run_inference(self, image, task_prompt, text_input=None):
 
