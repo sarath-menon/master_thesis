@@ -102,8 +102,9 @@ segmentation_models = res.models
 log_file = "./output.log"
 sys.stdout = open(log_file, "a")
 
-def localization_type_change(model_name):
-    selected_model = next((m for m in localization_models if m.name == model_name), None)
+def model_type_change(model_name, model_type):
+    models = localization_models if model_type == "localization" else segmentation_models
+    selected_model = next((m for m in models if m.name == model_name), None)
     if not selected_model:
         return [gr.update(choices=[], value=None)] * 2
     
@@ -112,15 +113,9 @@ def localization_type_change(model_name):
         gr.update(choices=selected_model.tasks, value=selected_model.tasks[0] if selected_model.tasks else None)
     ]
 
-def segmentation_type_change(model_name):
-    selected_model = next((m for m in segmentation_models if m.name == model_name), None)
-    if not selected_model:
-        return [gr.update(choices=[], value=None)] * 2
-    
-    return [
-        gr.update(choices=selected_model.variants, value=selected_model.variants[0] if selected_model.variants else None),
-        gr.update(choices=selected_model.tasks, value=selected_model.tasks[0] if selected_model.tasks else None)
-    ]
+# gradio state variables
+model_type_localization = gr.State(value="localization")
+model_type_segmentation = gr.State(value="segmentation")
 
 with gr.Blocks(css=css) as demo:
     gr.Markdown(DESCRIPTION)
@@ -163,7 +158,7 @@ with gr.Blocks(css=css) as demo:
                         value=localization_models[0].tasks[0] if localization_models and localization_models[0].tasks else None
                     )
 
-                    model.change(fn=localization_type_change, inputs=[model], outputs=[variant, mode])
+                    model.change(fn=model_type_change, inputs=[model, model_type_localization], outputs=[variant, mode])
 
                 # Segmentation
                 with gr.Row():
@@ -187,7 +182,7 @@ with gr.Blocks(css=css) as demo:
                         value=segmentation_models[0].tasks[0] if segmentation_models and segmentation_models[0].tasks else None
                     )
 
-                    model.change(fn=segmentation_type_change, inputs=[model], outputs=[variant, mode])
+                    model.change(fn=model_type_change, inputs=[model, model_type_segmentation], outputs=[variant, mode])
                
             with gr.Column():
                 selected_section = gr.Textbox(label="Selected Section")
