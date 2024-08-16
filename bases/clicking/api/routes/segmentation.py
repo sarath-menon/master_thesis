@@ -1,19 +1,19 @@
 from fastapi import APIRouter, File, UploadFile, Form
-from clicking.segmentation.core import PredictionReq, PredictionResp, SegmentationModel, GetModelsResp, GetModelResp, SetModelRequest
+from clicking.segmentation.core import PredictionReq, SegmentationPredResp, SegmentationModel, GetModelsResp, GetModelResp, SetModelRequest
 from PIL import Image
 import io
 import json
 
 segmentation_router = APIRouter()
 model = SegmentationModel()
-# response_model=PredictionResp, 
+# response_model=SegmentationPredResp, 
 
 @segmentation_router.post("/prediction",operation_id="get_segmentation_prediction")
 
 
 async def semantic_segmentation(image: UploadFile = File(...),
     task_prompt: str = Form(None),
-    input_boxes: str = Form(None)) -> PredictionResp:
+    input_boxes: str = Form(None)) -> SegmentationPredResp:
 
     #Convert to a PIL image
     image_data = await image.read()
@@ -24,11 +24,13 @@ async def semantic_segmentation(image: UploadFile = File(...),
     input_boxes = json.loads(input_boxes) if input_boxes else []
     
     print("input_boxes", input_boxes)
-    
-    if task_prompt == "bbox":
-        response = await model.get_segmentation_prediction(image, input_boxes)
-    else:
-        raise ValueError(f"Invalid task prompt: {task_prompt}")
+
+    # if task_prompt == "bbox":
+    #     response = await model.get_segmentation_prediction(image, input_boxes)
+    # else:
+    #     raise ValueError(f"Invalid task prompt: {task_prompt}")
+
+    response = await model.get_segmentation_prediction(image, input_boxes)
 
     return response
 

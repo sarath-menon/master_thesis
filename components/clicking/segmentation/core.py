@@ -14,7 +14,7 @@ class PredictionReq(BaseModel):
     image: Any
     input_boxes: list
 
-class PredictionResp(BaseModel):
+class SegmentationPredResp(BaseModel):
     masks: list
     scores: list
     inference_time: float
@@ -77,7 +77,7 @@ class SegmentationModel:
         rle['counts'] = rle['counts'].decode('utf-8')
         return rle
 
-    async def get_segmentation_prediction(self, image, input_boxes) -> PredictionResp:
+    async def get_segmentation_prediction(self, image, input_boxes) -> SegmentationPredResp:
 
         # run inference and measure execution time
         start_time = time.time()
@@ -92,7 +92,7 @@ class SegmentationModel:
         #convert masks to coco rle
         masks = [self.coco_encode_rle(mask) for mask in masks]
 
-        return PredictionResp(masks=masks, scores=scores, inference_time=inference_time)
+        return SegmentationPredResp(masks=masks, scores=scores, inference_time=inference_time)
 
 # localization_model = LocalizationModel()
 # print('Available models:', localization_model.get_available_models())
