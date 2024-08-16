@@ -4,17 +4,19 @@ from PIL import Image
 import io
 import base64
 import time
-from typing import Dict, List, Type
+from typing import Dict, List, Type, Any
 from dataclasses import dataclass, field
+from pycocotools import mask as mask_utils
+import numpy as np
+
 
 class PredictionReq(BaseModel):  
-    image: str
-    text_input: str
-    task_prompt: str
+    image: Any
+    input_boxes: list
 
 class PredictionResp(BaseModel):
-    bboxes: list
-    labels: list
+    masks: list
+    scores: list
     inference_time: float
 
 class ModelInfo(BaseModel):
@@ -66,18 +68,31 @@ class SegmentationModel:
             models.append(model)
         return GetModelsResp(models=models) 
 
-    async def get_segmentation_prediction(self, base64_image: str, text_input: str, task_prompt: str) :
-        # Convert base64 string back to image
-        image = base64.b64decode(base64_image)
-        image = Image.open(io.BytesIO(image))
+    def coco_encode_rle(self, mask: np.ndarray) -> Dict[str, Any]:
+        # Ensure the mask is boolean
+        binary_mask = mask.astype(bool)
+        
+        # Encode the mask
+        rle = mask_utils.encode(np.asfortranarray(binary_mask))
+        rle['counts'] = rle['counts'].decode('utf-8')
+        return rle
+
+    async def get_segmentation_prediction(self, image, input_boxes) -> PredictionResp:
 
         # run inference and measure execution time
         start_time = time.time()
-        result = self._model.run_inference(image, task_prompt, text_input=text_input)
+        # result = self._model.run_inference(image, task_prompt, text_input=text_input)
+        masks, scores = self._model.predict_with_batched_bbox(image, input_boxes)
         end_time = time.time()
         inference_time = end_time - start_time
 
-        return (result, inference_time)
+        # convert masks and scores from numpy arrays to lists
+        scores = scores.tolist()
+
+        #convert masks to coco rle
+        masks = [self.coco_encode_rle(mask) for mask in masks]
+
+        return PredictionResp(masks=masks, scores=scores, inference_time=inference_time)
 
 # localization_model = LocalizationModel()
 # print('Available models:', localization_model.get_available_models())

@@ -1,36 +1,51 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, File, UploadFile, Form
 from clicking.segmentation.core import PredictionReq, PredictionResp, SegmentationModel, GetModelsResp, GetModelResp, SetModelRequest
+from PIL import Image
+import io
+import json
 
 segmentation_router = APIRouter()
-segmentation_model = SegmentationModel()
+model = SegmentationModel()
+# response_model=PredictionResp, 
 
-@segmentation_router.get("/prediction", response_model=PredictionResp, operation_id="get_segmentation_prediction")
+@segmentation_router.post("/prediction",operation_id="get_segmentation_prediction")
 
-async def get_prediction(req: PredictionReq) -> PredictionResp:
-    result, inference_time = await segmentation_model.get_segmentation(req.image, req.text_input, req.task_prompt)
 
-    response = PredictionResp(
-        bboxes=result['bboxes'],
-        labels=result['labels'],
-        inference_time=inference_time
-    )
+async def semantic_segmentation(image: UploadFile = File(...),
+    task_prompt: str = Form(None),
+    input_boxes: str = Form(None)) -> PredictionResp:
+
+    #Convert to a PIL image
+    image_data = await image.read()
+    image = Image.open(io.BytesIO(image_data))
+
+    print("task_prompt", task_prompt)
+    # Convert input_boxes from string to float list\
+    input_boxes = json.loads(input_boxes) if input_boxes else []
+    
+    print("input_boxes", input_boxes)
+    
+    if task_prompt == "bbox":
+        response = await model.get_segmentation_prediction(image, input_boxes)
+    else:
+        raise ValueError(f"Invalid task prompt: {task_prompt}")
 
     return response
 
-@segmentation_router.get("/models", response_model=GetModelsResp, operation_id="get_available_segmentation_models")
+@segmentation_router.get("/models", response_model=GetModelsResp, operation_id="get_available_models")
 async def get_models():
-    models = segmentation_model.get_available_models()
+    models = model.get_available_models()
     return models
 
-@segmentation_router.get("/model", response_model=GetModelResp, operation_id="get_segmentation_model")
+@segmentation_router.get("/model", response_model=GetModelResp, operation_id="get_model")
 async def get_model():
-    model = segmentation_model.get_model()
+    model = model.get_model()
     return model
 
-@segmentation_router.post("/model", operation_id="set_segmentation_model")
+@segmentation_router.post("/model", operation_id="set_model")
 async def set_model(req: SetModelRequest):
     try:
-        segmentation_model.set_model(req)
+        model.set_model(req)
         return {"status": "OK"}
     except ValueError as e:
         return {"status": "error", "message": str(e)}

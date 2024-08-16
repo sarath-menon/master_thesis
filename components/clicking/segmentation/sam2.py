@@ -13,7 +13,7 @@ class SAM2:
         "sam2_hiera_large": {"checkpoint": "sam2_hiera_large.pt", "model_cfg": "sam2_hiera_l.yaml"}
     }
 
-    task_prompts = {}
+    task_prompts = [ "with_clickpoint_and_bbox", "with_batched_bbox"]
 
     def __init__(self, variant="sam2_hiera_tiny"):
         self.name = 'sam2'
@@ -52,7 +52,7 @@ class SAM2:
     
     @staticmethod
     def tasks():
-        return list(SAM2.task_prompts.keys())
+        return SAM2.task_prompts
 
     def load_model(self, variant):
         if variant not in self.variant_to_id:
@@ -114,7 +114,8 @@ class SAM2:
             None,
             None,
             box_batch=boxes_batch,
-            multimask_output=False
+            multimask_output=False,
+            output_mode='coco_rle'
         )
         return masks_batch, scores_batch
 
