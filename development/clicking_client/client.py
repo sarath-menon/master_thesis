@@ -46,7 +46,7 @@ def image_to_base64(img):
 #%%
 
 from clicking_client import Client
-from clicking_client.models import PredictionReq, PredictionResp
+from clicking_client.models import PredictionReq, SegmentationPredResp
 import io
 import base64
 
@@ -78,49 +78,73 @@ from clicking_client.api.default import get_localization_prediction
 from clicking_client.models import PredictionReq
 
 request = PredictionReq(image=image_to_base64(image), text_input=text_input, task_prompt='<CAPTION_TO_PHRASE_GROUNDING>')
-response = get_localization_prediction.sync(client=client, body=request)
+localization_response = get_localization_prediction.sync(client=client, body=request)
 
-print(f"inference time: {response.inference_time}")
-show_localization_prediction(image, response.bboxes, response.labels)
+print(f"inference time: {localization_response.inference_time}")
+show_localization_prediction(image, localization_response.bboxes, localization_response.labels)
 
 #%% Segmentation
 
-input_boxes = response['bboxes']
-results = api.get_segmentation_prediction(image, input_boxes)
-masks = np.array(results['masks'])
-centroids = api.get_mask_centroid(masks)
-show_segmentation_prediction(image, masks, input_boxes, centroids)
-#%%
+# input_boxes = response['bboxes']
+# results = api.get_segmentation_prediction(image, input_boxes)
+# masks = np.array(results['masks'])
+# centroids = api.get_mask_centroid(masks)
+# show_segmentation_prediction(image, masks, input_boxes, centroids)
 
-import requests
-import json
+from clicking_client.api.default import get_segmentation_prediction
+from clicking_client.models import BodyGetSegmentationPrediction
+from clicking_client.types import File
 import io
+import json
 
-# URL of your FastAPI server
-url = "http://127.0.0.1:8082/segmentation/prediction"
-
-# Convert PIL Image to JPEG bytes
+# Convert PIL Image to bytes
 image_byte_arr = io.BytesIO()
 image.save(image_byte_arr, format='JPEG')
-image_byte_arr = image_byte_arr.getvalue()
+image_bytes = image_byte_arr.getvalue()
 
-# Prepare the files and data for the request
-files = {
-    "image": ("image.jpg", image_byte_arr, "image/jpeg")
-}
-data = {
-    "task_prompt": "bbox",
-    "input_boxes": response.bboxes
-}
-# Send the POST request
-response = requests.post(url, files=files, data=data)
+# Create a File object
+image_file = File(file_name="image.jpg", payload=image_bytes, mime_type="image/jpeg")
 
-# Check the response
-if response.status_code == 200:
-    result = response.json()
-    print("Segmentation result:", result)
-else:
-    print("Error:", response.status_code, response.text)
+# Create the request object
+request = BodyGetSegmentationPrediction(
+    image=image_file,
+    task_prompt='bbox',
+    input_boxes=json.dumps(localization_response.bboxes)  # Convert bboxes to JSON string
+)
+
+segmentation_response = get_segmentation_prediction.sync(client=client, body=request)
+segmentation_response
+
+
+# import requests
+# import json
+# import io
+
+# # URL of your FastAPI server
+# url = "http://127.0.0.1:8082/segmentation/prediction"
+
+# # Convert PIL Image to JPEG bytes
+# image_byte_arr = io.BytesIO()
+# image.save(image_byte_arr, format='JPEG')
+# image_byte_arr = image_byte_arr.getvalue()
+
+# # Prepare the files and data for the request
+# files = {
+#     "image": ("image.jpg", image_byte_arr, "image/jpeg")
+# }
+# data = {
+#     "task_prompt": "bbox",
+#     "input_boxes": localization_response.bboxes
+# }
+# # Send the POST request
+# response = requests.post(url, files=files, data=data)
+
+# # Check the response
+# if response.status_code == 200:
+#     result = response.json()
+#     print("Segmentation result:", result)
+# else:
+#     print("Error:", response.status_code, response.text)
 
 # %%
 import numpy as np
@@ -141,7 +165,7 @@ ax.imshow(image)
 borders = False
 mask_alpha = 0.7
 
-for mask in result['masks']:
+for mask in segmentation_response.masks:
     m = mask_utils.decode(mask)
     color_mask = np.random.random(3)
 
@@ -160,3 +184,19 @@ ax.axis('off')
 plt.tight_layout()
 plt.show()
 
+#%%
+
+# Convert PIL Image to bytes
+import time
+start_time = time.time()
+image_byte_arr = io.BytesIO()
+image.save(image_byte_arr, format='JPEG')
+image_bytes = image_byte_arr.getvalue()
+end_time = time.time()
+print("Time taken to convert image to bytes: ", (end_time - start_time) * 1000, "ms")
+
+# Create a File object
+start_time = time.time()
+image_file = File(file_name="image.jpg", payload=image_bytes, mime_type="image/jpeg")
+end_time = time.time()
+print("Time taken to create File object: ", (end_time - start_time) * 1000, "ms")
