@@ -5,6 +5,7 @@ from PIL import Image
 from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
+from fastapi import HTTPException
 
 class SAM2:
     variant_to_id = {
@@ -56,7 +57,7 @@ class SAM2:
 
     def load_model(self, variant):
         if variant not in self.variant_to_id:
-            raise ValueError(f"Invalid variant: {variant}. Please choose from: {list(self.variant_to_id.keys())}")
+            raise HTTPException(status_code=400, detail=f"Invalid variant: {variant}. Please choose from: {list(self.variant_to_id.keys())}")
 
         self.checkpoint = "./checkpoints/sam2/" + self.variant_to_id[variant]["checkpoint"]
         self.model_cfg = self.variant_to_id[variant]["model_cfg"]

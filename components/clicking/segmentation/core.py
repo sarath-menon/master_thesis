@@ -8,6 +8,7 @@ from typing import Dict, List, Type, Any
 from dataclasses import dataclass, field
 from pycocotools import mask as mask_utils
 import numpy as np
+from fastapi import HTTPException
 
 
 class PredictionReq(BaseModel):  
@@ -44,21 +45,22 @@ class SegmentationModel:
 
     def get_model(self) -> GetModelResp:
         if self._model is None:
-            raise ValueError("Model not set")
+            raise HTTPException(status_code=404, detail="Model not set")
         return GetModelResp(name=self._model.name, variant=self._model.variant)
 
     def set_model(self, req: SetModelRequest):
         if req.name not in self._available_models:
-            raise ValueError(f"Model {req.name} not supported")
+            raise HTTPException(status_code=400, detail=f"Model {req.name} not supported")
         
         model_handle = self._available_models[req.name]
         if req.variant not in model_handle.variants():
-            raise ValueError(f"Variant {req.variant} not supported for model {req.name}")
+            raise HTTPException(status_code=400, detail=f"Variant {req.variant} not supported for model {req.name}")
         
         self._model = model_handle(req.variant)
 
         message = f"Segmentation model set to {req.name} with variant {req.variant}."
         print(message)
+        return {"message": message, "status_code": 200}
 
     def get_available_models(self):
         models = []
@@ -78,6 +80,8 @@ class SegmentationModel:
         return rle
 
     async def get_segmentation_prediction(self, image, input_boxes) -> SegmentationPredResp:
+        if self._model is None:
+            raise HTTPException(status_code=404, detail="Model not set")
 
         # run inference and measure execution time
         start_time = time.time()

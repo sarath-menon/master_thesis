@@ -6,6 +6,7 @@ import base64
 import time
 from typing import Dict, List, Type
 from dataclasses import dataclass, field
+from fastapi import HTTPException
 
 class PredictionReq(BaseModel):  
     image: str
@@ -40,26 +41,27 @@ class LocalizationModel:
             'florence2': Florence2,
         }
 
+        
     def get_model(self) -> GetModelResp:
         if self._model is None:
-            raise ValueError("Model not set")
+            raise HTTPException(status_code=404, detail="Model not set")
         return GetModelResp(name=self._model.name, variant=self._model.variant)
 
-    def set_model(self, req: SetModelRequest):
+    def set_model(self, req: SetModelRequest) -> None:
         if req.name not in self._available_models:
-            raise ValueError(f"Model {req.name} not supported")
+            raise HTTPException(status_code=400, detail=f"Model {req.name} not supported")
         
         model_handle = self._available_models[req.name]
         if req.variant not in model_handle.variants():
-            raise ValueError(f"Variant {req.variant} not supported for model {req.name}")
+            raise HTTPException(status_code=400, detail=f"Variant {req.variant} not supported for model {req.name}")
         
         self._model = model_handle(req.variant)
 
         message = f"Localization model set to {req.name} with variant {req.variant}."
         print(message)
+        return {"message": message, "status_code": 200}
 
-
-    def get_available_models(self):
+    def get_available_models(self) -> GetModelsResp:
         models = []
         for name in self._available_models.keys():
             handle = self._available_models[name]
@@ -68,6 +70,10 @@ class LocalizationModel:
         return GetModelsResp(models=models) 
 
     async def get_localization(self, base64_image: str, text_input: str, task_prompt: str) :
+
+        if self._model is None:
+            raise HTTPException(status_code=404, detail="Model not set")
+
         # Convert base64 string back to image
         image = base64.b64decode(base64_image)
         image = Image.open(io.BytesIO(image))
