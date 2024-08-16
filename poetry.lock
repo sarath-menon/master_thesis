@@ -893,6 +893,23 @@ typing-extensions = ">=4.0,<5.0"
 websockets = ">=10.0,<13.0"
 
 [[package]]
+name = "gradio-log"
+version = "0.0.4"
+description = "A Log component for Gradio which can easily show some log file in the interface."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "gradio_log-0.0.4-py3-none-any.whl", hash = "sha256:0fba5e6a44435f5bbd3da6e05389dd2b592f7e29f9f30f39f739f09b21d26047"},
+    {file = "gradio_log-0.0.4.tar.gz", hash = "sha256:5efd29476d53641b7b35672824f5f205ccfdc7cbfa0f17bb65d685471d86fd16"},
+]
+
+[package.dependencies]
+gradio = ">=4.0,<5.0"
+
+[package.extras]
+dev = ["build", "twine"]
+
+[[package]]
 name = "h11"
 version = "0.14.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
@@ -3741,4 +3758,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "0aaea438a57e95bf3b13efec3eb6bb611125ccc73a0123a768a083b53505dfed"
+content-hash = "43a1b0130c15179cbb2fb6aac57ce46d49c14a88b93e3215210a7f6dc10b5e5d"
