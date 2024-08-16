@@ -9,7 +9,8 @@ from clicking_client.models import PredictionReq, PredictionResp
 from clicking_client.api.default import get_available_localization_models, get_localization_prediction, get_available_segmentation_models
 import io
 import base64
-
+import sys
+from gradio_log import Log
 
 section_labels = [
     "apple",
@@ -32,6 +33,17 @@ css = """
   }
 """
 DESCRIPTION = "# [Florence-2 Demo](https://huggingface.co/microsoft/Florence-2-large)"
+
+
+def test(x):
+    print("This is a test")
+    print(f"Your function is running with input {x}...")
+    return x
+
+def read_logs():
+    sys.stdout.flush()
+    with open("output.log", "r") as f:
+        return f.read()
 
 def select_section(evt: gr.SelectData):
         return section_labels[evt.index]
@@ -85,6 +97,10 @@ localization_models = res.models
 
 res = get_available_segmentation_models.sync(client=client)
 segmentation_models = res.models
+
+# Redirect stdout to a log file
+log_file = "./output.log"
+sys.stdout = open(log_file, "a")
 
 def localization_type_change(model_name):
     selected_model = next((m for m in localization_models if m.name == model_name), None)
@@ -175,6 +191,8 @@ with gr.Blocks(css=css) as demo:
                
             with gr.Column():
                 selected_section = gr.Textbox(label="Selected Section")
+    
+        Log(log_file, dark=True, xterm_font_size=12)
     
     section_btn.click(section, [img_input, prompt_input], img_output)
     img_output.select(select_section, None, selected_section)
