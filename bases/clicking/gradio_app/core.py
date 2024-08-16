@@ -6,7 +6,7 @@ from scipy.ndimage import center_of_mass
 import matplotlib.pyplot as plt
 from clicking_client import Client
 from clicking_client.models import PredictionReq, PredictionResp
-from clicking_client.api.default import get_available_localization_models, get_localization_prediction
+from clicking_client.api.default import get_available_localization_models, get_localization_prediction, get_available_segmentation_models
 import io
 import base64
 
@@ -74,12 +74,6 @@ label_creation_models = {
     "GPT-4o": "",
 }
 
-
-segmentation_models = {
-    "Sam-2-tiny": "",
-    "Sam-2-large": "",
-}
-
 pipelines = {
     "localization + segmentation":"",
     "localization + geometric center":"",
@@ -89,8 +83,21 @@ client = Client(base_url="http://localhost:8082")
 res = get_available_localization_models.sync(client=client)
 localization_models = res.models
 
+res = get_available_segmentation_models.sync(client=client)
+segmentation_models = res.models
+
 def localization_type_change(model_name):
     selected_model = next((m for m in localization_models if m.name == model_name), None)
+    if not selected_model:
+        return [gr.update(choices=[], value=None)] * 2
+    
+    return [
+        gr.update(choices=selected_model.variants, value=selected_model.variants[0] if selected_model.variants else None),
+        gr.update(choices=selected_model.tasks, value=selected_model.tasks[0] if selected_model.tasks else None)
+    ]
+
+def segmentation_type_change(model_name):
+    selected_model = next((m for m in segmentation_models if m.name == model_name), None)
     if not selected_model:
         return [gr.update(choices=[], value=None)] * 2
     
@@ -141,10 +148,31 @@ with gr.Blocks(css=css) as demo:
                     )
 
                     model.change(fn=localization_type_change, inputs=[model], outputs=[variant, mode])
-               
-                        
-                segmentation_mode = gr.Dropdown(choices=list(segmentation_models.keys()), label="Segmentation model")
 
+                # Segmentation
+                with gr.Row():
+                    model = gr.Dropdown(
+                        choices=[m.name for m in segmentation_models],
+                        label="Segmentation model",
+                        value=segmentation_models[0].name if segmentation_models else None
+                    )
+
+                    variant = gr.Dropdown(
+                        choices=segmentation_models[0].variants if segmentation_models else [],
+                        label="Model variant",
+                        interactive=True,
+                        value=segmentation_models[0].variants[0] if segmentation_models and segmentation_models[0].variants else None
+                    )
+
+                    mode = gr.Dropdown(
+                        choices=segmentation_models[0].tasks if segmentation_models else [],
+                        label="Mode",
+                        interactive=True,
+                        value=segmentation_models[0].tasks[0] if segmentation_models and segmentation_models[0].tasks else None
+                    )
+
+                    model.change(fn=segmentation_type_change, inputs=[model], outputs=[variant, mode])
+               
             with gr.Column():
                 selected_section = gr.Textbox(label="Selected Section")
     
