@@ -11,6 +11,8 @@ import io
 import base64
 import sys
 from gradio_log import Log
+from clicking_client.models  import SetModelRequest
+from clicking_client.api.default import set_localization_model, set_segmentation_model
 
 section_labels = [
     "apple",
@@ -100,7 +102,9 @@ segmentation_models = res.models
 
 # Redirect stdout to a log file
 log_file = "./output.log"
-sys.stdout = open(log_file, "a")
+# sys.stdout = open(log_file, "a")
+
+
 
 def model_type_change(model_name, model_type):
     models = localization_models if model_type == "localization" else segmentation_models
@@ -112,6 +116,16 @@ def model_type_change(model_name, model_type):
         gr.update(choices=selected_model.variants, value=selected_model.variants[0] if selected_model.variants else None),
         gr.update(choices=selected_model.tasks, value=selected_model.tasks[0] if selected_model.tasks else None)
     ]
+
+def localization_model_variant_change(model, variant, mode):
+    print(model, variant, mode)
+    request = SetModelRequest(name=model, variant=variant)
+    set_localization_model.sync(client=client, body=request)
+
+def segmentation_model_variant_change(model, variant, mode):
+    print(model, variant, mode)
+    request = SetModelRequest(name=model, variant=variant)
+    set_segmentation_model.sync(client=client, body=request)
 
 # gradio state variables
 model_type_localization = gr.State(value="localization")
@@ -159,6 +173,7 @@ with gr.Blocks(css=css) as demo:
                     )
 
                     model.change(fn=model_type_change, inputs=[model, model_type_localization], outputs=[variant, mode])
+                    variant.change(fn=localization_model_variant_change, inputs=[model, variant, mode], outputs=[])
 
                 # Segmentation
                 with gr.Row():
@@ -183,11 +198,12 @@ with gr.Blocks(css=css) as demo:
                     )
 
                     model.change(fn=model_type_change, inputs=[model, model_type_segmentation], outputs=[variant, mode])
+                    variant.change(fn=segmentation_model_variant_change, inputs=[model, variant, mode], outputs=[])
                
             with gr.Column():
                 selected_section = gr.Textbox(label="Selected Section")
     
-        Log(log_file, dark=True, xterm_font_size=12)
+        # Log(log_file, dark=True, xterm_font_size=12)
     
     section_btn.click(section, [img_input, prompt_input], img_output)
     img_output.select(select_section, None, selected_section)
