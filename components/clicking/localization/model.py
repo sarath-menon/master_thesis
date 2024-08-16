@@ -17,7 +17,15 @@ class Florence2():
     def __init__(self, variant='florence-2-base'):
         self.name = 'florence2'
         self.variant = variant
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+         # select the device for computation
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+        else:
+            self.device = torch.device("cpu")
 
         print(f"Using {self.device} for {self.name}")
 
