@@ -6,17 +6,17 @@ from scipy.ndimage import center_of_mass
 import matplotlib.pyplot as plt
 from clicking_client import Client
 from clicking_client.models import PredictionReq, PredictionResp
-from clicking_client.api.default import get_available_localization_models, get_localization_prediction, get_available_segmentation_models
+from clicking_client.api.default import get_available_localization_models, get_localization_prediction, get_available_segmentation_models,set_localization_model, set_segmentation_model, get_segmentation_prediction
 import io
 import base64
 import sys
 from gradio_log import Log
 from clicking_client.models  import SetModelRequest
-from clicking_client.api.default import set_localization_model, set_segmentation_model, get_segmentation_prediction
 from clicking_client.models import BodyGetSegmentationPrediction
 from clicking_client.types import File
 import io
 import json
+from pycocotools import mask as mask_utils
 
 section_labels = [
     "apple",
@@ -60,8 +60,7 @@ def image_to_base64(img):
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 
-def section(image_np, text_input):
-
+def pipeline(image_np, text_input):
         # convert numpy array to PIL image
         image = Image.fromarray(image_np)
 
@@ -83,9 +82,6 @@ def section(image_np, text_input):
         )
 
         segmentation_response = get_segmentation_prediction.sync(client=client, body=request)
-
-        from pycocotools import mask as mask_utils
-        mask_alpha = 0.7
 
         sections = []
 
@@ -157,13 +153,20 @@ with gr.Blocks(css=css) as demo:
             )
 
         with gr.Row():
+            gr.CheckboxGroup(
+                ["input instruction => class labels", "class labels => bounding boxes ", "bounding boxes => segmentation masks", "segmentation masks => click point"],
+                label="Pipeline",
+                value=["class labels => bounding boxes ", "bounding boxes => segmentation masks", "segmentation masks => click point"], interactive=True
+            )
+
+        with gr.Row():
             with gr.Column():
                 section_btn = gr.Button("Identify Sections")
 
-                prompt_input = gr.Textbox(label="Text prompt")
+                input_instruction = gr.Textbox(label="Input instruction", interactive=True)
+                class_labels = gr.Textbox(label="Class labels", interactive=True)
 
-                pipeline_selector = gr.Dropdown(choices=list(pipelines.keys()), label="Select pipeline")
-
+            
                 label_creation_mode = gr.Dropdown(choices=list(label_creation_models .keys()), label="Text prompt to class label")
 
                 # Localization 
@@ -221,7 +224,7 @@ with gr.Blocks(css=css) as demo:
     
         # Log(log_file, dark=True, xterm_font_size=12)
     
-    section_btn.click(section, [img_input, prompt_input], img_output)
+    section_btn.click(pipeline, [img_input, prompt_input], img_output)
     img_output.select(select_section, None, selected_section)
 
 if __name__ == "__main__":
