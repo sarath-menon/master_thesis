@@ -12,7 +12,11 @@ import base64
 import sys
 from gradio_log import Log
 from clicking_client.models  import SetModelRequest
-from clicking_client.api.default import set_localization_model, set_segmentation_model
+from clicking_client.api.default import set_localization_model, set_segmentation_model, get_segmentation_prediction
+from clicking_client.models import BodyGetSegmentationPrediction
+from clicking_client.types import File
+import io
+import json
 
 section_labels = [
     "apple",
@@ -56,31 +60,43 @@ def image_to_base64(img):
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 
-def section(image, text_input):
-        sections = []
+def section(image_np, text_input):
 
         # convert numpy array to PIL image
-        image = Image.fromarray(image)
+        image = Image.fromarray(image_np)
 
+        # get localization prediction
         request = PredictionReq(image=image_to_base64(image), text_input=text_input, task_prompt='<CAPTION_TO_PHRASE_GROUNDING>')
 
-        response = get_localization_prediction.sync(client=client, body=request)
+        localization_response = get_localization_prediction.sync(client=client, body=request)
+
+        # get segmentation prediction
+        image_byte_arr = io.BytesIO()
+        image.save(image_byte_arr, format='JPEG')
+        image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
+
+        # Create the request object
+        request = BodyGetSegmentationPrediction(
+            image=image_file,
+            task_prompt='bbox',
+            input_boxes=json.dumps(localization_response.bboxes)  # Convert bboxes to JSON string
+        )
+
+        segmentation_response = get_segmentation_prediction.sync(client=client, body=request)
+
+        from pycocotools import mask as mask_utils
+        mask_alpha = 0.7
 
         sections = []
-        for i, bbox in enumerate(response.bboxes):
+
+        for i, bbox in enumerate(localization_response.bboxes):
             x1,y1,w,h = map(int, bbox)
             sections.append(((x1,y1,w,h), section_labels[i]))
 
-
-        #     mask = np.zeros(img.shape[:2])
-        #     for i in range(img.shape[0]):
-        #         for j in range(img.shape[1]):
-        #             dist_square = (i - y) ** 2 + (j - x) ** 2
-        #             if dist_square < r**2:
-        #                 mask[i, j] = round((r**2 - dist_square) / r**2 * 4) / 4
-        #     sections.append((mask, section_labels[b + num_boxes]))
+        for (i, mask) in enumerate(segmentation_response.masks):
+            mask = mask_utils.decode(mask)
+            sections.append((mask, section_labels[i]))
     
-
         return (image, sections)
 
 label_creation_models = {
