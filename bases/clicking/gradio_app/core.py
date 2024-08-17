@@ -18,6 +18,7 @@ import io
 import json
 from pycocotools import mask as mask_utils
 from dataclasses import dataclass, field
+import math
 
 css = """
   #output {
@@ -64,6 +65,24 @@ tasks = {
     "segmentation masks => click point":"",
 }
 
+import math
+
+def generate_star_points(center_x, center_y, size=20):
+    points = []
+    # There are 10 points in a 5-point star
+    for i in range(10):
+        angle = math.pi / 2 + (i * 2 * math.pi / 10)
+        if i % 2 == 0:
+            # Outer point
+            x = center_x + size * math.cos(angle)
+            y = center_y - size * math.sin(angle)
+        else:
+            # Inner point (halfway toward the center)
+            x = center_x + (size / 2) * math.cos(angle)
+            y = center_y - (size / 2) * math.sin(angle)
+        points.append((x, y))
+    return points
+
 def pipeline(image_np, input_instruction, class_label, pipeline_checkboxes):
         if image_np is None:
             raise ValueError("Set input image")
@@ -91,6 +110,7 @@ def pipeline(image_np, input_instruction, class_label, pipeline_checkboxes):
             localization_response = get_localization_prediction.sync(client=client, body=request)
 
         pipeline_result.bounding_boxes = localization_response.bboxes
+        
         # get segmentation prediction
         if "bounding boxes => segmentation masks" in pipeline_checkboxes:
             image_byte_arr = io.BytesIO()
@@ -120,8 +140,13 @@ def pipeline(image_np, input_instruction, class_label, pipeline_checkboxes):
         for (i, mask) in enumerate(segmentation_response.masks):
             mask = mask_utils.decode(mask)
             sections.append((mask, class_label))
-    
-        return (image, sections)
+
+        # get and overlay click point
+        if "segmentation masks => click point" in pipeline_checkboxes:
+            draw = ImageDraw.Draw(image)
+            star_points = generate_star_points(200,200,size=20)  # Define the points of the star
+            draw.polygon(star_points, fill="yellow", outline="yellow")  
+            return (image, sections)
 
 label_creation_models = {
     "GPT-4": "",
