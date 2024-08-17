@@ -70,7 +70,7 @@ tasks = {
 def pipeline(image_np, input_instruction, class_labels, pipeline_checkboxes):
         if image_np is None:
             raise ValueError("Set input image")
-        elif input_instruction=='' and input_instruction=='':
+        elif input_instruction=='' and class_labels=='':
             raise ValueError("Set input text or class labels")
         elif input_instruction!='' and class_labels!='':
             raise ValueError("You can't set both input text and class labels")
@@ -85,7 +85,7 @@ def pipeline(image_np, input_instruction, class_labels, pipeline_checkboxes):
 
         # get localization prediction
         if "class labels => bounding boxes" in pipeline_checkboxes:
-            request = PredictionReq(image=image_to_base64(image), text_input=text_input, task_prompt='<CAPTION_TO_PHRASE_GROUNDING>')
+            request = PredictionReq(image=image_to_base64(image), text_input=class_labels, task_prompt='<CAPTION_TO_PHRASE_GROUNDING>')
 
             localization_response = get_localization_prediction.sync(client=client, body=request)
 
