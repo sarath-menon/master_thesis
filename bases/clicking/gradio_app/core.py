@@ -145,14 +145,19 @@ def pipeline(image_np, input_instruction, class_label, pipeline_checkboxes):
 
         # get and overlay click point
         if "segmentation masks => click point" in pipeline_checkboxes:
-            for (i, mask) in enumerate(segmentation_response.masks):
-                mask = mask_utils.decode(mask)
+            decoded_masks = [mask_utils.decode(mask) for mask in segmentation_response.masks]
+            for i, mask in enumerate(decoded_masks):
+                # Create a blank image with the same dimensions
+                mask_image = Image.new('L', (image.width, image.height), 0)
+                draw_mask = ImageDraw.Draw(mask_image)
 
-                draw = ImageDraw.Draw(image)
                 centroid = get_mask_centroid(mask)
-                print(centroid)
-                star_points = generate_star_points(centroid, size=20)  
-                draw.polygon(star_points, fill="yellow", outline="yellow")
+                star_point = generate_star_points(centroid, size=10)
+
+                # create a mask for the click point
+                draw_mask.polygon(star_point, fill=1)
+                mask_np = np.array(mask_image)
+                sections.append((mask_np, "click point"))
 
         return (image, sections)
 
