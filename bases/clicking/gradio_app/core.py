@@ -17,19 +17,7 @@ from clicking_client.types import File
 import io
 import json
 from pycocotools import mask as mask_utils
-
-section_labels = [
-    "apple",
-    "banana",
-    "carrot",
-    "donut",
-    "eggplant",
-    "fish",
-    "grapes",
-    "hamburger",
-    "ice cream",
-    "juice",
-]
+from dataclasses import dataclass, field
 
 css = """
   #output {
@@ -40,6 +28,15 @@ css = """
 """
 DESCRIPTION = "# [Florence-2 Demo](https://huggingface.co/microsoft/Florence-2-large)"
 
+
+@dataclass
+class PipelineResult:
+    input_instruction: str = ""
+    class_label: str = ""
+    bounding_boxes: list = field(default_factory=list)  # Changed to use default_factory
+    segmentation_masks: list = field(default_factory=list)  # Changed to use default_factory
+    click_point: tuple = ()
+pipeline_result = PipelineResult()
 
 def test(x):
     print("This is a test")
@@ -52,7 +49,7 @@ def read_logs():
         return f.read()
 
 def select_section(evt: gr.SelectData):
-        return section_labels[evt.index]
+        return pipeline_result.class_label[evt.index]
 
 def image_to_base64(img):
     buffered = io.BytesIO()
@@ -67,28 +64,33 @@ tasks = {
     "segmentation masks => click point":"",
 }
 
-def pipeline(image_np, input_instruction, class_labels, pipeline_checkboxes):
+def pipeline(image_np, input_instruction, class_label, pipeline_checkboxes):
         if image_np is None:
             raise ValueError("Set input image")
-        elif input_instruction=='' and class_labels=='':
+        elif input_instruction=='' and class_label=='':
             raise ValueError("Set input text or class labels")
-        elif input_instruction!='' and class_labels!='':
+        elif input_instruction!='' and class_label!='':
             raise ValueError("You can't set both input text and class labels")
 
         # convert numpy array to PIL image
         image = Image.fromarray(image_np)
 
         print(pipeline_checkboxes)
+
+        pipeline_result.input_instruction = input_instruction
         
+        # convert input instruction to class labels
         if "input instruction => class labels" in pipeline_checkboxes:
             pass
 
+        pipeline_result.class_label = class_label
         # get localization prediction
         if "class labels => bounding boxes" in pipeline_checkboxes:
-            request = PredictionReq(image=image_to_base64(image), text_input=class_labels, task_prompt='<CAPTION_TO_PHRASE_GROUNDING>')
+            request = PredictionReq(image=image_to_base64(image), text_input=class_label, task_prompt='<CAPTION_TO_PHRASE_GROUNDING>')
 
             localization_response = get_localization_prediction.sync(client=client, body=request)
 
+        pipeline_result.bounding_boxes = localization_response.bboxes
         # get segmentation prediction
         if "bounding boxes => segmentation masks" in pipeline_checkboxes:
             image_byte_arr = io.BytesIO()
@@ -104,6 +106,7 @@ def pipeline(image_np, input_instruction, class_labels, pipeline_checkboxes):
 
             segmentation_response = get_segmentation_prediction.sync(client=client, body=request)
 
+        pipeline_result.segmentation_masks = segmentation_response.masks
         # get click point prediction from segmentation masks
         if "segmentation masks => click point" in pipeline_checkboxes:
             pass
@@ -112,11 +115,11 @@ def pipeline(image_np, input_instruction, class_labels, pipeline_checkboxes):
 
         for i, bbox in enumerate(localization_response.bboxes):
             x1,y1,w,h = map(int, bbox)
-            sections.append(((x1,y1,w,h), section_labels[i]))
+            sections.append(((x1,y1,w,h), class_label))
 
         for (i, mask) in enumerate(segmentation_response.masks):
             mask = mask_utils.decode(mask)
-            sections.append((mask, section_labels[i]))
+            sections.append((mask, class_label))
     
         return (image, sections)
 
@@ -185,7 +188,7 @@ with gr.Blocks(css=css) as demo:
                 section_btn = gr.Button("Identify Sections")
 
                 input_instruction = gr.Textbox(label="Input instruction", interactive=True)
-                class_labels = gr.Textbox(label="Class labels", interactive=True)
+                class_label = gr.Textbox(label="Class labels", interactive=True)
             
                 label_creation_mode = gr.Dropdown(choices=list(label_creation_models .keys()), label="Text prompt to class label")
 
@@ -244,8 +247,8 @@ with gr.Blocks(css=css) as demo:
     
         # Log(log_file, dark=True, xterm_font_size=12)
     
-    section_btn.click(pipeline, [img_input, input_instruction, class_labels, pipeline_checkboxes], img_output)
-    img_output.select(select_section, None, selected_section)
+    section_btn.click(pipeline, [img_input, input_instruction, class_label, pipeline_checkboxes], img_output)
+    img_output.select(select_section, None, pipeline_result.class_label)
 
 if __name__ == "__main__":
     demo.launch()
