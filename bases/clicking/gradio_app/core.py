@@ -60,28 +60,53 @@ def image_to_base64(img):
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 
-def pipeline(image_np, text_input):
+tasks = {
+    "input instruction => class labels":"",
+    "class labels => bounding boxes":"",
+    "bounding boxes => segmentation masks":"",
+    "segmentation masks => click point":"",
+}
+
+def pipeline(image_np, input_instruction, class_labels, pipeline_checkboxes):
+        if image_np is None:
+            raise ValueError("Set input image")
+        elif input_instruction=='' and input_instruction=='':
+            raise ValueError("Set input text or class labels")
+        elif input_instruction!='' and class_labels!='':
+            raise ValueError("You can't set both input text and class labels")
+
         # convert numpy array to PIL image
         image = Image.fromarray(image_np)
 
-        # get localization prediction
-        request = PredictionReq(image=image_to_base64(image), text_input=text_input, task_prompt='<CAPTION_TO_PHRASE_GROUNDING>')
+        print(pipeline_checkboxes)
+        
+        if "input instruction => class labels" in pipeline_checkboxes:
+            pass
 
-        localization_response = get_localization_prediction.sync(client=client, body=request)
+        # get localization prediction
+        if "class labels => bounding boxes" in pipeline_checkboxes:
+            request = PredictionReq(image=image_to_base64(image), text_input=text_input, task_prompt='<CAPTION_TO_PHRASE_GROUNDING>')
+
+            localization_response = get_localization_prediction.sync(client=client, body=request)
 
         # get segmentation prediction
-        image_byte_arr = io.BytesIO()
-        image.save(image_byte_arr, format='JPEG')
-        image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
+        if "bounding boxes => segmentation masks" in pipeline_checkboxes:
+            image_byte_arr = io.BytesIO()
+            image.save(image_byte_arr, format='JPEG')
+            image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
 
-        # Create the request object
-        request = BodyGetSegmentationPrediction(
-            image=image_file,
-            task_prompt='bbox',
-            input_boxes=json.dumps(localization_response.bboxes)  # Convert bboxes to JSON string
-        )
+            # Create the request object
+            request = BodyGetSegmentationPrediction(
+                image=image_file,
+                task_prompt='bbox',
+                input_boxes=json.dumps(localization_response.bboxes)  # Convert bboxes to JSON string
+            )
 
-        segmentation_response = get_segmentation_prediction.sync(client=client, body=request)
+            segmentation_response = get_segmentation_prediction.sync(client=client, body=request)
+
+        # get click point prediction from segmentation masks
+        if "segmentation masks => click point" in pipeline_checkboxes:
+            pass
 
         sections = []
 
@@ -100,10 +125,6 @@ label_creation_models = {
     "GPT-4o": "",
 }
 
-pipelines = {
-    "localization + segmentation":"",
-    "localization + geometric center":"",
-}
 
 client = Client(base_url="http://localhost:8082")
 res = get_available_localization_models.sync(client=client)
@@ -153,10 +174,10 @@ with gr.Blocks(css=css) as demo:
             )
 
         with gr.Row():
-            gr.CheckboxGroup(
-                ["input instruction => class labels", "class labels => bounding boxes ", "bounding boxes => segmentation masks", "segmentation masks => click point"],
+            pipeline_checkboxes = gr.CheckboxGroup(
+                choices=list(tasks.keys()),
                 label="Pipeline",
-                value=["class labels => bounding boxes ", "bounding boxes => segmentation masks", "segmentation masks => click point"], interactive=True
+                value=list(tasks.keys()), interactive=True
             )
 
         with gr.Row():
@@ -165,7 +186,6 @@ with gr.Blocks(css=css) as demo:
 
                 input_instruction = gr.Textbox(label="Input instruction", interactive=True)
                 class_labels = gr.Textbox(label="Class labels", interactive=True)
-
             
                 label_creation_mode = gr.Dropdown(choices=list(label_creation_models .keys()), label="Text prompt to class label")
 
@@ -224,7 +244,7 @@ with gr.Blocks(css=css) as demo:
     
         # Log(log_file, dark=True, xterm_font_size=12)
     
-    section_btn.click(pipeline, [img_input, prompt_input], img_output)
+    section_btn.click(pipeline, [img_input, input_instruction, class_labels, pipeline_checkboxes], img_output)
     img_output.select(select_section, None, selected_section)
 
 if __name__ == "__main__":
