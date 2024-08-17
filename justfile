@@ -1,6 +1,6 @@
 
 start_server PORT='8082':
-    uvicorn core:app --reload --port {{PORT}} --app-dir bases/clicking/api --reload-dir bases/clicking
+    uvicorn core:app --reload --port {{PORT}} --app-dir bases/clicking/api --reload-dir bases/clicking/api
 
 install_sam2:
     git clone https://github.com/facebookresearch/segment-anything-2.git
