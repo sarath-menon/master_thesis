@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from clicking_client import Client
 from clicking_client.models import PredictionReq, PredictionResp
 from clicking_client.api.default import get_available_localization_models, get_localization_prediction, get_available_segmentation_models,set_localization_model, set_segmentation_model, get_segmentation_prediction
+from clicking.segmentation.utils import get_mask_centroid
 import io
 import base64
 import sys
@@ -67,19 +68,20 @@ tasks = {
 
 import math
 
-def generate_star_points(center_x, center_y, size=20):
+def generate_star_points(centroid, size=20):
+    x, y = centroid
     points = []
     # There are 10 points in a 5-point star
     for i in range(10):
         angle = math.pi / 2 + (i * 2 * math.pi / 10)
         if i % 2 == 0:
             # Outer point
-            x = center_x + size * math.cos(angle)
-            y = center_y - size * math.sin(angle)
+            x = x + size * math.cos(angle)
+            y = y - size * math.sin(angle)
         else:
             # Inner point (halfway toward the center)
-            x = center_x + (size / 2) * math.cos(angle)
-            y = center_y - (size / 2) * math.sin(angle)
+            x = x + (size / 2) * math.cos(angle)
+            y = y - (size / 2) * math.sin(angle)
         points.append((x, y))
     return points
 
@@ -126,27 +128,33 @@ def pipeline(image_np, input_instruction, class_label, pipeline_checkboxes):
 
             segmentation_response = get_segmentation_prediction.sync(client=client, body=request)
 
-        pipeline_result.segmentation_masks = segmentation_response.masks
-        # get click point prediction from segmentation masks
-        if "segmentation masks => click point" in pipeline_checkboxes:
-            pass
+            pipeline_result.segmentation_masks = segmentation_response.masks
+            # get click point prediction from segmentation masks
+            if "segmentation masks => click point" in pipeline_checkboxes:
+                pass
 
-        sections = []
+            sections = []
 
-        for i, bbox in enumerate(localization_response.bboxes):
-            x1,y1,w,h = map(int, bbox)
-            sections.append(((x1,y1,w,h), class_label))
+            for i, bbox in enumerate(localization_response.bboxes):
+                x1,y1,w,h = map(int, bbox)
+                sections.append(((x1,y1,w,h), class_label))
 
-        for (i, mask) in enumerate(segmentation_response.masks):
-            mask = mask_utils.decode(mask)
-            sections.append((mask, class_label))
+            for (i, mask) in enumerate(segmentation_response.masks):
+                mask = mask_utils.decode(mask)
+                sections.append((mask, class_label))
 
         # get and overlay click point
         if "segmentation masks => click point" in pipeline_checkboxes:
-            draw = ImageDraw.Draw(image)
-            star_points = generate_star_points(200,200,size=20)  # Define the points of the star
-            draw.polygon(star_points, fill="yellow", outline="yellow")  
-            return (image, sections)
+            for (i, mask) in enumerate(segmentation_response.masks):
+                mask = mask_utils.decode(mask)
+
+                draw = ImageDraw.Draw(image)
+                centroid = get_mask_centroid(mask)
+                print(centroid)
+                star_points = generate_star_points(centroid, size=20)  
+                draw.polygon(star_points, fill="yellow", outline="yellow")
+
+        return (image, sections)
 
 label_creation_models = {
     "GPT-4": "",
