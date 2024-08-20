@@ -2590,6 +2590,17 @@ files = [
 wcwidth = "*"
 
 [[package]]
+name = "promptdown"
+version = "0.7.5"
+description = "A package for loading promptdown files, which are a special type of markdown file for defining structured LLM prompts"
+optional = false
+python-versions = ">=3.10"
+files = [
+    {file = "promptdown-0.7.5-py3-none-any.whl", hash = "sha256:634f3f36890427ff642ac6df0733aa6195593623b60d4832d3aa067db66b5527"},
+    {file = "promptdown-0.7.5.tar.gz", hash = "sha256:19ff71f979d3143bad622220bf26f23f6a1bdc55fea7a12dab2dc66efeabdf19"},
+]
+
+[[package]]
 name = "proto-plus"
 version = "1.24.0"
 description = "Beautiful, Pythonic protocol buffers."
@@ -4577,4 +4588,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "70a3a426a9a60b5442180684dfb120516c2be92f0336454fe8722d5c710508ec"
+content-hash = "de84fc25407a1e697cd7069f1c97a18e9466134007262381fee04e070e62a5c2"
