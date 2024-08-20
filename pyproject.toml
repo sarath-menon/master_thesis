@@ -14,6 +14,8 @@ packages = [
     { include = "clicking/visualization", from = "components" },
     { include = "clicking/auto_annotation", from = "components" },
     { include = "clicking/pipeline", from = "components" },
+    { include = "clicking/prompt_manager", from = "components" },
+    { include = "clicking/prompt_refinement", from = "components" },
 ]
 
 [tool.poetry.dependencies]

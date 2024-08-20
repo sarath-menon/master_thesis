@@ -8,7 +8,7 @@ import io
 dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
-class InstructionToLabel:
+class PromptRefiner:
     def __init__(self, model: str = "gpt-4o"):
         self.model = model
         self.messages = [

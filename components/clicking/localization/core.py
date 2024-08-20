@@ -7,6 +7,7 @@ import time
 from typing import Dict, List, Type
 from dataclasses import dataclass, field
 from fastapi import HTTPException
+from clicking.visualization.bbox import BoundingBox, BBoxMode
 
 class PredictionReq(BaseModel):  
     image: str

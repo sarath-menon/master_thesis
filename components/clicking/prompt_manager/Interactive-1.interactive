@@ -1,0 +1,1292 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 68,
+   "id": "d6bd5840-41d1-40a9-9918-6d2dcedfdbd5",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "You are a helpful assistant in Python programming.\n"
+     ]
+    }
+   ],
+   "source": [
+    "from promptdown import StructuredPrompt\n",
+    "\n",
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt.system_message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 69,
+   "id": "9a5e93f5-7b13-45fa-aaaf-c99601ba698a",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "You are a helpful assistant in Python programming.\n"
+     ]
+    }
+   ],
+   "source": [
+    "from promptdown import StructuredPrompt\n",
+    "\n",
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt.system_message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 70,
+   "id": "3404e44f-5dfb-47d2-81cd-27420e7a28b5",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from litellm import completion\n",
+    "import io\n",
+    "import base64\n",
+    "\n",
+    "class PromptRefiner:\n",
+    "    def __init__(self, model: str = \"gpt-4o\", prompt_path: str = \"./prompts/instruction_refinement.prompt.md\"):\n",
+    "        self.model = model\n",
+    "        self.PROMPT_PATH = prompt_path\n",
+    "        \n",
+    "        prompts = StructuredPrompt.from_promptdown_file(prompt_path)\n",
+    "\n",
+    "        self.messages = [\n",
+    "            {\"role\": \"system\", \"content\": prompts.system_message},\n",
+    "        ]\n",
+    "        \n",
+    "\n",
+    "    # def _get_prompt(self, text_prompt: str):\n",
+    "    #     prompt = f\"\"\"\n",
+    "    #     Analyze the videogame screenshot. For the action \"{text_prompt}\":\n",
+    "    #     1. Identify the game object to selected to execute the action. \n",
+    "    #     2. Provide a brief 10-word reasoning.\n",
+    "        \n",
+    "    #     Return JSON: {{\n",
+    "    #         \"class_label\": \"object to click\",\n",
+    "    #         \"reasoning\": \"10-word explanation\"\n",
+    "    #     }}\n",
+    "    #     \"\"\"\n",
+    "    #     return prompt\n",
+    "    \n",
+    "\n",
+    "    # def _get_text_response(self, prompt: str):\n",
+    "    #     prompts = StructuredPrompt.from_promptdown_file(self.prompt)\n",
+    "    #     prompt = self._get_prompt(prompt)\n",
+    "    #     self.add_message(prompt)\n",
+    "    #     response = completion(model=self.model, messages=self.messages)\n",
+    "    #     return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _get_image_response(self, base64_image: str, text_prompt: str):\n",
+    "        msg = {\"role\": \"user\", \"content\": [\n",
+    "                {\"type\": \"text\", \"text\": text_prompt},\n",
+    "                {\"type\": \"image_url\", \"image_url\": {\n",
+    "                    \"url\": f\"data:image/png;base64,{base64_image}\"}\n",
+    "                }\n",
+    "            ]}\n",
+    "\n",
+    "        self.messages.append(msg)\n",
+    "        response = completion(model=self.model, messages=self.messages)\n",
+    "        return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _pil_to_base64(self, image):\n",
+    "        with io.BytesIO() as buffer:\n",
+    "            image.save(buffer, format=\"PNG\")\n",
+    "            return base64.b64encode(buffer.getvalue()).decode(\"utf-8\")\n",
+    "\n",
+    "    def get_label(self, screenshot: str, action: str):\n",
+    "        template_values = {\n",
+    "        \"action\": action,\n",
+    "        }\n",
+    "\n",
+    "        base64_image = self._pil_to_base64(screenshot)\n",
+    "        prompts = structured_prompt.apply_template_values(template_values)\n",
+    "        print(prompts)\n",
+    "        # return self._get_image_response(base64_image, prompt)\n",
+    "\n",
+    "    def show_messages(self):\n",
+    "        for message in self.messages:\n",
+    "            print(message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 71,
+   "id": "c302f6fc-7d89-49bc-8f52-b5cce079a994",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "labeller =  PromptRefiner()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 72,
+   "id": "ab8a3051-aa4d-41b9-985a-c8e53753d822",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "None\n",
+      "None\n"
+     ]
+    }
+   ],
+   "source": [
+    "response = labeller.get_label(image, \"Pick up the flag\")\n",
+    "print(response)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 73,
+   "id": "80b5d397-8072-4829-9f5d-13386f63c833",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "None\n",
+      "None\n"
+     ]
+    }
+   ],
+   "source": [
+    "response = labeller.get_label(image, \"Pick up the flag\")\n",
+    "print(response)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 74,
+   "id": "1582a118-146d-4aa7-92f1-39638a707689",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "You are a helpful assistant and an expert videogame player.\n"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt.system_message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 75,
+   "id": "daffbba7-1a30-4aae-b27a-2a959d2c7e01",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "You are a helpful assistant and an expert videogame player.\n"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt.system_message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 76,
+   "id": "45e30393-4fcb-4c81-a78b-3a19ad1d4758",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "You are a helpful assistant and an expert videogame player.\n"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# # Apply the template values\n",
+    "# structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt.system_message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 77,
+   "id": "1044675e-5401-4bd7-be18-7d2c65e5879d",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "StructuredPrompt(name='My Prompt', system_message='You are a helpful assistant and an expert videogame player.', conversation=[Message(role='User', content='Hi, can you help me with {topic}?', name=None), Message(role='Assistant', content='Of course! What specifically do you need help with in {topic}?', name=None), Message(role='User', content=\"I'm having trouble understanding {concept}.\", name=None), Message(role='Assistant', content=\"No problem! Let's dive into {concept} together.\", name=None)])\n"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# # Apply the template values\n",
+    "# structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 78,
+   "id": "38d18def-072d-4fd5-aebc-cc940b23d3ca",
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "KeyError",
+     "evalue": "'topic'",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[0;31mKeyError\u001b[0m                                  Traceback (most recent call last)",
+      "Cell \u001b[0;32mIn[78], line 12\u001b[0m\n\u001b[1;32m      6\u001b[0m template_values \u001b[39m=\u001b[39m {\n\u001b[1;32m      7\u001b[0m     \u001b[39m\"\u001b[39m\u001b[39mtopic\u001b[39m\u001b[39m\"\u001b[39m: \u001b[39m\"\u001b[39m\u001b[39mPython programming\u001b[39m\u001b[39m\"\u001b[39m,\n\u001b[1;32m      8\u001b[0m     \u001b[39m\"\u001b[39m\u001b[39mconcept\u001b[39m\u001b[39m\"\u001b[39m: \u001b[39m\"\u001b[39m\u001b[39mdecorators\u001b[39m\u001b[39m\"\u001b[39m\n\u001b[1;32m      9\u001b[0m }\n\u001b[1;32m     11\u001b[0m \u001b[39m# Apply the template values\u001b[39;00m\n\u001b[0;32m---> 12\u001b[0m structured_prompt\u001b[39m.\u001b[39;49mapply_template_values({})\n\u001b[1;32m     14\u001b[0m \u001b[39m# Output the updated prompt\u001b[39;00m\n\u001b[1;32m     15\u001b[0m \u001b[39mprint\u001b[39m(structured_prompt\u001b[39m.\u001b[39msystem_message)\n",
+      "File \u001b[0;32m~/Documents/master_thesis/.venv/lib/python3.12/site-packages/promptdown/promptdown.py:427\u001b[0m, in \u001b[0;36mStructuredPrompt.apply_template_values\u001b[0;34m(self, template_values)\u001b[0m\n\u001b[1;32m    425\u001b[0m \u001b[39mif\u001b[39;00m \u001b[39mself\u001b[39m\u001b[39m.\u001b[39mconversation \u001b[39mis\u001b[39;00m \u001b[39mnot\u001b[39;00m \u001b[39mNone\u001b[39;00m:\n\u001b[1;32m    426\u001b[0m     \u001b[39mfor\u001b[39;00m message \u001b[39min\u001b[39;00m \u001b[39mself\u001b[39m\u001b[39m.\u001b[39mconversation:\n\u001b[0;32m--> 427\u001b[0m         message\u001b[39m.\u001b[39mcontent \u001b[39m=\u001b[39m message\u001b[39m.\u001b[39;49mcontent\u001b[39m.\u001b[39;49mformat(\u001b[39m*\u001b[39;49m\u001b[39m*\u001b[39;49mtemplate_values)\n",
+      "\u001b[0;31mKeyError\u001b[0m: 'topic'"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values({})\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt.system_message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 79,
+   "id": "77f1c0e1-a750-4e63-a25e-925bfe8036b8",
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "TypeError",
+     "evalue": "StructuredPrompt.apply_template_values() missing 1 required positional argument: 'template_values'",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[0;31mTypeError\u001b[0m                                 Traceback (most recent call last)",
+      "Cell \u001b[0;32mIn[79], line 12\u001b[0m\n\u001b[1;32m      6\u001b[0m template_values \u001b[39m=\u001b[39m {\n\u001b[1;32m      7\u001b[0m     \u001b[39m\"\u001b[39m\u001b[39mtopic\u001b[39m\u001b[39m\"\u001b[39m: \u001b[39m\"\u001b[39m\u001b[39mPython programming\u001b[39m\u001b[39m\"\u001b[39m,\n\u001b[1;32m      8\u001b[0m     \u001b[39m\"\u001b[39m\u001b[39mconcept\u001b[39m\u001b[39m\"\u001b[39m: \u001b[39m\"\u001b[39m\u001b[39mdecorators\u001b[39m\u001b[39m\"\u001b[39m\n\u001b[1;32m      9\u001b[0m }\n\u001b[1;32m     11\u001b[0m \u001b[39m# Apply the template values\u001b[39;00m\n\u001b[0;32m---> 12\u001b[0m structured_prompt\u001b[39m.\u001b[39;49mapply_template_values()\n\u001b[1;32m     14\u001b[0m \u001b[39m# Output the updated prompt\u001b[39;00m\n\u001b[1;32m     15\u001b[0m \u001b[39mprint\u001b[39m(structured_prompt\u001b[39m.\u001b[39msystem_message)\n",
+      "\u001b[0;31mTypeError\u001b[0m: StructuredPrompt.apply_template_values() missing 1 required positional argument: 'template_values'"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values()\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt.system_message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 80,
+   "id": "2ea7aeb9-e2e2-4620-8cd4-d68cfe3553d9",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "You are a helpful assistant and an expert videogame player.\n"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt.system_message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 81,
+   "id": "9f182c83-fa89-4dee-b15e-90acc722ae24",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from litellm import completion\n",
+    "import io\n",
+    "import base64\n",
+    "\n",
+    "class PromptRefiner:\n",
+    "    def __init__(self, model: str = \"gpt-4o\", prompt_path: str = \"./prompts/instruction_refinement.prompt.md\"):\n",
+    "        self.model = model\n",
+    "        self.PROMPT_PATH = prompt_path\n",
+    "        \n",
+    "        prompts = self.load_prompts_()\n",
+    "\n",
+    "        self.messages = [\n",
+    "            {\"role\": \"system\", \"content\": prompts.system_message},\n",
+    "        ]\n",
+    "        \n",
+    "\n",
+    "    def load_prompts_(self, template_values: dict = None):\n",
+    "        prompts = StructuredPrompt.from_promptdown_file(self.PROMPT_PATH)\n",
+    "        if template_values:\n",
+    "            prompts.apply_template_values(template_values)\n",
+    "        return prompts\n",
+    "\n",
+    "    # def _get_prompt(self, text_prompt: str):\n",
+    "    #     prompt = f\"\"\"\n",
+    "    #     Analyze the videogame screenshot. For the action \"{text_prompt}\":\n",
+    "    #     1. Identify the game object to selected to execute the action. \n",
+    "    #     2. Provide a brief 10-word reasoning.\n",
+    "        \n",
+    "    #     Return JSON: {{\n",
+    "    #         \"class_label\": \"object to click\",\n",
+    "    #         \"reasoning\": \"10-word explanation\"\n",
+    "    #     }}\n",
+    "    #     \"\"\"\n",
+    "    #     return prompt\n",
+    "    \n",
+    "\n",
+    "    # def _get_text_response(self, prompt: str):\n",
+    "    #     prompts = StructuredPrompt.from_promptdown_file(self.prompt)\n",
+    "    #     prompt = self._get_prompt(prompt)\n",
+    "    #     self.add_message(prompt)\n",
+    "    #     response = completion(model=self.model, messages=self.messages)\n",
+    "    #     return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _get_image_response(self, base64_image: str, text_prompt: str):\n",
+    "        msg = {\"role\": \"user\", \"content\": [\n",
+    "                {\"type\": \"text\", \"text\": text_prompt},\n",
+    "                {\"type\": \"image_url\", \"image_url\": {\n",
+    "                    \"url\": f\"data:image/png;base64,{base64_image}\"}\n",
+    "                }\n",
+    "            ]}\n",
+    "\n",
+    "        self.messages.append(msg)\n",
+    "        response = completion(model=self.model, messages=self.messages)\n",
+    "        return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _pil_to_base64(self, image):\n",
+    "        with io.BytesIO() as buffer:\n",
+    "            image.save(buffer, format=\"PNG\")\n",
+    "            return base64.b64encode(buffer.getvalue()).decode(\"utf-8\")\n",
+    "\n",
+    "    def get_label(self, screenshot: str, action: str):\n",
+    "        template_values = {\n",
+    "        \"action\": action,\n",
+    "        }\n",
+    "\n",
+    "        base64_image = self._pil_to_base64(screenshot)\n",
+    "        prompts = self.load_prompts_(template_values)\n",
+    "        print(prompts)\n",
+    "        # return self._get_image_response(base64_image, prompt)\n",
+    "\n",
+    "    def show_messages(self):\n",
+    "        for message in self.messages:\n",
+    "            print(message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 82,
+   "id": "ac4b84f5-e4b6-4687-a5b7-efb87699bef8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "labeller =  PromptRefiner()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 83,
+   "id": "76f79a21-895a-4d09-9bd6-fafe62089cb2",
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "KeyError",
+     "evalue": "'topic'",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[0;31mKeyError\u001b[0m                                  Traceback (most recent call last)",
+      "Cell \u001b[0;32mIn[83], line 2\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[39m# %%\u001b[39;00m\n\u001b[0;32m----> 2\u001b[0m response \u001b[39m=\u001b[39m labeller\u001b[39m.\u001b[39;49mget_label(image, \u001b[39m\"\u001b[39;49m\u001b[39mPick up the flag\u001b[39;49m\u001b[39m\"\u001b[39;49m)\n\u001b[1;32m      3\u001b[0m \u001b[39mprint\u001b[39m(response)\n",
+      "File \u001b[1;32m/Users/sarathmenon/Documents/master_thesis/development/scripts/instruction_to_label.py:68\u001b[0m\n\u001b[1;32m     63\u001b[0m template_values \u001b[39m=\u001b[39m {\n\u001b[1;32m     64\u001b[0m \u001b[39m\"\u001b[39m\u001b[39maction\u001b[39m\u001b[39m\"\u001b[39m: action,\n\u001b[1;32m     65\u001b[0m }\n\u001b[1;32m     67\u001b[0m base64_image \u001b[39m=\u001b[39m \u001b[39mself\u001b[39m\u001b[39m.\u001b[39m_pil_to_base64(screenshot)\n\u001b[0;32m---> 68\u001b[0m prompts \u001b[39m=\u001b[39m \u001b[39mself\u001b[39;49m\u001b[39m.\u001b[39;49mload_prompts_(template_values)\n\u001b[1;32m     69\u001b[0m \u001b[39mprint\u001b[39m(prompts)\n",
+      "File \u001b[1;32m/Users/sarathmenon/Documents/master_thesis/development/scripts/instruction_to_label.py:21\u001b[0m\n\u001b[1;32m     19\u001b[0m prompts \u001b[39m=\u001b[39m StructuredPrompt\u001b[39m.\u001b[39mfrom_promptdown_file(\u001b[39mself\u001b[39m\u001b[39m.\u001b[39mPROMPT_PATH)\n\u001b[1;32m     20\u001b[0m \u001b[39mif\u001b[39;00m template_values:\n\u001b[0;32m---> 21\u001b[0m     prompts\u001b[39m.\u001b[39;49mapply_template_values(template_values)\n\u001b[1;32m     22\u001b[0m \u001b[39mreturn\u001b[39;00m prompts\n",
+      "File \u001b[0;32m~/Documents/master_thesis/.venv/lib/python3.12/site-packages/promptdown/promptdown.py:427\u001b[0m, in \u001b[0;36mStructuredPrompt.apply_template_values\u001b[0;34m(self, template_values)\u001b[0m\n\u001b[1;32m    425\u001b[0m \u001b[39mif\u001b[39;00m \u001b[39mself\u001b[39m\u001b[39m.\u001b[39mconversation \u001b[39mis\u001b[39;00m \u001b[39mnot\u001b[39;00m \u001b[39mNone\u001b[39;00m:\n\u001b[1;32m    426\u001b[0m     \u001b[39mfor\u001b[39;00m message \u001b[39min\u001b[39;00m \u001b[39mself\u001b[39m\u001b[39m.\u001b[39mconversation:\n\u001b[0;32m--> 427\u001b[0m         message\u001b[39m.\u001b[39mcontent \u001b[39m=\u001b[39m message\u001b[39m.\u001b[39;49mcontent\u001b[39m.\u001b[39;49mformat(\u001b[39m*\u001b[39;49m\u001b[39m*\u001b[39;49mtemplate_values)\n",
+      "\u001b[0;31mKeyError\u001b[0m: 'topic'"
+     ]
+    }
+   ],
+   "source": [
+    "response = labeller.get_label(image, \"Pick up the flag\")\n",
+    "print(response)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 84,
+   "id": "b417e95b-c586-49be-a608-8b17a5367e9a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from litellm import completion\n",
+    "import io\n",
+    "import base64\n",
+    "\n",
+    "class PromptRefiner:\n",
+    "    def __init__(self, model: str = \"gpt-4o\", prompt_path: str = \"./prompts/instruction_refinement.prompt.md\"):\n",
+    "        self.model = model\n",
+    "        self.PROMPT_PATH = prompt_path\n",
+    "        \n",
+    "        prompts = self.load_prompts_()\n",
+    "\n",
+    "        self.messages = [\n",
+    "            {\"role\": \"system\", \"content\": prompts.system_message},\n",
+    "        ]\n",
+    "        \n",
+    "\n",
+    "    def load_prompts_(self, template_values: dict = None):\n",
+    "        prompts = StructuredPrompt.from_promptdown_file(self.PROMPT_PATH)\n",
+    "        if template_values:\n",
+    "            prompts.apply_template_values(template_values)\n",
+    "        return prompts\n",
+    "\n",
+    "    # def _get_prompt(self, text_prompt: str):\n",
+    "    #     prompt = f\"\"\"\n",
+    "    #     Analyze the videogame screenshot. For the action \"{text_prompt}\":\n",
+    "    #     1. Identify the game object to selected to execute the action. \n",
+    "    #     2. Provide a brief 10-word reasoning.\n",
+    "        \n",
+    "    #     Return JSON: {{\n",
+    "    #         \"class_label\": \"object to click\",\n",
+    "    #         \"reasoning\": \"10-word explanation\"\n",
+    "    #     }}\n",
+    "    #     \"\"\"\n",
+    "    #     return prompt\n",
+    "    \n",
+    "\n",
+    "    # def _get_text_response(self, prompt: str):\n",
+    "    #     prompts = StructuredPrompt.from_promptdown_file(self.prompt)\n",
+    "    #     prompt = self._get_prompt(prompt)\n",
+    "    #     self.add_message(prompt)\n",
+    "    #     response = completion(model=self.model, messages=self.messages)\n",
+    "    #     return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _get_image_response(self, base64_image: str, text_prompt: str):\n",
+    "        msg = {\"role\": \"user\", \"content\": [\n",
+    "                {\"type\": \"text\", \"text\": text_prompt},\n",
+    "                {\"type\": \"image_url\", \"image_url\": {\n",
+    "                    \"url\": f\"data:image/png;base64,{base64_image}\"}\n",
+    "                }\n",
+    "            ]}\n",
+    "\n",
+    "        self.messages.append(msg)\n",
+    "        response = completion(model=self.model, messages=self.messages)\n",
+    "        return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _pil_to_base64(self, image):\n",
+    "        with io.BytesIO() as buffer:\n",
+    "            image.save(buffer, format=\"PNG\")\n",
+    "            return base64.b64encode(buffer.getvalue()).decode(\"utf-8\")\n",
+    "\n",
+    "    def get_label(self, screenshot: str, action: str):\n",
+    "        template_values = {\n",
+    "        \"action\": action,\n",
+    "        }\n",
+    "\n",
+    "        base64_image = self._pil_to_base64(screenshot)\n",
+    "        prompts = self.load_prompts_(template_values)\n",
+    "        print(prompts)\n",
+    "        # return self._get_image_response(base64_image, prompt)\n",
+    "\n",
+    "    def show_messages(self):\n",
+    "        for message in self.messages:\n",
+    "            print(message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 85,
+   "id": "7e002b52-ae4a-43ea-8f41-752e9a6ddb4c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from litellm import completion\n",
+    "import io\n",
+    "import base64\n",
+    "\n",
+    "class PromptRefiner:\n",
+    "    def __init__(self, model: str = \"gpt-4o\", prompt_path: str = \"./prompts/instruction_refinement.prompt.md\"):\n",
+    "        self.model = model\n",
+    "        self.PROMPT_PATH = prompt_path\n",
+    "        \n",
+    "        prompts = self.load_prompts_()\n",
+    "\n",
+    "        self.messages = [\n",
+    "            {\"role\": \"system\", \"content\": prompts.system_message},\n",
+    "        ]\n",
+    "        \n",
+    "\n",
+    "    def load_prompts_(self, template_values: dict = None):\n",
+    "        prompts = StructuredPrompt.from_promptdown_file(self.PROMPT_PATH)\n",
+    "        if template_values:\n",
+    "            prompts.apply_template_values(template_values)\n",
+    "        return prompts\n",
+    "\n",
+    "    # def _get_prompt(self, text_prompt: str):\n",
+    "    #     prompt = f\"\"\"\n",
+    "    #     Analyze the videogame screenshot. For the action \"{text_prompt}\":\n",
+    "    #     1. Identify the game object to selected to execute the action. \n",
+    "    #     2. Provide a brief 10-word reasoning.\n",
+    "        \n",
+    "    #     Return JSON: {{\n",
+    "    #         \"class_label\": \"object to click\",\n",
+    "    #         \"reasoning\": \"10-word explanation\"\n",
+    "    #     }}\n",
+    "    #     \"\"\"\n",
+    "    #     return prompt\n",
+    "    \n",
+    "\n",
+    "    # def _get_text_response(self, prompt: str):\n",
+    "    #     prompts = StructuredPrompt.from_promptdown_file(self.prompt)\n",
+    "    #     prompt = self._get_prompt(prompt)\n",
+    "    #     self.add_message(prompt)\n",
+    "    #     response = completion(model=self.model, messages=self.messages)\n",
+    "    #     return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _get_image_response(self, base64_image: str, text_prompt: str):\n",
+    "        msg = {\"role\": \"user\", \"content\": [\n",
+    "                {\"type\": \"text\", \"text\": text_prompt},\n",
+    "                {\"type\": \"image_url\", \"image_url\": {\n",
+    "                    \"url\": f\"data:image/png;base64,{base64_image}\"}\n",
+    "                }\n",
+    "            ]}\n",
+    "\n",
+    "        self.messages.append(msg)\n",
+    "        response = completion(model=self.model, messages=self.messages)\n",
+    "        return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _pil_to_base64(self, image):\n",
+    "        with io.BytesIO() as buffer:\n",
+    "            image.save(buffer, format=\"PNG\")\n",
+    "            return base64.b64encode(buffer.getvalue()).decode(\"utf-8\")\n",
+    "\n",
+    "    def get_label(self, screenshot: str, action: str):\n",
+    "        template_values = {\n",
+    "        \"action\": action,\n",
+    "        }\n",
+    "\n",
+    "        base64_image = self._pil_to_base64(screenshot)\n",
+    "        prompts = self.load_prompts_(template_values)\n",
+    "        print(prompts)\n",
+    "        # return self._get_image_response(base64_image, prompt)\n",
+    "\n",
+    "    def show_messages(self):\n",
+    "        for message in self.messages:\n",
+    "            print(message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 86,
+   "id": "bd1bed10-ba35-4435-bc0c-a04de719bef7",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from litellm import completion\n",
+    "import io\n",
+    "import base64\n",
+    "\n",
+    "class PromptRefiner:\n",
+    "    def __init__(self, model: str = \"gpt-4o\", prompt_path: str = \"./prompts/instruction_refinement.prompt.md\"):\n",
+    "        self.model = model\n",
+    "        self.PROMPT_PATH = prompt_path\n",
+    "        \n",
+    "        prompts = self.load_prompts_()\n",
+    "\n",
+    "        self.messages = [\n",
+    "            {\"role\": \"system\", \"content\": prompts.system_message},\n",
+    "        ]\n",
+    "        \n",
+    "\n",
+    "    def load_prompts_(self, template_values: dict = None):\n",
+    "        prompts = StructuredPrompt.from_promptdown_file(self.PROMPT_PATH)\n",
+    "        if template_values:\n",
+    "            prompts.apply_template_values(template_values)\n",
+    "        return prompts\n",
+    "\n",
+    "    # def _get_prompt(self, text_prompt: str):\n",
+    "    #     prompt = f\"\"\"\n",
+    "    #     Analyze the videogame screenshot. For the action \"{text_prompt}\":\n",
+    "    #     1. Identify the game object to selected to execute the action. \n",
+    "    #     2. Provide a brief 10-word reasoning.\n",
+    "        \n",
+    "    #     Return JSON: {{\n",
+    "    #         \"class_label\": \"object to click\",\n",
+    "    #         \"reasoning\": \"10-word explanation\"\n",
+    "    #     }}\n",
+    "    #     \"\"\"\n",
+    "    #     return prompt\n",
+    "    \n",
+    "\n",
+    "    # def _get_text_response(self, prompt: str):\n",
+    "    #     prompts = StructuredPrompt.from_promptdown_file(self.prompt)\n",
+    "    #     prompt = self._get_prompt(prompt)\n",
+    "    #     self.add_message(prompt)\n",
+    "    #     response = completion(model=self.model, messages=self.messages)\n",
+    "    #     return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _get_image_response(self, base64_image: str, text_prompt: str):\n",
+    "        msg = {\"role\": \"user\", \"content\": [\n",
+    "                {\"type\": \"text\", \"text\": text_prompt},\n",
+    "                {\"type\": \"image_url\", \"image_url\": {\n",
+    "                    \"url\": f\"data:image/png;base64,{base64_image}\"}\n",
+    "                }\n",
+    "            ]}\n",
+    "\n",
+    "        self.messages.append(msg)\n",
+    "        response = completion(model=self.model, messages=self.messages)\n",
+    "        return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _pil_to_base64(self, image):\n",
+    "        with io.BytesIO() as buffer:\n",
+    "            image.save(buffer, format=\"PNG\")\n",
+    "            return base64.b64encode(buffer.getvalue()).decode(\"utf-8\")\n",
+    "\n",
+    "    def get_label(self, screenshot: str, action: str):\n",
+    "        template_values = {\n",
+    "        \"action\": action,\n",
+    "        }\n",
+    "\n",
+    "        base64_image = self._pil_to_base64(screenshot)\n",
+    "        prompts = self.load_prompts_(template_values)\n",
+    "        print(prompts)\n",
+    "        # return self._get_image_response(base64_image, prompt)\n",
+    "\n",
+    "    def show_messages(self):\n",
+    "        for message in self.messages:\n",
+    "            print(message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 87,
+   "id": "5a06e75d-136b-4489-bf29-f08249baa319",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "labeller =  PromptRefiner()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 88,
+   "id": "ddb70348-ca63-4900-b3ab-e57398789339",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "StructuredPrompt(name='My Prompt', system_message='You are a helpful assistant and an expert videogame player.', conversation=None)\n",
+      "None\n"
+     ]
+    }
+   ],
+   "source": [
+    "response = labeller.get_label(image, \"Pick up the flag\")\n",
+    "print(response)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 89,
+   "id": "e2331707-f259-41f6-8673-f242b76c915c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from litellm import completion\n",
+    "import io\n",
+    "import base64\n",
+    "\n",
+    "class PromptRefiner:\n",
+    "    def __init__(self, model: str = \"gpt-4o\", prompt_path: str = \"./prompts/instruction_refinement.prompt.md\"):\n",
+    "        self.model = model\n",
+    "        self.PROMPT_PATH = prompt_path\n",
+    "        \n",
+    "        prompts = self.load_prompts_()\n",
+    "\n",
+    "        self.messages = [\n",
+    "            {\"role\": \"system\", \"content\": prompts.system_message},\n",
+    "        ]\n",
+    "        \n",
+    "\n",
+    "    def load_prompts_(self, template_values: dict = None):\n",
+    "        prompts = StructuredPrompt.from_promptdown_file(self.PROMPT_PATH)\n",
+    "        if template_values:\n",
+    "            prompts.apply_template_values(template_values)\n",
+    "        return prompts\n",
+    "\n",
+    "    # def _get_prompt(self, text_prompt: str):\n",
+    "    #     prompt = f\"\"\"\n",
+    "    #     Analyze the videogame screenshot. For the action \"{text_prompt}\":\n",
+    "    #     1. Identify the game object to selected to execute the action. \n",
+    "    #     2. Provide a brief 10-word reasoning.\n",
+    "        \n",
+    "    #     Return JSON: {{\n",
+    "    #         \"class_label\": \"object to click\",\n",
+    "    #         \"reasoning\": \"10-word explanation\"\n",
+    "    #     }}\n",
+    "    #     \"\"\"\n",
+    "    #     return prompt\n",
+    "    \n",
+    "\n",
+    "    # def _get_text_response(self, prompt: str):\n",
+    "    #     prompts = StructuredPrompt.from_promptdown_file(self.prompt)\n",
+    "    #     prompt = self._get_prompt(prompt)\n",
+    "    #     self.add_message(prompt)\n",
+    "    #     response = completion(model=self.model, messages=self.messages)\n",
+    "    #     return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _get_image_response(self, base64_image: str, text_prompt: str):\n",
+    "        msg = {\"role\": \"user\", \"content\": [\n",
+    "                {\"type\": \"text\", \"text\": text_prompt},\n",
+    "                {\"type\": \"image_url\", \"image_url\": {\n",
+    "                    \"url\": f\"data:image/png;base64,{base64_image}\"}\n",
+    "                }\n",
+    "            ]}\n",
+    "\n",
+    "        self.messages.append(msg)\n",
+    "        response = completion(model=self.model, messages=self.messages)\n",
+    "        return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _pil_to_base64(self, image):\n",
+    "        with io.BytesIO() as buffer:\n",
+    "            image.save(buffer, format=\"PNG\")\n",
+    "            return base64.b64encode(buffer.getvalue()).decode(\"utf-8\")\n",
+    "\n",
+    "    def get_label(self, screenshot: str, action: str):\n",
+    "        template_values = {\n",
+    "        \"action\": action,\n",
+    "        }\n",
+    "\n",
+    "        base64_image = self._pil_to_base64(screenshot)\n",
+    "        prompts = self.load_prompts_(template_values)\n",
+    "        print(prompts)\n",
+    "        # return self._get_image_response(base64_image, prompt)\n",
+    "\n",
+    "    def show_messages(self):\n",
+    "        for message in self.messages:\n",
+    "            print(message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 90,
+   "id": "1f416927-bec7-4bb2-b8a0-8caaa412a29c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "labeller =  PromptRefiner()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 91,
+   "id": "1fe33723-2530-4a86-9ef1-857e1652d6ae",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "StructuredPrompt(name='My Prompt', system_message='You are a helpful assistant and an expert videogame player.', conversation=None)\n",
+      "None\n"
+     ]
+    }
+   ],
+   "source": [
+    "response = labeller.get_label(image, \"Pick up the flag\")\n",
+    "print(response)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 92,
+   "id": "5c0b36b3-257f-45b7-a8ee-c7c4c423a062",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from litellm import completion\n",
+    "import io\n",
+    "import base64\n",
+    "\n",
+    "class PromptRefiner:\n",
+    "    def __init__(self, model: str = \"gpt-4o\", prompt_path: str = \"./prompts/instruction_refinement.prompt.md\"):\n",
+    "        self.model = model\n",
+    "        self.PROMPT_PATH = prompt_path\n",
+    "        \n",
+    "        prompts = self.load_prompts_()\n",
+    "\n",
+    "        self.messages = [\n",
+    "            {\"role\": \"system\", \"content\": prompts.system_message},\n",
+    "        ]\n",
+    "        \n",
+    "\n",
+    "    def load_prompts_(self, template_values: dict = None):\n",
+    "        prompts = StructuredPrompt.from_promptdown_file(self.PROMPT_PATH)\n",
+    "        if template_values:\n",
+    "            prompts.apply_template_values(template_values)\n",
+    "        return prompts\n",
+    "\n",
+    "    # def _get_prompt(self, text_prompt: str):\n",
+    "    #     prompt = f\"\"\"\n",
+    "    #     Analyze the videogame screenshot. For the action \"{text_prompt}\":\n",
+    "    #     1. Identify the game object to selected to execute the action. \n",
+    "    #     2. Provide a brief 10-word reasoning.\n",
+    "        \n",
+    "    #     Return JSON: {{\n",
+    "    #         \"class_label\": \"object to click\",\n",
+    "    #         \"reasoning\": \"10-word explanation\"\n",
+    "    #     }}\n",
+    "    #     \"\"\"\n",
+    "    #     return prompt\n",
+    "    \n",
+    "\n",
+    "    # def _get_text_response(self, prompt: str):\n",
+    "    #     prompts = StructuredPrompt.from_promptdown_file(self.prompt)\n",
+    "    #     prompt = self._get_prompt(prompt)\n",
+    "    #     self.add_message(prompt)\n",
+    "    #     response = completion(model=self.model, messages=self.messages)\n",
+    "    #     return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _get_image_response(self, base64_image: str, text_prompt: str):\n",
+    "        msg = {\"role\": \"user\", \"content\": [\n",
+    "                {\"type\": \"text\", \"text\": text_prompt},\n",
+    "                {\"type\": \"image_url\", \"image_url\": {\n",
+    "                    \"url\": f\"data:image/png;base64,{base64_image}\"}\n",
+    "                }\n",
+    "            ]}\n",
+    "\n",
+    "        self.messages.append(msg)\n",
+    "        response = completion(model=self.model, messages=self.messages)\n",
+    "        return response[\"choices\"][0][\"message\"][\"content\"]\n",
+    "    \n",
+    "    def _pil_to_base64(self, image):\n",
+    "        with io.BytesIO() as buffer:\n",
+    "            image.save(buffer, format=\"PNG\")\n",
+    "            return base64.b64encode(buffer.getvalue()).decode(\"utf-8\")\n",
+    "\n",
+    "    def get_label(self, screenshot: str, action: str):\n",
+    "        template_values = {\n",
+    "        \"action\": action,\n",
+    "        }\n",
+    "\n",
+    "        base64_image = self._pil_to_base64(screenshot)\n",
+    "        prompts = self.load_prompts_(template_values)\n",
+    "        print(prompts)\n",
+    "        # return self._get_image_response(base64_image, prompt)\n",
+    "\n",
+    "    def show_messages(self):\n",
+    "        for message in self.messages:\n",
+    "            print(message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 93,
+   "id": "27ae7fc2-be8f-4f7c-9cd5-12002793f08c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "labeller =  PromptRefiner()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 94,
+   "id": "9559c7ad-7573-49c2-a7d6-1a5e959a08c3",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "StructuredPrompt(name='My Prompt', system_message='You are a helpful assistant and an expert videogame player.', conversation=None)\n",
+      "None\n"
+     ]
+    }
+   ],
+   "source": [
+    "response = labeller.get_label(image, \"Pick up the flag\")\n",
+    "print(response)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 95,
+   "id": "7cf27c17-2c27-44c8-b5fd-67879f5f55f8",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "You are a helpful assistant and an expert videogame player.\n"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt.system_message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 96,
+   "id": "dde61601-6c10-4257-8a45-a0fbd96bd153",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "You are a helpful assistant and an expert videogame player.\n"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt.system_message)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 97,
+   "id": "d21b24dd-cba8-4a5d-88ed-cafd78eb3ee4",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "StructuredPrompt(name='My Prompt', system_message='You are a helpful assistant and an expert videogame player.', conversation=None)\n"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 98,
+   "id": "589f2080-42b1-45db-922b-67c02e5d9b50",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "StructuredPrompt(name='My Prompt', system_message='You are a helpful assistant and an expert videogame player.', conversation=[Message(role='User', content='Hello, how are you doing today? I need some help with a project.', name=None), Message(role='Assistant', content=\"I'm here to help. What's the issue you're encountering with your project?\", name=None), Message(role='User', content=\"I'm trying to integrate an API, but I keep running into errors.\", name=None)])\n"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 99,
+   "id": "e4b81c3f-9ae1-4fb0-9303-86ce1413d695",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "Unknown role 'User1' encountered in conversation.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "StructuredPrompt(name='My Prompt', system_message='You are a helpful assistant and an expert videogame player.', conversation=[Message(role='Assistant', content=\"Hello, how are you doing today? I need some help with a project.  I'm here to help. What's the issue you're encountering with your project?\", name=None), Message(role='User', content=\"I'm trying to integrate an API, but I keep running into errors.\", name=None)])\n"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 100,
+   "id": "cdf65d2c-aef1-465c-9edc-0d099bb642dd",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "StructuredPrompt(name='My Prompt', system_message='You are a helpful assistant and an expert videogame player.', conversation=None)\n"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 101,
+   "id": "80c05558-1604-4cd2-bb28-c0a4daaff246",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "StructuredPrompt(name='My Prompt', system_message='You are a helpful assistant and an expert videogame player.', conversation=[Message(role='User', content='Hello, how are you doing today? I need some help with a project.', name=None), Message(role='Assistant', content=\"I'm here to help. What's the issue you're encountering with your project?\", name=None), Message(role='User', content=\"I'm trying to integrate an API, but I keep running into errors.\", name=None)])\n"
+     ]
+    }
+   ],
+   "source": [
+    "PROMPT_PATH = './prompts/instruction_refinement.prompt.md'\n",
+    "structured_prompt = StructuredPrompt.from_promptdown_file(PROMPT_PATH)\n",
+    "\n",
+    "# Define the template values to apply\n",
+    "template_values = {\n",
+    "    \"topic\": \"Python programming\",\n",
+    "    \"concept\": \"decorators\"\n",
+    "}\n",
+    "\n",
+    "# Apply the template values\n",
+    "structured_prompt.apply_template_values(template_values)\n",
+    "\n",
+    "# Output the updated prompt\n",
+    "print(structured_prompt)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Restarted .venv (Python 3.12.4)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": ".venv",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.12.4"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
