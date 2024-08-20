@@ -34,6 +34,7 @@ openapi-python-client = "^0.21.2"
 opencv-python = "^4.10.0.84"
 gradio-log = "^0.0.4"
 python-dotenv = "^1.0.1"
+litellm = "^1.43.18"
 
 
 [tool.poetry.group.dev.dependencies]
