@@ -80,7 +80,7 @@ request = PredictionReq(image=image_to_base64(image), text_input=text_input, tas
 localization_response = get_localization_prediction.sync(client=client, body=request)
 
 print(f"inference time: {localization_response.inference_time}")
-show_localization_prediction(image, localization_response.bboxes, localization_response.labels)
+show_localization_prediction(image.copy(), localization_response.bboxes, localization_response.labels)
 
 #%% verify bounding boxes
 # convert bboxes to BoundingBox type
@@ -92,14 +92,14 @@ from clicking.output_corrector.core import OutputCorrector
 
 bboxes = [BoundingBox((bbox[0], bbox[1], bbox[2], bbox[3]), BBoxMode.XYXY) for bbox in localization_response.bboxes]
 
-overlayed_image = overlay_bounding_box(image, bboxes[0], thickness=10, padding=20)
+overlayed_image = overlay_bounding_box(image.copy(), bboxes[0], thickness=10, padding=20)
 
 plt.grid(False)
 plt.axis('off')
 plt.imshow(overlayed_image)
 
 output_corrector = OutputCorrector()
-response = output_corrector.get_feedback(image, text_input)
+response = output_corrector.verify_bbox(overlayed_image, text_input)
 print(response)
 
 #%% set segmentation model
@@ -115,6 +115,7 @@ from clicking_client.models import BodyGetSegmentationPrediction
 from clicking_client.types import File
 import io
 import json
+from clicking.visualization.mask import SegmentationMask, SegmentationMode
 
 # Convert PIL Image to bytes and create a File object
 image_byte_arr = io.BytesIO()
@@ -132,6 +133,8 @@ segmentation_response = get_segmentation_prediction.sync(client=client, body=req
 print(f"inference time: {segmentation_response.inference_time}")
 
 print(segmentation_response)
+masks = [SegmentationMask(mask, mode=SegmentationMode.COCO_RLE) for mask in segmentation_response.masks]
+
 
 # %%
 import numpy as np
@@ -152,8 +155,8 @@ ax.imshow(image)
 borders = False
 mask_alpha = 0.7
 
-for mask in segmentation_response.masks:
-    m = mask_utils.decode(mask)
+for mask in masks:
+    m = mask_utils.decode(mask.get(SegmentationMode.COCO_RLE))
     color_mask = np.random.random(3)
 
     # Create color overlay with correct shape and alpha channel
@@ -170,3 +173,10 @@ for mask in segmentation_response.masks:
 ax.axis('off')
 plt.tight_layout()
 plt.show()
+
+# %% verify masks
+
+response = output_corrector.verify_mask(image, masks[0], text_input)
+print(response)
+
+# %%
