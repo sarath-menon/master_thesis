@@ -3,6 +3,25 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from PIL import Image, ImageDraw
 import numpy as np
+from clicking.visualization.bbox import BoundingBox, BBoxMode
+
+from dataclasses import dataclass
+
+@dataclass
+class BoundingBox:
+    def __init__(self, x, y, w=None, h=None, x2=None, y2=None):
+        if w is not None and h is not None:
+            self.x1 = x
+            self.y1 = y
+            self.x2 = x + w
+            self.y2 = y + h
+        elif x2 is not None and y2 is not None:
+            self.x1 = x
+            self.y1 = y
+            self.x2 = x2
+            self.y2 = y2
+        else:
+            raise ValueError("Invalid parameters for bounding box.")
 
 
 def show_localization_prediction(image, bboxes, labels):
@@ -89,14 +108,9 @@ def show_segmentation_prediction(image, masks, input_boxes, centroids):
     plt.show
 
 # overlay bounding box in format (x, y, w, h) on a PIL image
-def overlay_bounding_box(image, bbox, color='red', thickness=10):
+def overlay_bounding_box(image, bbox: BoundingBox, color='red', thickness=10):
 
-    # convert bbox to (x1, y1, x2, y2)
-    x1 = bbox[0]
-    y1 = bbox[1]
-    x2 = x1 + bbox[2]
-    y2 = y1 + bbox[3]
-
+    bbox = bbox.get(BBoxMode.XYXY)
     draw = ImageDraw.Draw(image)
-    draw.rectangle((x1, y1, x2, y2), outline=color, width=thickness)
+    draw.rectangle((bbox[0], bbox[1], bbox[2], bbox[3]), outline=color, width=thickness)
     return image
