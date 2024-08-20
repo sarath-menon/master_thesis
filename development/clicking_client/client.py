@@ -142,4 +142,10 @@ show_segmentation_prediction(image, masks)
 response = output_corrector.verify_mask(image, masks[0], text_input)
 print(response)
 
-# %%
+# %% get click point
+
+from clicking.visualization.core import show_clickpoint
+from clicking.segmentation.utils import get_mask_centroid
+
+centroid = get_mask_centroid(masks[0].get(mode=SegmentationMode.BINARY_MASK))
+show_clickpoint(image, centroid, text_input)
