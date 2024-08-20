@@ -4,6 +4,7 @@ import dotenv
 import base64
 import io
 from PIL import Image
+from clicking.visualization.mask import SegmentationMask, SegmentationMode
 
 # set API keys
 dotenv.load_dotenv()
@@ -55,8 +56,14 @@ class OutputCorrector:
             image.save(buffer, format="PNG")
             return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-    def get_feedback(self, screenshot: Image.Image, class_label: str):
+    def verify_bbox(self, screenshot: Image.Image, class_label: str):
         base64_image = self._pil_to_base64(screenshot)
+        text_prompt = self._get_prompt(class_label)
+        return self._get_image_response(base64_image, text_prompt)
+
+    def verify_mask(self, screenshot: Image.Image, mask: SegmentationMask, class_label: str):
+        extracted_area = mask.extract_area(screenshot, padding=10)
+        base64_image = self._pil_to_base64(extracted_area)
         text_prompt = self._get_prompt(class_label)
         return self._get_image_response(base64_image, text_prompt)
 
