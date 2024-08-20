@@ -9,8 +9,9 @@ from torchvision import transforms, datasets
 from matplotlib.path import Path
 import matplotlib.patches as patches
 import torch
-# from shapely.geometry import Point, Polygon
+from dotenv import load_dotenv
 
+load_dotenv()
 # run this code only in notebook mode
 if 'get_ipython' in globals():
     get_ipython().run_line_magic('matplotlib', 'inline')
@@ -72,7 +73,6 @@ request = SetModelRequest(name="florence2", variant="florence-2-base")
 set_localization_model.sync(client=client, body=request)
 
 #%% get localization prediction
-
 from clicking_client.api.default import get_localization_prediction
 from clicking_client.models import PredictionReq
 
@@ -81,21 +81,35 @@ localization_response = get_localization_prediction.sync(client=client, body=req
 
 print(f"inference time: {localization_response.inference_time}")
 show_localization_prediction(image, localization_response.bboxes, localization_response.labels)
-#%% set segmwntation model
+
+#%% verify bounding boxes
+# convert bboxes to BoundingBox type
+from clicking.visualization.bbox import BoundingBox, BBoxMode
+import matplotlib.pyplot as plt
+from clicking.visualization.core import overlay_bounding_box
+from clicking.visualization.bbox import BoundingBox, BBoxMode
+from clicking.output_corrector.core import OutputCorrector
+
+bboxes = [BoundingBox((bbox[0], bbox[1], bbox[2], bbox[3]), BBoxMode.XYXY) for bbox in localization_response.bboxes]
+
+overlayed_image = overlay_bounding_box(image, bboxes[0], thickness=10, padding=20)
+
+plt.grid(False)
+plt.axis('off')
+plt.imshow(overlayed_image)
+
+output_corrector = OutputCorrector()
+response = output_corrector.get_feedback(image, text_input)
+print(response)
+
+#%% set segmentation model
 from clicking_client.models  import SetModelRequest
 from clicking_client.api.default import set_segmentation_model
 
-request = SetModelRequest(name="sam2", variant="sam2_hiera_large")
+request = SetModelRequest(name="sam2", variant="sam2_hiera_tiny")
 
 set_segmentation_model.sync(client=client, body=request)
 #%% Segmentation
-
-# input_boxes = response['bboxes']
-# results = api.get_segmentation_prediction(image, input_boxes)
-# masks = np.array(results['masks'])
-# centroids = api.get_mask_centroid(masks)
-# show_segmentation_prediction(image, masks, input_boxes, centroids)
-
 from clicking_client.api.default import get_segmentation_prediction
 from clicking_client.models import BodyGetSegmentationPrediction
 from clicking_client.types import File
@@ -116,6 +130,8 @@ request = BodyGetSegmentationPrediction(
 
 segmentation_response = get_segmentation_prediction.sync(client=client, body=request)
 print(f"inference time: {segmentation_response.inference_time}")
+
+print(segmentation_response)
 
 # %%
 import numpy as np
@@ -154,18 +170,3 @@ for mask in segmentation_response.masks:
 ax.axis('off')
 plt.tight_layout()
 plt.show()
-
-#%%
-
-# Convert PIL Image to bytes
-import time
-start_time = time.time()
-
-# Convert PIL Image to bytes and create a File object
-image_byte_arr = io.BytesIO()
-image.save(image_byte_arr, format='JPEG')
-image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
-
-
-end_time = time.time()
-print("Time taken to create File object: ", (end_time - start_time) * 1000, "ms")
