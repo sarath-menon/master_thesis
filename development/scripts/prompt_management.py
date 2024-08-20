@@ -18,39 +18,41 @@ class PromptManager:
         user_prompts = {}
 
         for level, heading, text in matches:
-            if level != '#':  # Level 1 heading
+            heading = heading.strip()
+            text = text.strip()
+            if level != '#':
                 break
-        
-            print(heading)
-            if heading.strip() == 'System prompt':
-                system_prompt = text.strip()
-            elif heading.strip() == 'User prompt':
-                content = text.strip()
-                # user_prompts[heading.strip()] = content
-                level_2_prompts = []
 
-                # Pattern to match headings of all levels and their content
-                pattern = r'^(##)\s*(.*?)\s*\n(.*?)(?=\n##\s|\Z)'
-                matches = re.findall(pattern, content, re.S | re.M)
-
-                for level, heading, content in matches:
-                    user_prompts[heading.strip()] = content.strip()
+            if heading == 'System prompt':
+                system_prompt = text
+            elif heading == 'User prompt':
+                user_prompts.update(self.parse_user_prompts(text))
             else:
                 raise ValueError(f"Heading '{heading}' not found in prompt dictionary.")
 
-        result = {
+        
+
+        return {
             "system_prompt": system_prompt,
             "user_prompts": user_prompts
         }
 
-        return result
+    def parse_user_prompts(self, content):
+        pattern = r'^(##)\s*(.*?)\s*\n(.*?)(?=\n##\s|\Z)'
+        matches = re.findall(pattern, content, re.S | re.M)
+        prompts = {}
+        for _, heading, text in matches:
+            heading = heading.strip()
+            if heading in prompts:
+                raise ValueError(f"Duplicate subheading '{heading}' found.")
+            prompts[heading] = text.strip()
+        return prompts
 
     def load_prompts(self, template_values=None):
         with open(self.file_path, 'r') as file:
             content = file.read()
             prompts = self.get_content_by_heading(content)
 
-        # Apply template values if provided
         # Apply template values if provided
         if template_values:      
             for prompt_key, prompt_content in prompts['user_prompts'].items():
