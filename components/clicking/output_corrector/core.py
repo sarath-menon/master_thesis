@@ -3,6 +3,7 @@ import os
 import dotenv
 import base64
 import io
+from PIL import Image
 
 # set API keys
 dotenv.load_dotenv()
