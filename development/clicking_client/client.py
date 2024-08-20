@@ -135,44 +135,7 @@ print(f"inference time: {segmentation_response.inference_time}")
 print(segmentation_response)
 masks = [SegmentationMask(mask, mode=SegmentationMode.COCO_RLE) for mask in segmentation_response.masks]
 
-
-# %%
-import numpy as np
-from PIL import Image
-from pycocotools import mask as mask_utils
-import cv2
-import matplotlib.pyplot as plt
-
-# Assuming 'image' is your original PIL Image
-image_array = np.array(image)
-
-# Create a new figure and axis
-fig, ax = plt.subplots(figsize=(10, 10))
-
-# Display the original image
-ax.imshow(image)
-
-borders = False
-mask_alpha = 0.7
-
-for mask in masks:
-    m = mask_utils.decode(mask.get(SegmentationMode.COCO_RLE))
-    color_mask = np.random.random(3)
-
-    # Create color overlay with correct shape and alpha channel
-    color_overlay = np.zeros((*image_array.shape[:2], 4))
-    color_overlay[m == 1] = [*color_mask, mask_alpha] 
-    color_overlay[m == 0] = [0, 0, 0, 0]  
-    ax.imshow(color_overlay)
-
-    if borders:
-        contours, _ = cv2.findContours(m.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        for contour in contours:
-            ax.plot(contour[:, 0, 0], contour[:, 0, 1], color='white', linewidth=2)
-
-ax.axis('off')
-plt.tight_layout()
-plt.show()
+show_segmentation_prediction(image, masks)
 
 # %% verify masks
 
