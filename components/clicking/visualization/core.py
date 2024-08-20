@@ -1,8 +1,9 @@
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from PIL import Image
+from PIL import Image, ImageDraw
 import numpy as np
+
 
 def show_localization_prediction(image, bboxes, labels):
     fig, ax = plt.subplots()
@@ -86,3 +87,16 @@ def show_segmentation_prediction(image, masks, input_boxes, centroids):
         show_box(box, plt.gca())
     plt.axis('off')
     plt.show
+
+# overlay bounding box in format (x, y, w, h) on a PIL image
+def overlay_bounding_box(image, bbox, color='red', thickness=10):
+
+    # convert bbox to (x1, y1, x2, y2)
+    x1 = bbox[0]
+    y1 = bbox[1]
+    x2 = x1 + bbox[2]
+    y2 = y1 + bbox[3]
+
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((x1, y1, x2, y2), outline=color, width=thickness)
+    return image
