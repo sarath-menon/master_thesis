@@ -146,7 +146,7 @@ def show_segmentation_prediction(image, masks):
     plt.tight_layout()
     plt.show()
 
-def show_clickpoint(image, click_point, class_label):
+def show_clickpoint(image, click_point, class_label, size=100, color='yellow'):
     # Convert PIL Image to numpy array
     image_array = np.array(image)
     fig, ax = plt.subplots()
@@ -154,11 +154,9 @@ def show_clickpoint(image, click_point, class_label):
     ax.imshow(image_array)
     
     # Plot the click point
-    ax.scatter(*click_point, marker='*', color='yellow', s=200, label=class_label)    
+    ax.scatter(*click_point, marker='*', color=color, s=size, label=class_label)    
     ax.axis('off')
     plt.show()
-    
-
 
 # overlay bounding box in format (x, y, w, h) on a PIL image
 def overlay_bounding_box(image, bbox: BoundingBox, color='red', thickness=10, padding=0):
