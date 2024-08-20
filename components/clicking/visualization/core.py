@@ -108,9 +108,9 @@ def show_segmentation_prediction(image, masks, input_boxes, centroids):
     plt.show
 
 # overlay bounding box in format (x, y, w, h) on a PIL image
-def overlay_bounding_box(image, bbox: BoundingBox, color='red', thickness=10):
-
+def overlay_bounding_box(image, bbox: BoundingBox, color='red', thickness=10, padding=0):
     bbox = bbox.get(BBoxMode.XYXY)
     draw = ImageDraw.Draw(image)
-    draw.rectangle((bbox[0], bbox[1], bbox[2], bbox[3]), outline=color, width=thickness)
+
+    draw.rectangle((bbox[0] - padding, bbox[1] - padding, bbox[2] + padding, bbox[3] + padding), outline=color, width=thickness)
     return image
