@@ -1,10 +1,8 @@
-from litellm import acompletion, completion
-import asyncio
+from litellm import completion
 import os
 import dotenv
 import base64
 import io
-import json
 
 # set API keys
 dotenv.load_dotenv()
