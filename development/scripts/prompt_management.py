@@ -10,35 +10,67 @@ class PromptManager:
     def __init__(self, file_path):
         self.file_path = file_path
 
-    def load_prompts(self, template_values=None):
-        with open(self.file_path, 'r') as file:
-            content = file.read()
+    def get_content_by_heading(self, content):
+        pattern = r'^(#)\s*(.*?)\s*\n(.*?)(?=\n#\s|\Z)'
+        matches = re.findall(pattern, content, re.S | re.M)
+        
+        system_prompt = None
+        user_prompts = {}
 
-        # to match markdown headings and their corresponding text
-        pattern = r'^(#{1,6})\s*(.*?)\s*\n(.*?)(?=\n#{1,6}\s|\Z)'
-        matches = re.findall(pattern, content, re.S | re.M)  
+        for level, heading, text in matches:
+            if level != '#':  # Level 1 heading
+                break
+        
+            print(heading)
+            if heading.strip() == 'System prompt':
+                system_prompt = text.strip()
+            elif heading.strip() == 'User prompt':
+                content = text.strip()
+                # user_prompts[heading.strip()] = content
+                level_2_prompts = []
 
-        result = {}
-        for match in matches:
-            level, heading, text = match
+                # Pattern to match headings of all levels and their content
+                pattern = r'^(##)\s*(.*?)\s*\n(.*?)(?=\n##\s|\Z)'
+                matches = re.findall(pattern, content, re.S | re.M)
 
-            # check and fill in template values
-            if template_values:
-                text = text.format(**template_values)
+                for level, heading, content in matches:
+                    user_prompts[heading.strip()] = content.strip()
+            else:
+                raise ValueError(f"Heading '{heading}' not found in prompt dictionary.")
 
-            result[heading.strip()] = text.strip()
+        result = {
+            "system_prompt": system_prompt,
+            "user_prompts": user_prompts
+        }
 
         return result
 
+    def load_prompts(self, template_values=None):
+        with open(self.file_path, 'r') as file:
+            content = file.read()
+            prompts = self.get_content_by_heading(content)
+
+        # Apply template values if provided
+        # Apply template values if provided
+        if template_values:      
+            for prompt_key, prompt_content in prompts['user_prompts'].items():
+                prompts['user_prompts'][prompt_key] = prompt_content.format(**template_values)
+
+        return prompts
+
+    
+
     def get_prompt(self, heading=None, template_values=None):
         prompt_dict = self.load_prompts(template_values=template_values)
+        print(prompt_dict)
 
-        if heading is None:
-            return prompt_dict
-        elif heading in prompt_dict:
-            return prompt_dict[heading]
-        else:
-            raise ValueError(f"Heading '{heading}' not found in prompt dictionary.")
+        # if heading is None:
+        #     return prompt_dict
+        # elif heading in prompt_dict:
+        #     return prompt_dict[heading]
+        # else:
+        #     raise ValueError(f"Heading '{heading}' not found in prompt dictionary.")
+        return prompt_dict
         
 #%%
 template_values = {
@@ -47,8 +79,7 @@ template_values = {
 
 prompt_manager = PromptManager(PROMPT_PATH)
 prompts =  prompt_manager.get_prompt(heading='User prompt', template_values=template_values)
-
-print(prompts)
+print(prompts['user_prompts']['default'])
 
 
 #%%
