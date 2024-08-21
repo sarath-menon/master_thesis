@@ -29,47 +29,13 @@ async def set_model(req: SetModelReq = None):
     print(req)
     return {"message": "Model set successfully", "status_code": 200}
 
-# @vision_model_router.get("/prediction/localization", response_model=LocalizationResp, operation_id="get_localization_prediction")
-# async def get_prediction(
-#     image: str,
-#     text_input: str,
-#     task_prompt: str,
-#     task_type: TaskType = Query(..., description="Type of task to perform")
-# ):
-#     req = LocalizationReq(image=image, text_input=text_input, task_prompt=task_prompt)
-#     result, inference_time = await vision_model.get_localization(req.image, req.text_input, req.task_prompt, task_type)
-
-#     response = LocalizationResp(
-#         bboxes=result['bboxes'],
-#         labels=result['labels'],
-#         inference_time=inference_time
-#     )
-
-#     return response
-
-# @vision_model_router.post("/prediction/segmentation",operation_id="get_segmentation_prediction", response_model=SegmentationResp)
-# async def semantic_segmentation(image: UploadFile = File(...),
-#     task_prompt: str = Form(None),
-#     input_boxes: str = Form(None)):
-
-#     #Convert to a PIL image
-#     image_data = await image.read()
-#     image = Image.open(io.BytesIO(image_data))
-
-#     print("task_prompt", task_prompt)
-
-#     input_boxes = json.loads(input_boxes) if input_boxes else []
-#     response = await vision_model.get_segmentation_prediction(image, input_boxes)
-
-#     return response
-
 @vision_model_router.post("/prediction",operation_id="get_prediction", response_model=PredictionResp)
 async def prediction(image: UploadFile = File(...),
-    task: TaskType = Form(default=None),
-    input_boxes: str = Form(default=None),
-    input_point: str = Form(default=None),
-    input_label: str = Form(default=None),
-    input_text: str = Form(default=None)
+    task: TaskType = Form(None),
+    input_boxes: str = Form(None),
+    input_point: str = Form(None),
+    input_label: str = Form(None),
+    input_text: str = Form(None)
     ):
 
     if task is None:
@@ -87,5 +53,4 @@ async def prediction(image: UploadFile = File(...),
 
     
     response = await vision_model.get_prediction(req)
-
     return response
