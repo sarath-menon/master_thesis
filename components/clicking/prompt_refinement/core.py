@@ -3,37 +3,28 @@ import os
 import dotenv
 import base64
 import io
+from enum import Enum, auto
+from components.clicking.prompt_manager.core import PromptManager
 
 # set API keys
 dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
-class PromptRefiner:
-    def __init__(self, model: str = "gpt-4o"):
+class PromptMode(Enum):
+    LABEL = auto()
+    EXPANDED_DESCRIPTION = auto()
+
+class PromptRefiner:    
+    def __init__(self, prompt_path: str, model: str = "gpt-4o" ):
         self.model = model
-        self.messages = [
-            {"role": "system", "content": "You are a helpful assistant and an expert videogame player."},
-        ]
-
-    def _get_prompt(self, text_prompt: str):
-        prompt = f"""
-        Analyze the videogame screenshot. For the action "{text_prompt}":
-        1. Identify the game object to selected to execute the action. 
-        2. Provide a brief 10-word reasoning.
+        self.PROMPT_PATH = prompt_path
         
-        Return JSON: {{
-            "class_label": "object to click",
-            "reasoning": "10-word explanation"
-        }}
-        """
-        return prompt
-    
+        self.prompt_manager = PromptManager(self.PROMPT_PATH)
 
-    def _get_text_response(self, prompt: str):
-        prompt = self._get_prompt(prompt)
-        self.add_message(prompt)
-        response = completion(model=self.model, messages=self.messages)
-        return response["choices"][0]["message"]["content"]
+        self.messages = [
+            {"role": "system", "content": self.prompt_manager.get_prompt(type='system')},
+        ]
+        
     
     def _get_image_response(self, base64_image: str, text_prompt: str):
         msg = {"role": "user", "content": [
@@ -44,7 +35,7 @@ class PromptRefiner:
             ]}
 
         self.messages.append(msg)
-        response = completion(model=self.model, messages=self.messages)
+        response = completion(model=self.model, messages=self.messages, response_format={ "type": "json_object" })
         return response["choices"][0]["message"]["content"]
     
     def _pil_to_base64(self, image):
@@ -52,10 +43,28 @@ class PromptRefiner:
             image.save(buffer, format="PNG")
             return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
+    def process_prompt(self, screenshot: str, input_text: str, mode: PromptMode, word_limit: int = 10):
+        if mode == PromptMode.LABEL:
+            return self.get_label(screenshot, input_text)
+        elif mode == PromptMode.EXPANDED_DESCRIPTION:
+            return self.get_expanded_description(screenshot, input_text, word_limit)
+        else:
+            raise ValueError(f"Invalid mode: {mode}")
+
     def get_label(self, screenshot: str, action: str):
+        template_values = {"action": action}
         base64_image = self._pil_to_base64(screenshot)
-        full_prompt = self._get_prompt(action)
-        return self._get_image_response(base64_image, full_prompt)
+        prompt = self.prompt_manager.get_prompt(type='user', prompt_key='prompt_to_class_label', template_values=template_values)
+        return self._get_image_response(base64_image, prompt)
+
+    def get_expanded_description(self, screenshot: str, input_description: str, word_limit: int = 10):
+        template_values = {
+            "input_description": input_description,
+            "word_limit": str(word_limit)
+        }
+        base64_image = self._pil_to_base64(screenshot)
+        prompt = self.prompt_manager.get_prompt(type='user', prompt_key='prompt_expansion', template_values=template_values)
+        return self._get_image_response(base64_image, prompt)
 
     def show_messages(self):
         for message in self.messages:
