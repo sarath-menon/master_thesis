@@ -63,12 +63,14 @@ async def set_model(req: SetModelReq = None):
 
 #     return response
 
-@vision_model_router.post("/prediction",operation_id="get_prediction", response_model=PredictionResp | dict)
-async def semantic_segmentation(image: UploadFile = File(...),
+@vision_model_router.post("/prediction",operation_id="get_prediction", response_model=PredictionResp)
+async def prediction(image: UploadFile = File(...),
     task: TaskType = Form(default=None),
     input_boxes: str = Form(default=None),
     input_point: str = Form(default=None),
-    input_label: str = Form(default=None)):
+    input_label: str = Form(default=None),
+    input_text: str = Form(default=None)
+    ):
 
     if task is None:
         raise HTTPException(status_code=400, detail="Task is required")
@@ -80,7 +82,7 @@ async def semantic_segmentation(image: UploadFile = File(...),
     # convert input_boxes to a list of lists
     input_boxes = json.loads(input_boxes) if input_boxes else []
 
-    req = PredictionReq(image=image, task=task, input_point=input_point, input_label=input_label, input_box=input_boxes)
+    req = PredictionReq(image=image, task=task, input_point=input_point, input_label=input_label, input_box=input_boxes, input_text=input_text)
     print(req)
 
     

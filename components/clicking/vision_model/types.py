@@ -56,9 +56,10 @@ class PredictionReq(BaseModel):
     input_point: Optional[list] = None
     input_label: Optional[list] = None
     input_box: Optional[list] = None
+    input_text: Optional[str] = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 class PredictionResp(BaseModel):
-    inference_time: float
+    inference_time: Optional[float] = 0.0
     prediction: Union[LocalizationResp, SegmentationResp]

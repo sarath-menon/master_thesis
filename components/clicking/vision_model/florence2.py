@@ -6,6 +6,7 @@ from transformers.dynamic_module_utils import get_imports
 import torch
 from dataclasses import dataclass
 from clicking.vision_model.types import TaskType
+from clicking.vision_model.types import TaskType, PredictionReq, SegmentationResp, PredictionResp, LocalizationResp
 
 class Florence2():
     variant_to_id = {
@@ -31,6 +32,7 @@ class Florence2():
         print(f"Using {self.device} for {self.name}")
 
         self.model, self.processor = self.load_model_gpu(self.variant_to_id[self.variant])
+
 
     @staticmethod
     def variants():
@@ -62,7 +64,19 @@ class Florence2():
                 processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
             return model, processor
 
-    def run_inference(self, image, task_prompt, text_input=None):
+    def predict(self, req: PredictionReq) -> PredictionResp:
+        if req.task not in self.task_prompts:
+            raise ValueError(f"Invalid task type: {req.task}")
+        elif req.image is None:
+            raise ValueError("Image is required for any vision task")
+        elif req.input_text is None:
+            raise ValueError("Text input is required for florence2 vision tasks")
+
+        task_prompt = self.task_prompts[req.task]
+        response = self.run_inference(req.image, task_prompt, req.input_text)
+        return PredictionResp(prediction=response)
+
+    def run_inference(self, image, task_prompt, text_input=None) -> LocalizationResp:
 
         if text_input is None:
             prompt = task_prompt
@@ -89,7 +103,6 @@ class Florence2():
         bboxes = []
         labels = []
 
-
         if task_prompt == '<OPEN_VOCABULARY_DETECTION>':
             print(result[task_prompt], flush=True)
             bboxes = result[task_prompt]["bboxes"]
@@ -98,11 +111,7 @@ class Florence2():
             bboxes = result[task_prompt]["bboxes"]
             labels = result[task_prompt]["labels"]
 
-        response = {
-            "bboxes": bboxes,
-            "labels": labels
-        }
-        return response
+        return LocalizationResp(bboxes=bboxes, labels=labels)
 
 ## For profiling
 

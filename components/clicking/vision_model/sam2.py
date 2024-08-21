@@ -82,7 +82,7 @@ class SAM2:
         
         predict_method = self.task_to_method[req.task]
         response = predict_method(req)
-        return PredictionResp(prediction=response, inference_time=0.0)
+        return PredictionResp(prediction=response)
 
     # Modify existing methods to return results instead of showing them
     def predict_with_clickpoint(self, req: PredictionReq):
