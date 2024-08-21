@@ -5,7 +5,7 @@ class PromptManager:
     def __init__(self, file_path):
         self.file_path = file_path
     
-    def load_prompts(self, template_values=None):
+    def load_prompts(self):
         with open(self.file_path, 'r') as file:
             content = file.read()
 
@@ -28,11 +28,6 @@ class PromptManager:
             else:
                 raise ValueError(f"Heading '{heading}' not found in prompt dictionary.")
 
-        # Apply template values if provided
-        if template_values:      
-            for prompt_key, prompt_content in user_prompts.items():
-                user_prompts[prompt_key] = prompt_content.format(**template_values)
-
         prompts = {
             "system_prompt": system_prompt,
             "user_prompts": user_prompts
@@ -53,17 +48,26 @@ class PromptManager:
     
 
     def get_prompt(self, type=None, prompt_key=None, template_values=None):
-        prompt_dict = self.load_prompts(template_values=template_values)
+        prompt_dict = self.load_prompts()
+
+        prompt = ""
 
         if type == 'system':
-            return prompt_dict['system_prompt']
+            prompt = prompt_dict['system_prompt']
         elif type == 'user':
             if prompt_key is None:
                 raise ValueError("Prompt key is required for user prompts.")
             elif prompt_key in prompt_dict['user_prompts']:
-                return prompt_dict['user_prompts'][prompt_key]
+                prompt = prompt_dict['user_prompts'][prompt_key]
             else:
                 raise ValueError(f"User prompt '{prompt_key}' not found in prompt dictionary.")
 
         else:
             raise ValueError(f"Prompt type '{type}' not found in prompt dictionary.")
+
+        
+        # Apply template values if provided
+        if template_values:      
+            prompt = prompt.format(**template_values)
+
+        return prompt
