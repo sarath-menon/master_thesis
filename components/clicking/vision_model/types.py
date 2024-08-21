@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import Any
+from pydantic import BaseModel, ConfigDict
+from typing import Any, Union, Optional
 from enum import Enum, auto
+from PIL import Image
 
 class TaskType(str, Enum):
     LOCALIZATION_WITH_TEXT = "LOCALIZATION_WITH_TEXT"
@@ -9,16 +10,12 @@ class TaskType(str, Enum):
     SEGMENTATION_WITH_TEXT = "SEGMENTATION_WITH_TEXT"
     SEGMENTATION_WITH_CLICKPOINT = "SEGMENTATION_WITH_CLICKPOINT"
     SEGMENTATION_WITH_BBOX = "SEGMENTATION_WITH_BBOX"
+    SEGMENTATION_WITH_CLICKPOINT_AND_BBOX = "SEGMENTATION_WITH_CLICKPOINT_AND_BBOX"
     CAPTIONING = "CAPTIONING"
 
 class SegmentationReq(BaseModel):  
     image: Any
     input_boxes: list
-
-class SegmentationResp(BaseModel):
-    masks: list
-    scores: list
-    inference_time: float
 
 class ModelInfo(BaseModel):
     name: str
@@ -48,4 +45,20 @@ class LocalizationReq(BaseModel):
 class LocalizationResp(BaseModel):
     bboxes: list
     labels: list
+
+class SegmentationResp(BaseModel):
+    masks: list
+    scores: list
+
+class PredictionReq(BaseModel):
+    image: Image.Image
+    task: TaskType
+    input_point: Optional[list] = None
+    input_label: Optional[list] = None
+    input_box: Optional[list] = None
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+class PredictionResp(BaseModel):
     inference_time: float
+    prediction: Union[LocalizationResp, SegmentationResp]

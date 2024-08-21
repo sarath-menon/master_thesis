@@ -26,12 +26,18 @@ class VisionModel:
     def tasks(self) -> list[str]:
         return [task.value for task in TaskType]
 
+    def _get_model_for_task(self, task: TaskType):
+        if task not in self._task_models:
+            return None
+        return self._task_models[task]
+
     def get_model(self, task: TaskType) ->GetModelResp:
         # check if task-model mapping exists
-        if task not in self._task_models:
-            raise HTTPException(status_code=404, detail=f"{task.name.capitalize()} model not set")
+        model = self._get_model_for_task(task)
 
-        model = self._task_models[task]
+        if model is None:
+            raise HTTPException(status_code=404, detail=f"{task.name.capitalize()} model not set")
+        
         response = GetModelResp(name=model.name, variant=model.variant)
         return response
 
@@ -66,10 +72,6 @@ class VisionModel:
             models.append(model)
         return GetModelsResp(models=models)
 
-    # def _get_model_for_task(self, task: TaskType):
-
-    #     else:
-    #         raise HTTPException(status_code=400, detail=f"Invalid task: {task}")
 
     def coco_encode_rle(self, mask: np.ndarray) -> Dict[str, Any]:
         binary_mask = mask.astype(bool)
@@ -77,26 +79,18 @@ class VisionModel:
         rle['counts'] = rle['counts'].decode('utf-8')
         return rle
 
-    async def get_prediction(self, task: TaskType, image_data, text_input=None, task_prompt=None, input_boxes=None):
-        model = self._get_model_for_task(task)
+    async def get_prediction(self, req: PredictionReq) -> PredictionResp:
+        model = self._get_model_for_task(req.task)
         if model is None:
-            raise HTTPException(status_code=404, detail=f"{task.name.capitalize()} model not set")
+            raise HTTPException(status_code=404, detail=f"{req.task.name.capitalize()} model not set")
 
-        if task == TaskType.LOCALIZATION:
-            image = base64.b64decode(image_data)
-            image = Image.open(io.BytesIO(image))
-            start_time = time.time()
-            result = model.run_inference(image, task_prompt, text_input=text_input)
-            inference_time = time.time() - start_time
-            return (result, inference_time)
+        start_time = time.time()
+        masks, scores = model.predict(req)
 
-        elif task == TaskType.SEGMENTATION:
-            start_time = time.time()
-            masks, scores = model.predict_with_batched_bbox(image_data, input_boxes)
-            inference_time = time.time() - start_time
-            scores = scores.tolist()
-            masks = [self.coco_encode_rle(mask) for mask in masks]
-            return SegmentationResp(masks=masks, scores=scores, inference_time=inference_time)
-        else:
-            raise HTTPException(status_code=400, detail=f"Invalid task: {task}")
+        scores = scores.tolist()
+        masks = [self.coco_encode_rle(mask) for mask in masks]
 
+        inference_time = time.time() - start_time
+        
+        prediction = SegmentationResp(masks=masks, scores=scores)
+        return PredictionResp(prediction=prediction, inference_time=inference_time)

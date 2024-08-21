@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Query, File, UploadFile, Form, Path, HTTPException
-from clicking.vision_model.core import SegmentationReq, SegmentationResp, LocalizationReq, LocalizationResp, VisionModel, GetModelsResp, GetModelResp, SetModelReq, TaskType, GetModelReq
+from clicking.vision_model.core import SegmentationReq, SegmentationResp, LocalizationReq, LocalizationResp, VisionModel, GetModelsResp, GetModelResp, SetModelReq, TaskType, GetModelReq, PredictionReq, PredictionResp
 from PIL import Image
 import io
 import json
+import time
 
 vision_model_router = APIRouter()
 vision_model = VisionModel()
@@ -28,36 +29,61 @@ async def set_model(req: SetModelReq = None):
     print(req)
     return {"message": "Model set successfully", "status_code": 200}
 
-@vision_model_router.get("/prediction/localization", response_model=LocalizationResp, operation_id="get_localization_prediction")
-async def get_prediction(
-    image: str,
-    text_input: str,
-    task_prompt: str,
-    task_type: TaskType = Query(..., description="Type of task to perform")
-):
-    req = LocalizationReq(image=image, text_input=text_input, task_prompt=task_prompt)
-    result, inference_time = await vision_model.get_localization(req.image, req.text_input, req.task_prompt, task_type)
+# @vision_model_router.get("/prediction/localization", response_model=LocalizationResp, operation_id="get_localization_prediction")
+# async def get_prediction(
+#     image: str,
+#     text_input: str,
+#     task_prompt: str,
+#     task_type: TaskType = Query(..., description="Type of task to perform")
+# ):
+#     req = LocalizationReq(image=image, text_input=text_input, task_prompt=task_prompt)
+#     result, inference_time = await vision_model.get_localization(req.image, req.text_input, req.task_prompt, task_type)
 
-    response = LocalizationResp(
-        bboxes=result['bboxes'],
-        labels=result['labels'],
-        inference_time=inference_time
-    )
+#     response = LocalizationResp(
+#         bboxes=result['bboxes'],
+#         labels=result['labels'],
+#         inference_time=inference_time
+#     )
 
-    return response
+#     return response
 
-@vision_model_router.post("/prediction/segmentation",operation_id="get_segmentation_prediction", response_model=SegmentationResp)
+# @vision_model_router.post("/prediction/segmentation",operation_id="get_segmentation_prediction", response_model=SegmentationResp)
+# async def semantic_segmentation(image: UploadFile = File(...),
+#     task_prompt: str = Form(None),
+#     input_boxes: str = Form(None)):
+
+#     #Convert to a PIL image
+#     image_data = await image.read()
+#     image = Image.open(io.BytesIO(image_data))
+
+#     print("task_prompt", task_prompt)
+
+#     input_boxes = json.loads(input_boxes) if input_boxes else []
+#     response = await vision_model.get_segmentation_prediction(image, input_boxes)
+
+#     return response
+
+@vision_model_router.post("/prediction",operation_id="get_prediction", response_model=PredictionResp | dict)
 async def semantic_segmentation(image: UploadFile = File(...),
-    task_prompt: str = Form(None),
-    input_boxes: str = Form(None)):
+    task: TaskType = Form(default=None),
+    input_boxes: str = Form(default=None),
+    input_point: str = Form(default=None),
+    input_label: str = Form(default=None)):
+
+    if task is None:
+        raise HTTPException(status_code=400, detail="Task is required")
 
     #Convert to a PIL image
     image_data = await image.read()
     image = Image.open(io.BytesIO(image_data))
 
-    print("task_prompt", task_prompt)
-
+    # convert input_boxes to a list of lists
     input_boxes = json.loads(input_boxes) if input_boxes else []
-    response = await vision_model.get_segmentation_prediction(image, input_boxes)
+
+    req = PredictionReq(image=image, task=task, input_point=input_point, input_label=input_label, input_box=input_boxes)
+    print(req)
+
+    
+    response = await vision_model.get_prediction(req)
 
     return response

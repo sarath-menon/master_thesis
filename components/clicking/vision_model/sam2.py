@@ -6,7 +6,7 @@ from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
 from fastapi import HTTPException
-from clicking.vision_model.types import TaskType
+from clicking.vision_model.types import TaskType, PredictionReq
 
 class SAM2:
     variant_to_id = {
@@ -48,13 +48,20 @@ class SAM2:
         self.sam2_model = build_sam2(self.model_cfg, self.checkpoint, device=self.device)
         self.predictor = SAM2ImagePredictor(self.sam2_model)
 
+        self.task_to_method = {
+            TaskType.SEGMENTATION_WITH_CLICKPOINT: self.predict_with_clickpoint,
+            TaskType.SEGMENTATION_WITH_BBOX: self.predict_with_bbox,
+            TaskType.SEGMENTATION_WITH_CLICKPOINT_AND_BBOX: self.predict_with_clickpoint_and_bbox
+        }
+
+
     @staticmethod
     def variants():
         return list(SAM2.variant_to_id.keys())
     
     @staticmethod
     def tasks():
-        return SAM2.task_prompts
+        return list(SAM2.task_prompts.keys())
 
     def load_model(self, variant):
         if variant not in self.variant_to_id:
@@ -64,23 +71,39 @@ class SAM2:
         self.model_cfg = self.variant_to_id[variant]["model_cfg"]
         return build_sam2(self.model_cfg, self.checkpoint, device=self.device)
 
-    def predict_with_clickpoint(self, image, input_point, input_label):
-        self.predictor.set_image(image)
-        self.show_points(input_point, input_label, plt.gca())
-        self.show_image(image)
+
+    def predict(self, req: PredictionReq):
+        if req.task not in self.task_to_method:
+            raise ValueError(f"Invalid task type: {req.task}")
+        elif req.image is None:
+            raise ValueError("Image is required for any vision task")
+        
+        predict_method = self.task_to_method[req.task]
+        return predict_method(req)
+
+    # Modify existing methods to return results instead of showing them
+    def predict_with_clickpoint(self, req: PredictionReq):
+        if req.click_point is None:
+            raise ValueError("Click point is required for clickpoint task")
+
+        self.predictor.set_image(req.image)
         masks, scores, logits = self.predictor.predict(
-            point_coords=input_point,
-            point_labels=input_label,
+            point_coords=req.click_point,
+            point_labels=req.click_label,
             multimask_output=True,
         )
         sorted_ind = np.argsort(scores)[::-1]
-        masks = masks[sorted_ind]
-        scores = scores[sorted_ind]
-        logits = logits[sorted_ind]
-        self.show_masks(image, masks, scores, point_coords=input_point, input_labels=input_label, borders=True)
+        return masks[sorted_ind], scores[sorted_ind]
 
-    def predict_with_bbox(self, image, input_box):
-        self.predictor.set_image(image)
+    def predict_with_bbox(self, req: PredictionReq):
+        if req.input_box is None:
+            raise ValueError("Bbox is required for bbox task")
+
+        # Convert input_box to numpy array
+        input_box = np.array(req.input_box)
+
+
+        self.predictor.set_image(req.image)
         masks, scores, _ = self.predictor.predict(
             point_coords=None,
             point_labels=None,
@@ -89,38 +112,22 @@ class SAM2:
         )
         return masks, scores
 
-    def predict_with_batched_bbox(self, image, input_boxes):
-        self.predictor.set_image(image)
-        masks, scores, _ = self.predictor.predict(
-            point_coords=None,
-            point_labels=None,
-            box=input_boxes,
-            multimask_output=False,
-        )
-        return masks, scores
-        
+    def predict_with_clickpoint_and_bbox(self, req: PredictionReq):
+        if req.click_point is None:
+            raise ValueError("Click point is required for clickpoint task")
+        if req.bbox is None:
+            raise ValueError("Bbox is required for bbox task")
 
-    def predict_with_clickpoint_and_bbox(self, image, input_point, input_label, input_box):
-        self.predictor.set_image(image)
+        self.predictor.set_image(req.image)
         masks, scores, logits = self.predictor.predict(
-            point_coords=input_point,
-            point_labels=input_label,
-            box=input_box,
+            point_coords=req.click_point,
+            point_labels=req.click_label,
+            box=req.bbox[None, :],
             multimask_output=False,
         )
-        self.show_masks(predictor.image, masks, scores, box_coords=input_box, point_coords=input_point, input_labels=input_label)
+        return masks, scores, logits
 
-    def batched_prediction_multiple_images(self, img_batch, boxes_batch):
-        self.predictor.set_image_batch(img_batch)
-        masks_batch, scores_batch, _ = self.predictor.predict_batch(
-            None,
-            None,
-            box_batch=boxes_batch,
-            multimask_output=False,
-            output_mode='coco_rle'
-        )
-        return masks_batch, scores_batch
-
+    # ... other existing methods ...
     def generate_masks(self, image, min_mask_region_area, pred_iou_thresh):
         mask_generator = SAM2AutomaticMaskGenerator(self.sam2_model, min_mask_region_area=min_mask_region_area,
         pred_iou_thresh=pred_iou_thresh,
