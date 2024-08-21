@@ -52,12 +52,18 @@ class PromptManager:
         return prompts
     
 
-    def get_prompt(self, user_prompt_key=None, template_values=None):
+    def get_prompt(self, type=None, prompt_key=None, template_values=None):
         prompt_dict = self.load_prompts(template_values=template_values)
 
-        if user_prompt_key is None:
-            return prompt_dict
-        elif user_prompt_key in prompt_dict['user_prompts']:
-            return prompt_dict['user_prompts'][user_prompt_key]
+        if type == 'system':
+            return prompt_dict['system_prompt']
+        elif type == 'user':
+            if prompt_key is None:
+                raise ValueError("Prompt key is required for user prompts.")
+            elif prompt_key in prompt_dict['user_prompts']:
+                return prompt_dict['user_prompts'][prompt_key]
+            else:
+                raise ValueError(f"User prompt '{prompt_key}' not found in prompt dictionary.")
+
         else:
-            raise ValueError(f"User prompt '{user_prompt_key}' not found in prompt dictionary.")
+            raise ValueError(f"Prompt type '{type}' not found in prompt dictionary.")
