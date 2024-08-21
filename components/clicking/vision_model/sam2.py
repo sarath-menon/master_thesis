@@ -6,7 +6,9 @@ from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
 from fastapi import HTTPException
-from clicking.vision_model.types import TaskType, PredictionReq
+from clicking.vision_model.types import TaskType, PredictionReq, SegmentationResp, PredictionResp
+from pycocotools import mask as mask_utils
+from typing import Dict, Any
 
 class SAM2:
     variant_to_id = {
@@ -72,14 +74,15 @@ class SAM2:
         return build_sam2(self.model_cfg, self.checkpoint, device=self.device)
 
 
-    def predict(self, req: PredictionReq):
+    def predict(self, req: PredictionReq) -> PredictionResp:
         if req.task not in self.task_to_method:
             raise ValueError(f"Invalid task type: {req.task}")
         elif req.image is None:
             raise ValueError("Image is required for any vision task")
         
         predict_method = self.task_to_method[req.task]
-        return predict_method(req)
+        response = predict_method(req)
+        return PredictionResp(prediction=response, inference_time=0.0)
 
     # Modify existing methods to return results instead of showing them
     def predict_with_clickpoint(self, req: PredictionReq):
@@ -95,7 +98,13 @@ class SAM2:
         sorted_ind = np.argsort(scores)[::-1]
         return masks[sorted_ind], scores[sorted_ind]
 
-    def predict_with_bbox(self, req: PredictionReq):
+    def coco_encode_rle(self, mask: np.ndarray) -> Dict[str, Any]:
+        binary_mask = mask.astype(bool)
+        rle = mask_utils.encode(np.asfortranarray(binary_mask))
+        rle['counts'] = rle['counts'].decode('utf-8')
+        return rle
+
+    def predict_with_bbox(self, req: PredictionReq) -> SegmentationResp:
         if req.input_box is None:
             raise ValueError("Bbox is required for bbox task")
 
@@ -110,7 +119,12 @@ class SAM2:
             box=input_box[None, :],
             multimask_output=False,
         )
-        return masks, scores
+
+        scores = scores.tolist()
+        masks = [self.coco_encode_rle(mask) for mask in masks]
+
+        response = SegmentationResp(masks=masks, scores=scores)
+        return response
 
     def predict_with_clickpoint_and_bbox(self, req: PredictionReq):
         if req.click_point is None:

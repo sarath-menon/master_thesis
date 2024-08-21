@@ -9,7 +9,6 @@ from typing import Dict, List, Type, Any
 from dataclasses import dataclass, field
 from fastapi import HTTPException
 from clicking.visualization.bbox import BoundingBox, BBoxMode
-from pycocotools import mask as mask_utils
 import numpy as np
 from enum import Enum, auto
 from clicking.vision_model.types import *
@@ -73,24 +72,13 @@ class VisionModel:
         return GetModelsResp(models=models)
 
 
-    def coco_encode_rle(self, mask: np.ndarray) -> Dict[str, Any]:
-        binary_mask = mask.astype(bool)
-        rle = mask_utils.encode(np.asfortranarray(binary_mask))
-        rle['counts'] = rle['counts'].decode('utf-8')
-        return rle
-
     async def get_prediction(self, req: PredictionReq) -> PredictionResp:
         model = self._get_model_for_task(req.task)
         if model is None:
             raise HTTPException(status_code=404, detail=f"{req.task.name.capitalize()} model not set")
 
         start_time = time.time()
-        masks, scores = model.predict(req)
+        response = model.predict(req)
+        response.inference_time = time.time() - start_time
 
-        scores = scores.tolist()
-        masks = [self.coco_encode_rle(mask) for mask in masks]
-
-        inference_time = time.time() - start_time
-        
-        prediction = SegmentationResp(masks=masks, scores=scores)
-        return PredictionResp(prediction=prediction, inference_time=inference_time)
+        return response
