@@ -10,7 +10,7 @@ class TaskType(str, Enum):
     SEGMENTATION_WITH_CLICKPOINT = "SEGMENTATION_WITH_CLICKPOINT"
     SEGMENTATION_WITH_BBOX = "SEGMENTATION_WITH_BBOX"
     CAPTIONING = "CAPTIONING"
-    
+
 class SegmentationReq(BaseModel):  
     image: Any
     input_boxes: list
@@ -32,9 +32,12 @@ class GetModelResp(BaseModel):
     name: str
     variant: str
 
-class SetModelRequest(BaseModel):
+class SetModelReq(BaseModel):
     name: str
     variant: str 
+    task: TaskType
+
+class GetModelReq(BaseModel):
     task: TaskType
 
 class LocalizationReq(BaseModel):  

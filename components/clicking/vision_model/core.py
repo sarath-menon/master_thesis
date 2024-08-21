@@ -26,14 +26,17 @@ class VisionModel:
     def tasks(self) -> list[str]:
         return [task.value for task in TaskType]
 
-    def _get_model_for_task(self, task: TaskType):
+    def get_model(self, task: TaskType) ->GetModelResp:
         # check if task-model mapping exists
         if task not in self._task_models:
             raise HTTPException(status_code=404, detail=f"{task.name.capitalize()} model not set")
-        return self._task_models[task]
+
+        model = self._task_models[task]
+        response = GetModelResp(name=model.name, variant=model.variant)
+        return response
 
 
-    def set_model(self, req: SetModelRequest):
+    def set_model(self, req: SetModelReq):
         if req.name not in self._available_models:
             raise HTTPException(status_code=400, detail=f"Model {req.name} not supported")
         

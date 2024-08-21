@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query, File, UploadFile, Form, Path, HTTPException
-from clicking.vision_model.core import SegmentationReq, SegmentationResp, LocalizationReq, LocalizationResp, VisionModel, GetModelsResp, GetModelResp, SetModelRequest, TaskType
+from clicking.vision_model.core import SegmentationReq, SegmentationResp, LocalizationReq, LocalizationResp, VisionModel, GetModelsResp, GetModelResp, SetModelReq, TaskType, GetModelReq
 from PIL import Image
 import io
 import json
@@ -7,34 +7,22 @@ import json
 vision_model_router = APIRouter()
 vision_model = VisionModel()
 
-# # Create a mapping dictionary
-# TASK_TYPE_MAP = {
-#     "localization": TaskType.LOCALIZATION,
-#     "segmentation": TaskType.SEGMENTATION
-# }
 
 @vision_model_router.get("/models", response_model=GetModelsResp, operation_id="get_models")
 async def get_models():
     models = vision_model.get_available_models()
     return models
 
-
-# @vision_model_router.get("/model/{task_type}", response_model=GetModelResp, operation_id="get_model")
-# async def get_model(task_type: str = Path(..., description="Type of task"), set_model_request: SetModelRequest = None):
-#     # Convert task_type string to TaskType enum
-#     task_type = TASK_TYPE_MAP.get(task_type.lower())
+@vision_model_router.get("/model", response_model=GetModelResp, operation_id="get_model")
+async def get_model(req: GetModelReq = None):
     
-#     if task_type is None:
-#         raise HTTPException(status_code=400, detail=f"Invalid task type: {task_type}")
-    
-#     # Get model info using the TaskType enum
-#     model_info = vision_model.get_model(task_type)
-#     return model_info
+    # Get model info using the TaskType enum
+    response  = vision_model.get_model(req.task)
+    return response
 
 
 @vision_model_router.post("/model", operation_id="set_model")
-async def set_model(req: SetModelRequest = None):
-
+async def set_model(req: SetModelReq = None):
     # Get model info using the TaskType enum
     result = vision_model.set_model(req)
     print(req)
