@@ -7,11 +7,11 @@ import json
 vision_model_router = APIRouter()
 vision_model = VisionModel()
 
-# Create a mapping dictionary
-TASK_TYPE_MAP = {
-    "localization": TaskType.LOCALIZATION,
-    "segmentation": TaskType.SEGMENTATION
-}
+# # Create a mapping dictionary
+# TASK_TYPE_MAP = {
+#     "localization": TaskType.LOCALIZATION,
+#     "segmentation": TaskType.SEGMENTATION
+# }
 
 @vision_model_router.get("/models", response_model=GetModelsResp, operation_id="get_models")
 async def get_models():
@@ -19,30 +19,26 @@ async def get_models():
     return models
 
 
-@vision_model_router.get("/model/{task_type}", response_model=GetModelResp, operation_id="get_model")
-async def get_model(task_type: str = Path(..., description="Type of task"), set_model_request: SetModelRequest = None):
-    # Convert task_type string to TaskType enum
-    task_type = TASK_TYPE_MAP.get(task_type.lower())
+# @vision_model_router.get("/model/{task_type}", response_model=GetModelResp, operation_id="get_model")
+# async def get_model(task_type: str = Path(..., description="Type of task"), set_model_request: SetModelRequest = None):
+#     # Convert task_type string to TaskType enum
+#     task_type = TASK_TYPE_MAP.get(task_type.lower())
     
-    if task_type is None:
-        raise HTTPException(status_code=400, detail=f"Invalid task type: {task_type}")
+#     if task_type is None:
+#         raise HTTPException(status_code=400, detail=f"Invalid task type: {task_type}")
     
-    # Get model info using the TaskType enum
-    model_info = vision_model.get_model(task_type)
-    return model_info
+#     # Get model info using the TaskType enum
+#     model_info = vision_model.get_model(task_type)
+#     return model_info
 
 
-@vision_model_router.post("/model/{task_type}", operation_id="set_model")
-async def set_model(task_type: str = Path(..., description="Type of task"), req: SetModelRequest = None):
-    # Convert task_type string to TaskType enum
-    task_type = TASK_TYPE_MAP.get(task_type.lower())
-    
-    if task_type is None:
-        raise HTTPException(status_code=400, detail=f"Invalid task type: {task_type}")
-    
+@vision_model_router.post("/model", operation_id="set_model")
+async def set_model(req: SetModelRequest = None):
+
     # Get model info using the TaskType enum
-    result = vision_model.set_model(req, task_type)
-    return result
+    result = vision_model.set_model(req)
+    print(req)
+    return {"message": "Model set successfully", "status_code": 200}
 
 @vision_model_router.get("/prediction/localization", response_model=LocalizationResp, operation_id="get_localization_prediction")
 async def get_prediction(
