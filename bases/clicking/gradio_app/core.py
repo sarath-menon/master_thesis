@@ -12,7 +12,7 @@ import io
 import base64
 import sys
 from gradio_log import Log
-from clicking_client.models  import SetModelRequest
+from clicking_client.models  import SetModelReq
 from clicking_client.models import BodyGetSegmentationPrediction
 from clicking_client.types import File
 import io
@@ -137,11 +137,11 @@ def pipeline(image_np, input_instruction, class_label, pipeline_checkboxes):
 
             for i, bbox in enumerate(localization_response.bboxes):
                 x1,y1,w,h = map(int, bbox)
-                sections.append(((x1,y1,w,h), class_label))
+                sections.append(((x1,y1,w,h), class_label + "_bbox"))
 
             for (i, mask) in enumerate(segmentation_response.masks):
                 mask = mask_utils.decode(mask)
-                sections.append((mask, class_label))
+                sections.append((mask, class_label + "_mask"   ))
 
         # get and overlay click point
         if "segmentation masks => click point" in pipeline_checkboxes:
@@ -178,8 +178,6 @@ segmentation_models = res.models
 log_file = "./output.log"
 # sys.stdout = open(log_file, "a")
 
-
-
 def model_type_change(model_name, model_type):
     models = localization_models if model_type == "localization" else segmentation_models
     selected_model = next((m for m in models if m.name == model_name), None)
@@ -193,12 +191,12 @@ def model_type_change(model_name, model_type):
 
 def localization_model_variant_change(model, variant, mode):
     print(model, variant, mode)
-    request = SetModelRequest(name=model, variant=variant)
+    request = SetModelReq(name=model, variant=variant)
     set_localization_model.sync(client=client, body=request)
 
 def segmentation_model_variant_change(model, variant, mode):
     print(model, variant, mode)
-    request = SetModelRequest(name=model, variant=variant)
+    request = SetModelReq(name=model, variant=variant)
     set_segmentation_model.sync(client=client, body=request)
 
 # gradio state variables
@@ -211,7 +209,7 @@ with gr.Blocks(css=css) as demo:
         with gr.Row():
             img_input = gr.Image()
             img_output = gr.AnnotatedImage(
-                color_map={"banana": "#a89a00", "carrot": "#ffae00"}
+                color_map={"click point": "#a89a00"}
             )
 
         with gr.Row():
