@@ -35,7 +35,7 @@ class PromptRefiner:
             ]}
 
         self.messages.append(msg)
-        response = completion(model=self.model, messages=self.messages)
+        response = completion(model=self.model, messages=self.messages, response_format={ "type": "json_object" })
         return response["choices"][0]["message"]["content"]
     
     def _pil_to_base64(self, image):
@@ -45,21 +45,32 @@ class PromptRefiner:
 
     def get_label(self, screenshot: str, action: str):
         template_values = {
-        "action": action,
+        "action": action
         }
 
         base64_image = self._pil_to_base64(screenshot)
-        prompts = self.prompt_manager.get_prompt(type='user', prompt_key='default', template_values=template_values)
-        print(prompts)
+        prompt = self.prompt_manager.get_prompt(type='user', prompt_key='default', template_values=template_values)
+        print(prompt)
         # return self._get_image_response(base64_image, prompt)
+
+    def get_expanded_description(self, screenshot: str, input_description: str):
+        template_values = {
+        "input_description": input_description,
+        "word_limit": "10"
+        }
+
+        base64_image = self._pil_to_base64(screenshot)
+        prompt = self.prompt_manager.get_prompt(type='user', prompt_key='prompt_expansion', template_values=template_values)
+        return self._get_image_response(base64_image, prompt)
 
     def show_messages(self):
         for message in self.messages:
             print(message)
 #%%
 labeller =  PromptRefiner(prompt_path="./prompts/instruction_refinement.md")
-# %%
-response = labeller.get_label(image, "Pick up the flag")
+
+# response = labeller.get_label(image, "Pick up the flag")
+response = labeller.get_expanded_description(image, "yellow car")
 print(response)
 # %%
 import re
