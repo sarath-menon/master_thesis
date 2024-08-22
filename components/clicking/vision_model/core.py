@@ -1,5 +1,6 @@
 from clicking.vision_model.florence2 import Florence2
 from clicking.vision_model.sam2 import SAM2
+from clicking.vision_model.evf_sam2 import EVF_SAM
 from pydantic import BaseModel
 from PIL import Image
 import io
@@ -18,6 +19,7 @@ class VisionModel:
         self._available_models = {
             'florence2': Florence2,
             'sam2': SAM2,
+            'evf_sam2': EVF_SAM
         }
         # to store task-model mappings
         self._task_models = {}  
@@ -45,21 +47,21 @@ class VisionModel:
         if req.name not in self._available_models:
             raise HTTPException(status_code=400, detail=f"Model {req.name} not supported")
         
-        model_handle = self._available_models[req.name]
+        model_class_obj = self._available_models[req.name]
         
-        if req.variant not in model_handle.variants():
+        if req.variant not in model_class_obj.variants():
             raise HTTPException(status_code=400, detail=f"Variant {req.variant} not supported for model {req.name}")
 
         task_type = TaskType(req.task)
 
         # Check if model has the task
-        if task_type not in model_handle.tasks():
+        if task_type not in model_class_obj.tasks():
             raise HTTPException(status_code=400, detail=f"Model {req.name} does not support task {req.task}")
 
-        model = model_handle(req.variant)
+        model_handle = model_class_obj(variant=req.variant)
         
         # Save the model for the task
-        self._task_models[task_type] = model
+        self._task_models[task_type] = model_handle
         
         message = f"{req.task.capitalize()} model set to {req.name} with variant {req.variant}."
         return {"message": message, "status_code": 200}
@@ -73,12 +75,12 @@ class VisionModel:
 
 
     async def get_prediction(self, req: PredictionReq) -> PredictionResp:
-        model = self._get_model_for_task(req.task)
-        if model is None:
+        model_handle = self._get_model_for_task(req.task)
+        if model_handle is None:
             raise HTTPException(status_code=404, detail=f"{req.task.name.capitalize()} model not set")
 
         start_time = time.time()
-        response = model.predict(req)
+        response = model_handle.predict(req)
         response.inference_time = time.time() - start_time
 
         return response
