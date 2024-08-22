@@ -1,20 +1,22 @@
 #%%
 
-from litellm import completion
+from litellm import completion, acompletion
 import os
 import dotenv
 import base64
 import io
 from PIL import Image
 from clicking.visualization.mask import SegmentationMask, SegmentationMode
+import asyncio
 
 # set API keys
 dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 class OutputCorrector:
-    def __init__(self, model: str = "gpt-4o"):
+    def __init__(self, model: str = "gpt-4o", temperature: float = 0.0):
         self.model = model
+        self.temperature = temperature
         self.messages = [
             {"role": "system", "content": "You are a helpful assistant and in an annotating videogame images."},
         ]
@@ -34,43 +36,20 @@ class OutputCorrector:
         }}
         """
         return prompt
-    
-    def _get_text_response(self, prompt: str):
-        prompt = self._get_prompt(prompt)
-        self.add_message(prompt)
-        response = completion(model=self.model, messages=self.messages)
-        return response["choices"][0]["message"]["content"]
-    
-    # def _get_image_response(self, base64_image: str, text_prompt: str):
-    #     msg = {"role": "user", "content": [
-    #             {"type": "text", "text": text_prompt},
-    #             {"type": "image_url", "image_url": {
-    #                 "url": f"data:image/png;base64,{base64_image}"}
-    #             }
-    #         ]}
 
-    #     self.messages.append(msg)
-    #     response = completion(model=self.model, messages=self.messages)
-    #     return response["choices"][0]["message"]["content"]
-    
     def _pil_to_base64(self, image):
         with io.BytesIO() as buffer:
             image.save(buffer, format="PNG")
             return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-    # def verify_bbox(self, screenshot: Image.Image, class_label: str):
-    #     base64_image = self._pil_to_base64(screenshot)
-    #     text_prompt = self._get_prompt(class_label)
-    #     return self._get_image_response(base64_image, text_prompt)
+    async def _get_text_response(self, prompt: str):
+        prompt = self._get_prompt(prompt)
+        self.add_message(prompt)
+        response = await acompletion(model=self.model, messages=self.messages, response_format={"type": "json_object"}, temperature=self.temperature)
+        return response["choices"][0]["message"]["content"]
 
-    # def verify_mask(self, screenshot: Image.Image, mask: SegmentationMask, class_label: str):
-    #     extracted_area = mask.extract_area(screenshot, padding=10)
-    #     base64_image = self._pil_to_base64(extracted_area)
-    #     text_prompt = self._get_prompt(class_label)
-    #     return self._get_image_response(base64_image, text_prompt)
-
-    def _get_image_responses(self, base64_images: list, text_prompts: list):
-        messages = []
+    async def _get_image_responses(self, base64_images: list, text_prompts: list):
+        tasks = []
         for base64_image, text_prompt in zip(base64_images, text_prompts):
             msg = {"role": "user", "content": [
                     {"type": "text", "text": text_prompt},
@@ -78,29 +57,28 @@ class OutputCorrector:
                         "url": f"data:image/png;base64,{base64_image}"}
                     }
                 ]}
-            messages.append(msg)
+            # Create a copy of messages for each task
+            messages_copy = self.messages.copy()
+            messages_copy.append(msg)
+            task = acompletion(model=self.model, messages=messages_copy)
+            tasks.append(task)
+        
+        responses = await asyncio.gather(*tasks)
+        return [resp["choices"][0]["message"]["content"] for resp in responses]
 
-        self.messages.extend(messages)
-        response = completion(model=self.model, messages=self.messages)
-        return [resp["message"]["content"] for resp in response["choices"]]
-
-    def verify_bboxes(self, screenshots: list[Image.Image], class_labels: list[str]):
+    async def verify_bboxes(self, screenshots: list[Image.Image], class_labels: list[str]):
         base64_images = [self._pil_to_base64(screenshot) for screenshot in screenshots]
         text_prompts = [self._get_prompt(class_label) for class_label in class_labels]
-        return self._get_image_responses(base64_images, text_prompts)
+        return await self._get_image_responses(base64_images, text_prompts)
 
-    def verify_masks(self, screenshots: list[Image.Image], masks: list[SegmentationMask], class_labels: list[str]):
+    async def verify_masks(self, screenshots: list[Image.Image], masks: list[SegmentationMask], class_labels: list[str]):
         base64_images = []
         text_prompts = []
         for screenshot, mask, class_label in zip(screenshots, masks, class_labels):
             extracted_area = mask.extract_area(screenshot, padding=10)
             base64_images.append(self._pil_to_base64(extracted_area))
             text_prompts.append(self._get_prompt(class_label))
-        return self._get_image_responses(base64_images, text_prompts)
-
-    def show_messages(self):
-        for message in self.messages:
-            print(message)
+        return await self._get_image_responses(base64_images, text_prompts)
 
 #%% Load test image
 
@@ -129,13 +107,20 @@ if __name__ == "__main__":
     images_overlayed = [overlay_bounding_box(img.copy(), bbox) for img, bbox in zip(images, bboxes)]
 
     # Display images
-    for img in images_overlayed:
-        plt.figure()
-        plt.grid(False)
-        plt.axis('off')
-        plt.imshow(img)
+    plt.imshow(images_overlayed[0])
+    plt.axis(False)
+    plt.axis('off')
 
     # Batch verify bounding boxes
     output_corrector = OutputCorrector()
-    response = output_corrector.verify_bboxes(images, class_labels)
-    print(response)
+
+    # Call process_prompts asynchronously
+    async def process_batch_prompts():
+        results = await output_corrector.verify_bboxes(images, class_labels)
+        for result, class_label in zip(results, class_labels):
+            print(f"Class label: {class_label}")
+            print(f"Result: {result}")
+
+    # Run the asynchronous function
+    await process_batch_prompts()
+# %%
