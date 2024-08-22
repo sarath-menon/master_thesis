@@ -57,17 +57,19 @@ from clicking_client.models import PredictionResp
 import io
 import base64
 
-client = Client(base_url="http://localhost:8082")
+client = Client(base_url="http://localhost:8083")
 
 #%% Get available models
 from clicking_client.api.default import get_models
+from clicking_client.models  import SetModelReq
+from clicking_client.api.default import set_model
+from clicking.vision_model.types import TaskType
+
+
 api_response = get_models.sync(client=client)
 print(api_response)
 
 #%% set localization model
-from clicking_client.models  import SetModelReq
-from clicking_client.api.default import set_model
-from clicking.vision_model.types import TaskType
 
 request = SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_GROUNDED)
 
@@ -162,3 +164,35 @@ from clicking.segmentation.utils import get_mask_centroid
 
 centroid = get_mask_centroid(masks[0].get(mode=SegmentationMode.BINARY_MASK))
 show_clickpoint(image, centroid, text_input)
+# %%
+
+## EVF_SAM2
+
+request = SetModelReq(name="evf_sam2", variant="sam2", task=TaskType.SEGMENTATION_WITH_TEXT)
+set_model.sync(client=client, body=request)
+#%% Segmentation
+from clicking_client.api.default import get_prediction
+from clicking_client.models import BodyGetPrediction
+from clicking_client.types import File
+import io
+import json
+from clicking.visualization.mask import SegmentationMask, SegmentationMode
+
+# Convert PIL Image to bytes and create a File object
+image_byte_arr = io.BytesIO()
+image.save(image_byte_arr, format='JPEG')
+image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
+
+# Create the request object
+request = BodyGetPrediction(
+    image=image_file,
+    task=TaskType.SEGMENTATION_WITH_TEXT,
+    input_text=text_input
+)
+    
+segmentation_resp = get_prediction.sync(client=client, body=request)
+print(f"inference time: {segmentation_resp.inference_time}")
+
+prediction = segmentation_resp.prediction
+masks = [SegmentationMask(mask, mode=SegmentationMode.COCO_RLE) for mask in prediction.masks]
+show_segmentation_prediction(image, masks)
