@@ -11,10 +11,16 @@ from pycocotools import mask as mask_utils
 from typing import Dict, Any
 
 class SAM2:
+    # variant_to_id = {
+    #     "sam2_hiera_tiny": {"checkpoint": "sam2_hiera_tiny.pt", "model_cfg": "sam2_hiera_t.yaml"},
+    #     "sam2_hiera_base": {"checkpoint": "sam2_hiera_base.pt", "model_cfg": "sam2_hiera_b.yaml"},
+    #     "sam2_hiera_large": {"checkpoint": "sam2_hiera_large.pt", "model_cfg": "sam2_hiera_l.yaml"}
+    # }
+
     variant_to_id = {
-        "sam2_hiera_tiny": {"checkpoint": "sam2_hiera_tiny.pt", "model_cfg": "sam2_hiera_t.yaml"},
-        "sam2_hiera_base": {"checkpoint": "sam2_hiera_base.pt", "model_cfg": "sam2_hiera_b.yaml"},
-        "sam2_hiera_large": {"checkpoint": "sam2_hiera_large.pt", "model_cfg": "sam2_hiera_l.yaml"}
+        "sam2_hiera_tiny": "facebook/sam2-hiera-tiny" ,
+        "sam2_hiera_base": "facebook/sam2-hiera-base" ,
+        "sam2_hiera_large": "facebook/sam2-hiera-large" ,
     }
 
     task_prompts = {TaskType.SEGMENTATION_WITH_CLICKPOINT: "", TaskType.SEGMENTATION_WITH_BBOX: "", TaskType.SEGMENTATION_WITH_BBOX: ""}
@@ -32,6 +38,9 @@ class SAM2:
             self.device = torch.device("cpu")
         print(f"Using {self.device} for {self.name}")
 
+        print(f"Loading model: {self.variant_to_id[self.variant]}")
+        self.predictor = SAM2ImagePredictor.from_pretrained(self.variant_to_id[self.variant])
+
         if self.device.type == "cuda":
             torch.autocast("cuda", dtype=torch.bfloat16).__enter__()
             # turn on tfloat32 for Ampere GPUs 
@@ -45,10 +54,11 @@ class SAM2:
                 "See e.g. https://github.com/pytorch/pytorch/issues/84936 for a discussion."
             )
 
-        self.checkpoint = "./checkpoints/sam2/" + self.variant_to_id[self.variant]["checkpoint"]
-        self.model_cfg = self.variant_to_id[self.variant]["model_cfg"]
-        self.sam2_model = build_sam2(self.model_cfg, self.checkpoint, device=self.device)
-        self.predictor = SAM2ImagePredictor(self.sam2_model)
+        # self.checkpoint = "./checkpoints/sam2/" + self.variant_to_id[self.variant]["checkpoint"]
+        # self.model_cfg = self.variant_to_id[self.variant]["model_cfg"]
+        # self.sam2_model = build_sam2(self.model_cfg, self.checkpoint, device=self.device)
+        # self.predictor = SAM2ImagePredictor(self.sam2_model)
+
 
         self.task_to_method = {
             TaskType.SEGMENTATION_WITH_CLICKPOINT: self.predict_with_clickpoint,
