@@ -1,8 +1,10 @@
 #%%
+
 from transformers import AutoTokenizer
 import torch
-import numpy as np
+import numpy as np 
 import sys
+
 import time
 import torch.nn.functional as F
 from torchvision import transforms
@@ -10,11 +12,22 @@ from torchvision.transforms.functional import InterpolationMode
 from transformers import AutoTokenizer, BitsAndBytesConfig
 from evf_sam.model.segment_anything.utils.transforms import ResizeLongestSide
 from evf_sam.model.evf_sam2 import EvfSam2Model
-#%%
-class EVF_SAM:
-    def __init__(self, version):
-        self.version = version
+from clicking.vision_model.types import TaskType, PredictionReq, SegmentationResp, PredictionResp
+from clicking.vision_model.utils import coco_encode_rle
 
+#%%
+
+class EVF_SAM:
+    variant_to_id = {
+        "sam2": "sam2"
+    }
+    task_prompts = {TaskType.SEGMENTATION_WITH_TEXT: ""}
+
+    def __init__(self, version, variant='sam2'):
+        self.name = 'evf_sam2'
+        self.variant = variant
+        self.version = version
+        
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.version,
             padding_side="right",
@@ -23,9 +36,20 @@ class EVF_SAM:
         self.kwargs = {
             "torch_dtype": torch.half,
         }
-        self.model = self.load_model()
+        self.model = self.load_model(variant='sam2')
+    
+    @staticmethod
+    def variants():
+        return list(EVF_SAM.variant_to_id.keys())
+    
+    @staticmethod
+    def tasks():
+        return list(EVF_SAM.task_prompts.keys())
        
-    def load_model(self):
+    def load_model(self, variant):
+        if variant not in self.variant_to_id:
+            raise HTTPException(status_code=400, detail=f"Invalid variant: {variant}. Please choose from: {list(self.variant_to_id.keys())}")
+            
         model = EvfSam2Model.from_pretrained(self.version, low_cpu_mem_usage=True, **self.kwargs)
         del model.visual_model.memory_encoder
         del model.visual_model.memory_attention
@@ -69,7 +93,15 @@ class EVF_SAM:
         return beit_preprocess(x)
 
     @torch.no_grad()
-    def predict(self, image_np, prompt):
+    def predict(self, req: PredictionReq) -> PredictionResp:
+        if req.task not in self.task_prompts:
+            raise ValueError(f"Invalid task type: {req.task}")
+        elif req.image is None:
+            raise ValueError("Image is required for any vision task")
+        elif req.input_text is None:
+            raise ValueError("Text input is required for evf_sam2")
+
+        image_np = np.array(req.image)
         original_size_list = [image_np.shape[:2]]
 
         image_beit = self.beit3_preprocess(image_np, 224).to(dtype=self.model.dtype, device=self.model.device)
@@ -77,7 +109,7 @@ class EVF_SAM:
         image_sam, resize_shape = self.sam_preprocess(image_np)
         image_sam = image_sam.to(dtype=self.model.dtype, device=self.model.device)
 
-        input_ids = self.tokenizer(prompt, return_tensors="pt")["input_ids"].to(device=self.model.device)
+        input_ids = self.tokenizer(req.input_text, return_tensors="pt")["input_ids"].to(device=self.model.device)
 
         pred_mask = self.model.inference(
             image_sam.unsqueeze(0),
@@ -86,25 +118,19 @@ class EVF_SAM:
             resize_list=[resize_shape],
             original_size_list=original_size_list,
         )
-        pred_mask = pred_mask.detach().cpu().numpy()[0]
-        pred_mask = pred_mask > 0
+        mask = pred_mask.detach().cpu().numpy()[0]
+        mask = mask > 0
 
-        visualization = image_np.copy()
-        visualization[pred_mask] = (
-            image_np * 0.5
-            + pred_mask[:, :, None].astype(np.uint8) * np.array([50, 120, 220]) * 0.5
-        )[pred_mask]
-        return visualization / 255.0, pred_mask.astype(np.float16)
-
+        masks = [coco_encode_rle(mask)]
+        return PredictionResp(prediction=SegmentationResp(masks=masks))
 #%%
 
 version = "./EVF-SAM/checkpoints"
 model = EVF_SAM(version)
 
 # %%
-from PIL import Image
 
 image = Image.open("./EVF-SAM/assets/zebra.jpg")
-image_np = np.array(image)
-model.predict(image_np, "zebra")
-# %%
+req = PredictionReq(image=image, task=TaskType.SEGMENTATION_WITH_TEXT, input_text="zebra")
+masks = model.predict(req)
+
