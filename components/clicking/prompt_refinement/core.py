@@ -28,6 +28,12 @@ class PromptRefiner:
         self.messages = [
             {"role": "system", "content": self.prompt_manager.get_prompt(type='system')},
         ]
+        self.lock = asyncio.Lock()  # Initialize a lock
+    
+    def _pil_to_base64(self, image):
+        with io.BytesIO() as buffer:
+            image.save(buffer, format="PNG")
+            return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
     async def _get_image_response(self, base64_image: str, text_prompt: str):
         msg = {"role": "user", "content": [
@@ -37,14 +43,12 @@ class PromptRefiner:
                 }
             ]}
 
-        self.messages.append(msg)
+        # to avoid race condition
+        async with self.lock: 
+            self.messages.append(msg)
+
         response = await acompletion(model=self.model, messages=self.messages, response_format={ "type": "json_object" }, temperature=self.temperature)
         return response["choices"][0]["message"]["content"]
-    
-    def _pil_to_base64(self, image):
-        with io.BytesIO() as buffer:
-            image.save(buffer, format="PNG")
-            return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
     async def process_prompts(self, screenshots: List[str], input_texts: List[str], mode: PromptMode, word_limit: int = 10):
         tasks = []
