@@ -11,9 +11,9 @@ download_sam2_checkpoint VARIANT:
     mkdir -p ./checkpoints/sam2
     wget -q https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_{{VARIANT}}.pt -P ./checkpoints/sam2
 
-install_openapi_client:
+install_openapi_client PORT='8082':
     mkdir -p ./generated/clicking_client
-    openapi-python-client generate --url http://localhost:8082/openapi.json  --config ./configs/openapi_generator_config.json  --output-path  ./generated/clicking_client --overwrite
+    openapi-python-client generate --url http://localhost:{{PORT}}/openapi.json  --config ./configs/openapi_generator_config.json  --output-path  ./generated/clicking_client --overwrite
     pip install -e ./generated/clicking_client
 
 poetry_shell:
