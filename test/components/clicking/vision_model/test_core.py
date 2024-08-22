@@ -1,4 +1,4 @@
-from clicking.prompt_refinement import core
+from clicking.vision_model import core
 
 
 def test_sample():
