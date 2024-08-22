@@ -15,8 +15,9 @@ class PromptMode(Enum):
     EXPANDED_DESCRIPTION = auto()
 
 class PromptRefiner:    
-    def __init__(self, prompt_path: str, model: str = "gpt-4o" ):
+    def __init__(self, prompt_path: str, model: str = "gpt-4o", temperature: float = 0.0):
         self.model = model
+        self.temperature = temperature
         self.PROMPT_PATH = prompt_path
         
         self.prompt_manager = PromptManager(self.PROMPT_PATH)
@@ -35,7 +36,7 @@ class PromptRefiner:
             ]}
 
         self.messages.append(msg)
-        response = completion(model=self.model, messages=self.messages, response_format={ "type": "json_object" })
+        response = completion(model=self.model, messages=self.messages, response_format={ "type": "json_object" }, temperature=self.temperature)
         return response["choices"][0]["message"]["content"]
     
     def _pil_to_base64(self, image):
@@ -64,6 +65,7 @@ class PromptRefiner:
         }
         base64_image = self._pil_to_base64(screenshot)
         prompt = self.prompt_manager.get_prompt(type='user', prompt_key='prompt_expansion', template_values=template_values)
+        print(prompt)
         return self._get_image_response(base64_image, prompt)
 
     def show_messages(self):
