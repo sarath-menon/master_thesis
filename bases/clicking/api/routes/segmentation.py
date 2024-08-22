@@ -1,5 +1,5 @@
 from fastapi import APIRouter, File, UploadFile, Form
-from clicking.segmentation.core import PredictionReq, SegmentationPredResp, SegmentationModel, GetModelsResp, GetModelResp, SetModelRequest
+from clicking.segmentation.core import PredictionReq, SegmentationPredResp, SegmentationModel, GetModelsResp, GetModelResp, SetModelReq
 from PIL import Image
 import io
 import json
@@ -41,7 +41,7 @@ async def get_model():
     return model_info
 
 @segmentation_router.post("/model", operation_id="set_segmentation_model")
-async def set_model(req: SetModelRequest):
+async def set_model(req: SetModelReq):
     try:
         model.set_model(req)
         return {"status": "OK"}

@@ -32,7 +32,7 @@ class GetModelResp(BaseModel):
     name: str
     variant: str
 
-class SetModelRequest(BaseModel):
+class SetModelReq(BaseModel):
     name: str
     variant: str 
 
@@ -48,7 +48,7 @@ class SegmentationModel:
             raise HTTPException(status_code=404, detail="Model not set")
         return GetModelResp(name=self._model.name, variant=self._model.variant)
 
-    def set_model(self, req: SetModelRequest):
+    def set_model(self, req: SetModelReq):
         if req.name not in self._available_models:
             raise HTTPException(status_code=400, detail=f"Model {req.name} not supported")
         
