@@ -48,7 +48,7 @@ class LocalizationResp(BaseModel):
 
 class SegmentationResp(BaseModel):
     masks: list
-    scores: list
+    scores: Optional[list] = None
 
 class PredictionReq(BaseModel):
     image: Image.Image
