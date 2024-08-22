@@ -9,14 +9,9 @@ from fastapi import HTTPException
 from clicking.vision_model.types import TaskType, PredictionReq, SegmentationResp, PredictionResp
 from pycocotools import mask as mask_utils
 from typing import Dict, Any
+from clicking.vision_model.utils import coco_encode_rle
 
 class SAM2:
-    # variant_to_id = {
-    #     "sam2_hiera_tiny": {"checkpoint": "sam2_hiera_tiny.pt", "model_cfg": "sam2_hiera_t.yaml"},
-    #     "sam2_hiera_base": {"checkpoint": "sam2_hiera_base.pt", "model_cfg": "sam2_hiera_b.yaml"},
-    #     "sam2_hiera_large": {"checkpoint": "sam2_hiera_large.pt", "model_cfg": "sam2_hiera_l.yaml"}
-    # }
-
     variant_to_id = {
         "sam2_hiera_tiny": "facebook/sam2-hiera-tiny" ,
         "sam2_hiera_base": "facebook/sam2-hiera-base" ,
@@ -38,8 +33,7 @@ class SAM2:
             self.device = torch.device("cpu")
         print(f"Using {self.device} for {self.name}")
 
-        print(f"Loading model: {self.variant_to_id[self.variant]}")
-        self.predictor = SAM2ImagePredictor.from_pretrained(self.variant_to_id[self.variant])
+        self.predictor = self.load_predictor_from_hub(self.variant)
 
         if self.device.type == "cuda":
             torch.autocast("cuda", dtype=torch.bfloat16).__enter__()
@@ -53,12 +47,6 @@ class SAM2:
                 "give numerically different outputs and sometimes degraded performance on MPS. "
                 "See e.g. https://github.com/pytorch/pytorch/issues/84936 for a discussion."
             )
-
-        # self.checkpoint = "./checkpoints/sam2/" + self.variant_to_id[self.variant]["checkpoint"]
-        # self.model_cfg = self.variant_to_id[self.variant]["model_cfg"]
-        # self.sam2_model = build_sam2(self.model_cfg, self.checkpoint, device=self.device)
-        # self.predictor = SAM2ImagePredictor(self.sam2_model)
-
 
         self.task_to_method = {
             TaskType.SEGMENTATION_WITH_CLICKPOINT: self.predict_with_clickpoint,
@@ -75,14 +63,21 @@ class SAM2:
     def tasks():
         return list(SAM2.task_prompts.keys())
 
-    def load_model(self, variant):
+    def load_predictor_from_disk(self, variant):
         if variant not in self.variant_to_id:
             raise HTTPException(status_code=400, detail=f"Invalid variant: {variant}. Please choose from: {list(self.variant_to_id.keys())}")
 
         self.checkpoint = "./checkpoints/sam2/" + self.variant_to_id[variant]["checkpoint"]
         self.model_cfg = self.variant_to_id[variant]["model_cfg"]
-        return build_sam2(self.model_cfg, self.checkpoint, device=self.device)
+        model = build_sam2(self.model_cfg, self.checkpoint, device=self.device)
+        return SAM2ImagePredictor(model)
 
+    def load_predictor_from_hub(self, variant):
+        if variant not in self.variant_to_id:
+            raise HTTPException(status_code=400, detail=f"Invalid variant: {variant}. Please choose from: {list(self.variant_to_id.keys())}")
+
+        return SAM2ImagePredictor.from_pretrained(self.variant_to_id[variant])
+        
 
     def predict(self, req: PredictionReq) -> PredictionResp:
         if req.task not in self.task_to_method:
@@ -108,12 +103,6 @@ class SAM2:
         sorted_ind = np.argsort(scores)[::-1]
         return masks[sorted_ind], scores[sorted_ind]
 
-    def coco_encode_rle(self, mask: np.ndarray) -> Dict[str, Any]:
-        binary_mask = mask.astype(bool)
-        rle = mask_utils.encode(np.asfortranarray(binary_mask))
-        rle['counts'] = rle['counts'].decode('utf-8')
-        return rle
-
     def predict_with_bbox(self, req: PredictionReq) -> SegmentationResp:
         if req.input_box is None:
             raise ValueError("Bbox is required for bbox task")
@@ -131,7 +120,7 @@ class SAM2:
         )
 
         scores = scores.tolist()
-        masks = [self.coco_encode_rle(mask) for mask in masks]
+        masks = [coco_encode_rle(mask) for mask in masks]
 
         response = SegmentationResp(masks=masks, scores=scores)
         return response
