@@ -65,10 +65,10 @@ api_response = get_available_localization_models.sync(client=client)
 print(api_response)
 
 #%% set localization model
-from clicking_client.models  import SetModelRequest
+from clicking_client.models  import SetModelReq
 from clicking_client.api.default import set_localization_model
 
-request = SetModelRequest(name="florence2", variant="florence-2-base")
+request = SetModelReq(name="florence2", variant="florence-2-base")
 
 set_localization_model.sync(client=client, body=request)
 
@@ -103,10 +103,10 @@ response = output_corrector.verify_bbox(overlayed_image, text_input)
 print(response)
 
 #%% set segmentation model
-from clicking_client.models  import SetModelRequest
+from clicking_client.models  import SetModelReq
 from clicking_client.api.default import set_segmentation_model
 
-request = SetModelRequest(name="sam2", variant="sam2_hiera_tiny")
+request = SetModelReq(name="sam2", variant="sam2_hiera_tiny")
 
 set_segmentation_model.sync(client=client, body=request)
 #%% Segmentation

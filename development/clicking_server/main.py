@@ -21,12 +21,12 @@ sam2 = models.SAM2Model(type='large')
 async def h():
     return {"message": "This is a model server for pytorch models from HuggingFace"}
 
-class LocalizationRequest(BaseModel):  
+class PredictionReq(BaseModel):  
     image: str
     text_input: str
     task_prompt: str
 
-class LocalizationResp(BaseModel):
+class PredictionResp(BaseModel):
     bboxes: list
     labels: list
     inference_time: float
@@ -50,8 +50,8 @@ class AnnotationResp(BaseModel):
     masks: list
     inference_time: float
 
-@app.get("/localization", response_model=LocalizationResp)
-async def localization(req: LocalizationRequest):
+@app.get("/localization", response_model=PredictionResp)
+async def localization(req: PredictionReq):
     base64_image = req.image
     text_input = req.text_input
     task_prompt = req.task_prompt

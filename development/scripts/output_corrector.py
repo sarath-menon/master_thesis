@@ -14,7 +14,7 @@ os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 
 #%%
-# from clicking.visualization.core import InstructionToLabel
+# from clicking.visualization.core import PromptRefiner
 from PIL import ImageDraw, Image
 import matplotlib.pyplot as plt
 from clicking.visualization.core import overlay_bounding_box
