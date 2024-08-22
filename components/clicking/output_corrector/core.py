@@ -1,3 +1,5 @@
+#%%
+
 from litellm import completion
 import os
 import dotenv
@@ -9,6 +11,8 @@ from clicking.visualization.mask import SegmentationMask, SegmentationMode
 # set API keys
 dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
+
+
 
 class OutputCorrector:
     def __init__(self, model: str = "gpt-4o"):
@@ -70,3 +74,25 @@ class OutputCorrector:
     def show_messages(self):
         for message in self.messages:
             print(message)
+
+#%% Load test image
+
+if __name__ == "__main__":
+    # from clicking.visualization.core import PromptRefiner
+    from PIL import ImageDraw, Image
+    import matplotlib.pyplot as plt
+    from clicking.visualization.core import overlay_bounding_box
+    from clicking.visualization.bbox import BoundingBox, BBoxMode
+
+    bbox = BoundingBox((1000, 400, 200, 200), BBoxMode.XYWH)
+
+    image = Image.open("./datasets/resized_media/gameplay_images/mario_odessey/8.jpg")
+    image_overlayed = overlay_bounding_box(image.copy(), bbox)
+    plt.grid(False)
+    plt.axis('off')
+    plt.imshow(image_overlayed)
+
+    # verify bbox
+    output_corrector = OutputCorrector()
+    response = output_corrector.verify_bbox(image, "building")
+    print(response)
