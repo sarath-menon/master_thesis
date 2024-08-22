@@ -23,7 +23,7 @@ class EVF_SAM:
     }
     task_prompts = {TaskType.SEGMENTATION_WITH_TEXT: ""}
 
-    def __init__(self, version, variant='sam2'):
+    def __init__(self, version='./EVF-SAM/checkpoints', variant='sam2'):
         self.name = 'evf_sam2'
         self.variant = variant
         self.version = version
@@ -125,12 +125,10 @@ class EVF_SAM:
         return PredictionResp(prediction=SegmentationResp(masks=masks))
 #%%
 
-version = "./EVF-SAM/checkpoints"
-model = EVF_SAM(version)
+# version = "./EVF-SAM/checkpoints"
+# model = EVF_SAM(version)
 
-# %%
-
-image = Image.open("./EVF-SAM/assets/zebra.jpg")
-req = PredictionReq(image=image, task=TaskType.SEGMENTATION_WITH_TEXT, input_text="zebra")
-masks = model.predict(req)
+# image = Image.open("./EVF-SAM/assets/zebra.jpg")
+# req = PredictionReq(image=image, task=TaskType.SEGMENTATION_WITH_TEXT, input_text="zebra")
+# masks = model.predict(req)
 
