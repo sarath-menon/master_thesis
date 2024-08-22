@@ -1,3 +1,2 @@
-from clicking.prompt_refinement.core import Message, StructuredPrompt
-
-__all__ = ["Message", "StructuredPrompt"]
+from clicking.prompt_refinement import core
+__all__ = ["core"]
