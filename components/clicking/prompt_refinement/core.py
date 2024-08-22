@@ -26,7 +26,7 @@ class PromptRefiner:
         self.messages = [
             {"role": "system", "content": self.prompt_manager.get_prompt(type='system')},
         ]
-        
+
     
     def _get_image_response(self, base64_image: str, text_prompt: str):
         msg = {"role": "user", "content": [
@@ -66,7 +66,6 @@ class PromptRefiner:
         }
         base64_image = self._pil_to_base64(screenshot)
         prompt = self.prompt_manager.get_prompt(type='user', prompt_key='prompt_expansion', template_values=template_values)
-        print(prompt)
         return self._get_image_response(base64_image, prompt)
 
     def show_messages(self):
@@ -88,3 +87,5 @@ class PromptRefiner:
 # response = labeller.process_prompt(image, "yellow car", PromptMode.EXPANDED_DESCRIPTION)
 # print(response)
 
+
+# %%
