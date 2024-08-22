@@ -1,13 +1,9 @@
 #!/bin/bash
 
-# Clone the repository
-git clone https://github.com/facebookresearch/segment-anything-2.git
+# install dependencies
+apt update 
+apt install libgl1 mesa-utils python3.12-venvgit-lfs just
 
-# Install the package in editable mode
-cd segment-anything-2 &&  pip install -e .
-
-# # Clean up
-# cd ..
-# rm -rf segment-anything-2
-
-echo "Package installed successfully"
+# install poetry
+curl -sSL https://install.python-poetry.org | python3 -
+echo 'export PATH="/root/.local/bin:$PATH"' >> ~/.bashrc
