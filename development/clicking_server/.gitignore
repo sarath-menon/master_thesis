@@ -1,8 +1,0 @@
-**/.DS_Store
-**/.vscode
-**/.ipynb_checkpoints
-**/.env
-**/__pycache__/
-**/*.pyc
-**/*.cpython-3?*.pyc
-/checkpoints
