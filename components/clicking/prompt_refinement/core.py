@@ -82,33 +82,31 @@ class PromptRefiner:
             print(message)
 # %%
 
-# ## Sample code
+if __name__ == "__main__":
+    from PIL import Image
+    from matplotlib import pyplot as plt
 
-# from PIL import Image
-# from matplotlib import pyplot as plt
+    image = Image.open("./datasets/resized_media/gameplay_images/mario_odessey/8.jpg")
 
-# image = Image.open("./datasets/resized_media/gameplay_images/mario_odessey/8.jpg")
+    # Create an instance of PromptRefiner
+    prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
 
-# # Create an instance of PromptRefiner
-# prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
+    # Define the batch of screenshots and corresponding input texts
+    screenshots = [image, image]
+    input_texts = [
+        "car",
+        "flag"
+    ]
 
-# # Define the batch of screenshots and corresponding input texts
-# screenshots = [image, image]
-# input_texts = [
-#     "car",
-#     "flag"
-# ]
+    # Define the mode and word limit for the prompts
+    mode = PromptMode.EXPANDED_DESCRIPTION
+    word_limit = 15
 
-# # Define the mode and word limit for the prompts
-# mode = PromptMode.EXPANDED_DESCRIPTION
-# word_limit = 15
+    # Call process_prompts asynchronously
+    async def process_batch_prompts():
+        results = await prompt_refiner.process_prompts(screenshots, input_texts, mode, word_limit)
+        for result in results:
+            print(result)
 
-# # Call process_prompts asynchronously
-# async def process_batch_prompts():
-#     results = await prompt_refiner.process_prompts(screenshots, input_texts, mode, word_limit)
-#     for result in results:
-#         print(result)
-
-# # Run the asynchronous function
-# await process_batch_prompts()
-
+    # Run the asynchronous function
+    await process_batch_prompts()
