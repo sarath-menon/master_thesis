@@ -6,7 +6,7 @@ from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
 from fastapi import HTTPException
-from clicking.vision_model.types import TaskType, PredictionReq, SegmentationResp, PredictionResp
+from clicking.vision_model.types import *
 from pycocotools import mask as mask_utils
 from typing import Dict, Any
 from clicking.vision_model.utils import coco_encode_rle
@@ -51,7 +51,8 @@ class SAM2:
         self.task_to_method = {
             TaskType.SEGMENTATION_WITH_CLICKPOINT: self.predict_with_clickpoint,
             TaskType.SEGMENTATION_WITH_BBOX: self.predict_with_bbox,
-            TaskType.SEGMENTATION_WITH_CLICKPOINT_AND_BBOX: self.predict_with_clickpoint_and_bbox
+            TaskType.SEGMENTATION_WITH_CLICKPOINT_AND_BBOX: self.predict_with_clickpoint_and_bbox,
+            TaskType.SEGMENTATION_AUTO_ANNOTATION: self.auto_annotate
         }
 
 
@@ -110,7 +111,6 @@ class SAM2:
         # Convert input_box to numpy array
         input_box = np.array(req.input_box)
 
-
         self.predictor.set_image(req.image)
         masks, scores, _ = self.predictor.predict(
             point_coords=None,
@@ -123,6 +123,16 @@ class SAM2:
         masks = [coco_encode_rle(mask) for mask in masks]
 
         response = SegmentationResp(masks=masks, scores=scores)
+        return response
+
+    def auto_annotate(self, req: AutoAnnotationReq) ->SegmentationResp:
+        mask_generator = SAM2AutomaticMaskGenerator(self.sam2_model, min_mask_region_area=req.min_mask_region_area,
+        pred_iou_thresh=req.pred_iou_thresh,
+        output_mode=req.output_mode)
+        image_np = np.array(image.convert("RGB"))
+        masks = mask_generator.generate(image_np)
+
+        response = SegmentationResp(masks=masks)
         return response
 
     def predict_with_clickpoint_and_bbox(self, req: PredictionReq):
@@ -140,10 +150,3 @@ class SAM2:
         )
         return masks, scores, logits
 
-    def generate_masks(self, image, min_mask_region_area, pred_iou_thresh):
-        mask_generator = SAM2AutomaticMaskGenerator(self.sam2_model, min_mask_region_area=min_mask_region_area,
-        pred_iou_thresh=pred_iou_thresh,
-        output_mode='coco_rle')
-        image_np = np.array(image.convert("RGB"))
-        masks = mask_generator.generate(image_np)
-        return masks

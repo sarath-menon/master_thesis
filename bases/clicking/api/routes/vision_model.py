@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query, File, UploadFile, Form, Path, HTTPException
-from clicking.vision_model.core import SegmentationReq, SegmentationResp, LocalizationReq, LocalizationResp, VisionModel, GetModelsResp, GetModelResp, SetModelReq, TaskType, GetModelReq, PredictionReq, PredictionResp
+from clicking.vision_model.core import *
 from PIL import Image
 import io
 import json
@@ -29,13 +29,14 @@ async def set_model(req: SetModelReq = None):
     print(req)
     return {"message": "Model set successfully", "status_code": 200}
 
+
 @vision_model_router.post("/prediction",operation_id="get_prediction", response_model=PredictionResp)
 async def prediction(image: UploadFile = File(...),
     task: TaskType = Form(None),
     input_boxes: str = Form(None),
     input_point: str = Form(None),
     input_label: str = Form(None),
-    input_text: str = Form(None)
+    input_text: str = Form(None),
     ):
 
     if task is None:
@@ -53,4 +54,29 @@ async def prediction(image: UploadFile = File(...),
 
     
     response = await vision_model.get_prediction(req)
+    return response
+
+
+@vision_model_router.post("/auto_annotation",operation_id="get_auto_annotation", response_model=PredictionResp)
+async def auto_annotation(image: UploadFile = File(...),
+    task: TaskType = Form(None),
+    min_mask_region_area: int = Form(None),
+    pred_iou_thresh: float = Form(None),
+    output_mode: str = Form(None),
+    ):
+
+    if task is None:
+        raise HTTPException(status_code=400, detail="Task is required")
+
+    #Convert to a PIL image
+    image_data = await image.read()
+    image = Image.open(io.BytesIO(image_data))
+
+    # convert input_boxes to a list of lists
+    input_boxes = json.loads(input_boxes) if input_boxes else []
+
+    req = AutoAnnotationReq(image=image, task=task, min_mask_region_area=min_mask_region_area, pred_iou_thresh=pred_iou_thresh, output_mode=output_mode)
+    print(req)
+
+    response = await vision_model.get_auto_annotation(req)
     return response

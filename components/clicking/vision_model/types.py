@@ -12,6 +12,7 @@ class TaskType(str, Enum):
     SEGMENTATION_WITH_BBOX = "SEGMENTATION_WITH_BBOX"
     SEGMENTATION_WITH_CLICKPOINT_AND_BBOX = "SEGMENTATION_WITH_CLICKPOINT_AND_BBOX"
     CAPTIONING = "CAPTIONING"
+    SEGMENTATION_AUTO_ANNOTATION = "SEGMENTATION_AUTO_ANNOTATION"
 
 class SegmentationReq(BaseModel):  
     image: Any
@@ -63,3 +64,13 @@ class PredictionReq(BaseModel):
 class PredictionResp(BaseModel):
     inference_time: Optional[float] = 0.0
     prediction: Union[LocalizationResp, SegmentationResp]
+
+class AutoAnnotationReq(BaseModel):
+    task: TaskType
+    min_mask_region_area: int 
+    pred_iou_thresh: float 
+    output_mode: str 
+
+# class AutoAnnotationResp(BaseModel):
+#     prediction: SegmentationResp
+#     inference_time: Optional[float] = 0.0

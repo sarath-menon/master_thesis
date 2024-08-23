@@ -84,3 +84,15 @@ class VisionModel:
         response.inference_time = time.time() - start_time
 
         return response
+
+
+    async def get_auto_annotation(self, req: AutoAnnotationReq) -> PredictionResp:
+        model_handle = self._get_model_for_task(req.task)
+        if model_handle is None:
+            raise HTTPException(status_code=404, detail=f"{req.task.name.capitalize()} model not set")
+
+        start_time = time.time()
+        response = model_handle.auto_annotate(req)
+        response.inference_time = time.time() - start_time
+
+        return response

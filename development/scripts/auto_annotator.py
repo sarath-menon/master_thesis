@@ -29,10 +29,14 @@ elif device.type == "mps":
         "See e.g. https://github.com/pytorch/pytorch/issues/84936 for a discussion."
     )
 # %%
+from pycocotools import mask as mask_utils
 
 np.random.seed(3)
 
 def show_anns(anns, borders=True):
+
+    anns = [mask_utils.decode(ann['segmentation']) for ann in anns]
+
     if len(anns) == 0:
         return
     sorted_anns = sorted(anns, key=(lambda x: x['area']), reverse=True)
@@ -44,6 +48,7 @@ def show_anns(anns, borders=True):
     for ann in sorted_anns:
         m = ann['segmentation']
         color_mask = np.concatenate([np.random.random(3), [0.9]])
+
         img[m] = color_mask
         if borders:
             import cv2
@@ -82,16 +87,17 @@ pred_iou_thresh = 0.94
 
 mask_generator = SAM2AutomaticMaskGenerator.from_pretrained ("facebook/sam2-hiera-large",min_mask_region_area=min_mask_region_area,
 pred_iou_thresh=pred_iou_thresh,
-# output_mode='coco_rle'
+output_mode='coco_rle'
 )
 image_np = np.array(image.convert("RGB"))
 masks = mask_generator.generate(image_np)
 
 # %% Run the mask generator
 
-plt.figure(figsize=(20, 20))
-plt.imshow(image)
-show_anns(masks)
-plt.axis('off')
-plt.show()
+from clicking.visualization.core import show_localization_prediction, show_segmentation_prediction
+show_segmentation_prediction(image, masks)
+
+
+
+
 

@@ -44,17 +44,12 @@ def image_to_base64(img):
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 #%% set image and text input
-index = 6
+index = 5
 image_tensor, annotations = coco_dataset[index]
 to_pil = transforms.ToPILImage()
 image = to_pil(image_tensor)
 text_input = create_text_input(annotations)
 print(text_input)
-
-plt.imshow(image)
-plt.grid(False)
-plt.axis('off')
-plt.show()
 
 #%%
 from clicking_client import Client
@@ -70,22 +65,16 @@ from clicking_client.models  import SetModelReq
 from clicking_client.api.default import set_model
 from clicking.vision_model.types import TaskType
 
+
 api_response = get_models.sync(client=client)
 print(api_response)
+
 #%% set localization model
 
-request = SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB)
+request = SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_GROUNDED)
+
 set_model.sync(client=client, body=request)
 
-#%% get refined prompt
-from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
-
-text_input = 'flag'
-labeller =  PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
-response = labeller.process_prompt(image, text_input, PromptMode.EXPANDED_DESCRIPTION)
-response = json.loads(response)
-refined_text_input = response["expanded_description"]
-print(f"refined_text_input: {refined_text_input}")
 #%% get localization prediction
 
 from clicking_client.api.default import get_prediction
@@ -103,8 +92,8 @@ image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime
 # Create the request object
 request = BodyGetPrediction(
     image=image_file,
-    task= TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
-    input_text=refined_text_input
+    task= TaskType.LOCALIZATION_WITH_TEXT_GROUNDED,
+    input_text=text_input
 )
 localization_resp = get_prediction.sync(client=client, body=request)
 print(f"inference time: {localization_resp.inference_time}")
