@@ -43,13 +43,7 @@ def image_to_base64(img):
     img.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
-#%% set image and text input
-index = 5
-image_tensor, annotations = coco_dataset[index]
-to_pil = transforms.ToPILImage()
-image = to_pil(image_tensor)
-text_input = create_text_input(annotations)
-print(text_input)
+
 
 #%%
 from clicking_client import Client
@@ -72,6 +66,17 @@ print(api_response)
 request = SetModelReq(name="sam2", variant="sam2_hiera_large", task=TaskType.SEGMENTATION_AUTO_ANNOTATION)
 set_model.sync(client=client, body=request)
 
+#%% set image and text input
+index = 6
+image_tensor, annotations = coco_dataset[index]
+to_pil = transforms.ToPILImage()
+image = to_pil(image_tensor)
+text_input = create_text_input(annotations)
+print(text_input)
+
+plt.imshow(image)
+plt.axis('off')
+plt.show()
 #%% Segmentation
 from clicking_client.api.default import get_auto_annotation
 from clicking_client.models import BodyGetAutoAnnotation
@@ -100,7 +105,7 @@ request = BodyGetAutoAnnotation(
     image=image_file,
     task=TaskType.SEGMENTATION_AUTO_ANNOTATION,
     min_mask_region_area=400,
-    pred_iou_thresh=0.80,
+    pred_iou_thresh=0.90,
     output_mode='coco_rle'
 )
 
@@ -114,13 +119,51 @@ show_segmentation_prediction(image, masks)
 
 # %% verify masks
 
-response = output_corrector.verify_mask(image, masks[0], text_input)
-print(response)
+import numpy as np
+import matplotlib.pyplot as plt
 
-# %% get click point
+image_np = np.array(image)
+mask_count = len(prediction.masks)
+n_cols = 1
+num_rows = (mask_count + 3) // n_cols  # Calculate the number of rows needed for subplots
+plt.figure(figsize=(20, 2 * num_rows))  # Adjust the figure size dynamically
 
-from clicking.visualization.core import show_clickpoint
-from clicking.segmentation.utils import get_mask_centroid
+def crop_using_bbox(image_np, bbox, padding=10):
+    x1, y1, width, height = map(int, bbox)
+    x1 = max(0, x1 - padding)
+    y1 = max(0, y1 - padding)
 
-centroid = get_mask_centroid(masks[0].get(mode=SegmentationMode.BINARY_MASK))
-show_clickpoint(image, centroid, text_input)
+    width += 2 * padding
+    height += 2 * padding
+
+    x2 = x1 + width
+    y2 = y1 + height
+    cropped_image = image_np[y1:y2, x1:x2]
+    return cropped_image
+
+
+for i, mask in enumerate(prediction.masks):
+    plt.subplot(num_rows, n_cols, i + 1)  # Set rows and n_cols columns
+
+    # Crop bounding box around segmented pixels
+    cropped_image = crop_using_bbox(image_np, mask['bbox'])
+
+    plt.imshow(cropped_image )
+    plt.title(str(mask['area']))
+    plt.axis('off')
+
+plt.show()
+
+#%% plot all masks
+
+mask_count = len(prediction.masks)
+n_cols = 1
+rows = (mask_count + 3) // n_cols  # Calculate the number of rows needed
+plt.figure(figsize=(20, 3 * rows))  # Adjust the figure size dynamically
+
+for i, mask in enumerate(masks):
+    plt.subplot(rows, n_cols, i + 1)  # Set rows and 4 columns
+    plt.imshow(mask.get(mode=SegmentationMode.BINARY_MASK), cmap='gray')  # Assuming mask is a numpy array
+    plt.axis('off')
+    plt.tight_layout()
+plt.show()
