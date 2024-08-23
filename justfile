@@ -2,10 +2,10 @@
 start_server PORT='8082':
     uvicorn core:app --reload --port {{PORT}} --app-dir bases/clicking/api --reload-dir bases/clicking/api
 
-install_sam2:
-    git clone https://github.com/facebookresearch/segment-anything-2.git
-    pip install -e ./segment-anything-2
-    rm -rf segment-anything-2
+install_wheels:
+    pip install ./wheels/evf_sam2/evf_sam-1.0-py3-none-any.whl
+    pip install ./wheels/sam2/SAM_2-1.0-py3-none-any.whl
+    git clone https://huggingface.co/YxZhang/evf-sam2 checkpoints
 
 download_sam2_checkpoint VARIANT:
     mkdir -p ./checkpoints/sam2
