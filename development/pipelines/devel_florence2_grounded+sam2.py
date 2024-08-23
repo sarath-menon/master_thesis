@@ -43,7 +43,13 @@ def image_to_base64(img):
     img.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
-
+#%% set image and text input
+index = 5
+image_tensor, annotations = coco_dataset[index]
+to_pil = transforms.ToPILImage()
+image = to_pil(image_tensor)
+text_input = create_text_input(annotations)
+print(text_input)
 
 #%%
 from clicking_client import Client
@@ -59,41 +65,24 @@ from clicking_client.models  import SetModelReq
 from clicking_client.api.default import set_model
 from clicking.vision_model.types import TaskType
 
+
 api_response = get_models.sync(client=client)
 print(api_response)
-#%% set segmentation model
 
-request = SetModelReq(name="sam2", variant="sam2_hiera_large", task=TaskType.SEGMENTATION_AUTO_ANNOTATION)
+#%% set localization model
+
+request = SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_GROUNDED)
+
 set_model.sync(client=client, body=request)
 
-#%% set image and text input
-index = 6
-image_tensor, annotations = coco_dataset[index]
-to_pil = transforms.ToPILImage()
-image = to_pil(image_tensor)
-text_input = create_text_input(annotations)
-print(text_input)
+#%% get localization prediction
 
-plt.imshow(image)
-plt.axis('off')
-plt.show()
-#%% Segmentation
-from clicking_client.api.default import get_auto_annotation
-from clicking_client.models import BodyGetAutoAnnotation
+from clicking_client.api.default import get_prediction
+from clicking_client.models import BodyGetPrediction
 from clicking_client.types import File
 import io
 import json
-from clicking.visualization.mask import SegmentationMask, SegmentationMode
-
-# import requests
-# from io import BytesIO
-
-# def get_image_from_url(url):
-#   response = requests.get(url)
-#   return Image.open(BytesIO(response.content))
-
-# # image = Image.open('images/cars.jpg')
-# image = get_image_from_url("https://nichegamer.com/wp-content/uploads/2022/12/hogwarts-legacy-12-18-22-1.jpg")
+from clicking.visualization.bbox import BoundingBox
 
 # Convert PIL Image to bytes and create a File object
 image_byte_arr = io.BytesIO()
@@ -101,69 +90,77 @@ image.save(image_byte_arr, format='JPEG')
 image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
 
 # Create the request object
-request = BodyGetAutoAnnotation(
+request = BodyGetPrediction(
     image=image_file,
-    task=TaskType.SEGMENTATION_AUTO_ANNOTATION,
-    min_mask_region_area=400,
-    pred_iou_thresh=0.90,
-    output_mode='coco_rle'
+    task= TaskType.LOCALIZATION_WITH_TEXT_GROUNDED,
+    input_text=text_input
+)
+localization_resp = get_prediction.sync(client=client, body=request)
+print(f"inference time: {localization_resp.inference_time}")
+
+prediction = localization_resp.prediction
+show_localization_prediction(image.copy(), prediction.bboxes, prediction.labels)
+
+#%% verify bounding boxes
+# convert bboxes to BoundingBox type
+from clicking.visualization.bbox import BoundingBox, BBoxMode
+import matplotlib.pyplot as plt
+from clicking.visualization.core import overlay_bounding_box
+from clicking.visualization.bbox import BoundingBox, BBoxMode
+from clicking.output_corrector.core import OutputCorrector
+
+bboxes = [BoundingBox((bbox[0], bbox[1], bbox[2], bbox[3]), BBoxMode.XYXY) for bbox in prediction.bboxes]
+
+overlayed_image = overlay_bounding_box(image.copy(), bboxes[0], thickness=10, padding=20)
+
+plt.grid(False)
+plt.axis('off')
+plt.imshow(overlayed_image)
+
+output_corrector = OutputCorrector()
+response = output_corrector.verify_bbox(overlayed_image, text_input)
+print(response)
+
+#%% set segmentation model
+
+request = SetModelReq(name="sam2", variant="sam2_hiera_tiny", task=TaskType.SEGMENTATION_WITH_BBOX)
+set_model.sync(client=client, body=request)
+#%% Segmentation
+from clicking_client.api.default import get_prediction
+from clicking_client.models import BodyGetPrediction
+from clicking_client.types import File
+import io
+import json
+from clicking.visualization.mask import SegmentationMask, SegmentationMode
+
+# Convert PIL Image to bytes and create a File object
+image_byte_arr = io.BytesIO()
+image.save(image_byte_arr, format='JPEG')
+image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
+
+# Create the request object
+request = BodyGetPrediction(
+    image=image_file,
+    task=TaskType.SEGMENTATION_WITH_BBOX,
+    input_boxes=json.dumps(prediction.bboxes)  # Convert bboxes to JSON string
 )
 
-segmentation_resp = get_auto_annotation.sync(client=client, body=request)
+segmentation_resp = get_prediction.sync(client=client, body=request)
 print(f"inference time: {segmentation_resp.inference_time}")
 
 prediction = segmentation_resp.prediction
-masks = [SegmentationMask(mask['segmentation'], mode=SegmentationMode.COCO_RLE) for mask in prediction.masks]
-
+masks = [SegmentationMask(mask, mode=SegmentationMode.COCO_RLE) for mask in prediction.masks]
 show_segmentation_prediction(image, masks)
 
 # %% verify masks
 
-import numpy as np
-import matplotlib.pyplot as plt
+response = output_corrector.verify_mask(image, masks[0], text_input)
+print(response)
 
-image_np = np.array(image)
-mask_count = len(prediction.masks)
-n_cols = 1
-num_rows = (mask_count + 3) // n_cols  # Calculate the number of rows needed for subplots
-plt.figure(figsize=(20, 2 * num_rows))  # Adjust the figure size dynamically
+# %% get click point
 
-def crop_using_bbox(image_np, bbox, padding=10):
-    x1, y1, width, height = map(int, bbox)
-    x1 = max(0, x1 - padding)
-    y1 = max(0, y1 - padding)
+from clicking.visualization.core import show_clickpoint
+from clicking.segmentation.utils import get_mask_centroid
 
-    width += 2 * padding
-    height += 2 * padding
-
-    x2 = x1 + width
-    y2 = y1 + height
-    cropped_image = image_np[y1:y2, x1:x2]
-    return cropped_image
-
-
-for i, mask in enumerate(prediction.masks):
-    plt.subplot(num_rows, n_cols, i + 1)  # Set rows and n_cols columns
-
-    # Crop bounding box around segmented pixels
-    cropped_image = crop_using_bbox(image_np, mask['bbox'])
-
-    plt.imshow(cropped_image )
-    plt.title(str(mask['area']))
-    plt.axis('off')
-
-plt.show()
-
-#%% plot all masks
-
-mask_count = len(prediction.masks)
-n_cols = 1
-rows = (mask_count + 3) // n_cols  # Calculate the number of rows needed
-plt.figure(figsize=(20, 3 * rows))  # Adjust the figure size dynamically
-
-for i, mask in enumerate(masks):
-    plt.subplot(rows, n_cols, i + 1)  # Set rows and 4 columns
-    plt.imshow(mask.get(mode=SegmentationMode.BINARY_MASK), cmap='gray')  # Assuming mask is a numpy array
-    plt.axis('off')
-    plt.tight_layout()
-plt.show()
+centroid = get_mask_centroid(masks[0].get(mode=SegmentationMode.BINARY_MASK))
+show_clickpoint(image, centroid, text_input)
