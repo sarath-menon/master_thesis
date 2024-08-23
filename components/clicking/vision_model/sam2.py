@@ -140,7 +140,6 @@ class SAM2:
         )
         return masks, scores, logits
 
-    # ... other existing methods ...
     def generate_masks(self, image, min_mask_region_area, pred_iou_thresh):
         mask_generator = SAM2AutomaticMaskGenerator(self.sam2_model, min_mask_region_area=min_mask_region_area,
         pred_iou_thresh=pred_iou_thresh,

@@ -53,7 +53,7 @@ def show_anns(anns, borders=True):
             cv2.drawContours(img, contours, -1, (0, 0, 1, 0.4), thickness=1)
 
     ax.imshow(img)
-
+#%%
 import requests
 from PIL import Image
 from io import BytesIO
@@ -61,7 +61,6 @@ from io import BytesIO
 def get_image_from_url(url):
   response = requests.get(url)
   return Image.open(BytesIO(response.content))
-
 
 # image = Image.open('images/cars.jpg')
 image = get_image_from_url("https://nichegamer.com/wp-content/uploads/2022/12/hogwarts-legacy-12-18-22-1.jpg")
@@ -76,18 +75,23 @@ plt.show()
 from sam2.build_sam import build_sam2
 from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
 
+# mask_generator = SAM2AutomaticMaskGenerator.from_pretrained ("facebook/sam2-hiera-large", device=device)
 
-mask_generator = SAM2AutomaticMaskGenerator.from_pretrained ("facebook/sam2-hiera-tiny", device=device)
-# %% Run the mask generator
+min_mask_region_area = 400
+pred_iou_thresh = 0.94
 
+mask_generator = SAM2AutomaticMaskGenerator.from_pretrained ("facebook/sam2-hiera-large",min_mask_region_area=min_mask_region_area,
+pred_iou_thresh=pred_iou_thresh,
+# output_mode='coco_rle'
+)
+image_np = np.array(image.convert("RGB"))
 masks = mask_generator.generate(image_np)
 
-# Remove all masks with area less than threshold
-area_threshold = 400
-masks = [mask for mask in masks if mask['area'] >= area_threshold]
+# %% Run the mask generator
 
 plt.figure(figsize=(20, 20))
 plt.imshow(image)
 show_anns(masks)
 plt.axis('off')
 plt.show()
+
