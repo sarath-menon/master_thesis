@@ -148,10 +148,26 @@ class SAM2:
 
         self.predictor.set_image(req.image)
         masks, scores, logits = self.predictor.predict(
+            box=req.bbox[None, :],
             point_coords=req.click_point,
             point_labels=req.click_label,
-            box=req.bbox[None, :],
-            multimask_output=False,
+            points_per_side = req.points_per_side,
+            points_per_batch = req.points_per_batch,
+            pred_iou_thresh = req.pred_iou_thresh,
+            stability_score_thresh = req.stability_score_thresh,
+            stability_score_offset = req.stability_score_offset,
+            mask_threshold = req.mask_threshold,
+            box_nms_thresh = req.box_nms_thresh,
+            crop_n_layers = req.crop_n_layers,
+            crop_nms_thresh = req.crop_nms_thresh,
+            crop_overlap_ratio = req.crop_overlap_ratio,
+            crop_n_points_downscale_factor = req.crop_n_points_downscale_factor,
+            point_grids = req.point_grids,
+            min_mask_region_area = req.min_mask_region_area,
+            output_mode = req.output_mode,
+            use_m2m = req.use_m2m,
+            multimask_output = req.multimask_output,
+
         )
         return masks, scores, logits
 

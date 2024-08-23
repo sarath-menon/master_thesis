@@ -1,7 +1,8 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, List
 from enum import Enum, auto
 from PIL import Image
+import numpy as np
 
 class TaskType(str, Enum):
     LOCALIZATION_WITH_TEXT = "LOCALIZATION_WITH_TEXT"
@@ -54,10 +55,22 @@ class SegmentationResp(BaseModel):
 class PredictionReq(BaseModel):
     image: Image.Image
     task: TaskType
-    input_point: Optional[list] = None
-    input_label: Optional[list] = None
-    input_box: Optional[list] = None
-    input_text: Optional[str] = None
+    points_per_side: Optional[int] = 32,
+    points_per_batch: Optional[int] = 64,
+    pred_iou_thresh: Optional[float] = 0.8,
+    stability_score_thresh: Optional[float] = 0.95,
+    stability_score_offset: Optional[float] = 1.0,
+    mask_threshold: Optional[float] = 0.0,
+    box_nms_thresh: Optional[float] = 0.7,
+    crop_n_layers: Optional[int] = 0,
+    crop_nms_thresh: Optional[float] = 0.7,
+    crop_overlap_ratio: Optional[float] = 512 / 1500,
+    crop_n_points_downscale_factor: Optional[int] = 1,
+    point_grids: Optional[List[np.ndarray]] = None,
+    min_mask_region_area: Optional[int] = 0,
+    output_mode: Optional[str] = "coco_rle",
+    use_m2m: Optional[bool] = False,
+    multimask_output: Optional[bool] = True,
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
