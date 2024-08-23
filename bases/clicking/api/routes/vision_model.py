@@ -57,7 +57,7 @@ async def prediction(image: UploadFile = File(...),
     return response
 
 
-@vision_model_router.post("/auto_annotation",operation_id="get_auto_annotation", response_model=PredictionResp)
+@vision_model_router.post("/auto_annotation",operation_id="get_auto_annotation", response_model=AutoAnnotationResp)
 async def auto_annotation(image: UploadFile = File(...),
     task: TaskType = Form(None),
     min_mask_region_area: int = Form(None),
@@ -71,9 +71,6 @@ async def auto_annotation(image: UploadFile = File(...),
     #Convert to a PIL image
     image_data = await image.read()
     image = Image.open(io.BytesIO(image_data))
-
-    # convert input_boxes to a list of lists
-    input_boxes = json.loads(input_boxes) if input_boxes else []
 
     req = AutoAnnotationReq(image=image, task=task, min_mask_region_area=min_mask_region_area, pred_iou_thresh=pred_iou_thresh, output_mode=output_mode)
     print(req)

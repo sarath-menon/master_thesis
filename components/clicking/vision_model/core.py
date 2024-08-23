@@ -1,6 +1,6 @@
 from clicking.vision_model.florence2 import Florence2
 from clicking.vision_model.sam2 import SAM2
-from clicking.vision_model.evf_sam2 import EVF_SAM
+# from clicking.vision_model.evf_sam2 import EVF_SAM
 from pydantic import BaseModel
 from PIL import Image
 import io
@@ -19,7 +19,7 @@ class VisionModel:
         self._available_models = {
             'florence2': Florence2,
             'sam2': SAM2,
-            'evf_sam2': EVF_SAM
+            # 'evf_sam2': EVF_SAM
         }
         # to store task-model mappings
         self._task_models = {}  

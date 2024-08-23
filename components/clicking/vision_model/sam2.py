@@ -18,7 +18,7 @@ class SAM2:
         "sam2_hiera_large": "facebook/sam2-hiera-large" ,
     }
 
-    task_prompts = {TaskType.SEGMENTATION_WITH_CLICKPOINT: "", TaskType.SEGMENTATION_WITH_BBOX: "", TaskType.SEGMENTATION_WITH_BBOX: ""}
+    task_prompts = {TaskType.SEGMENTATION_WITH_CLICKPOINT: "", TaskType.SEGMENTATION_WITH_BBOX: "", TaskType.SEGMENTATION_WITH_BBOX: "", TaskType.SEGMENTATION_AUTO_ANNOTATION: ""}
 
     def __init__(self, variant="sam2_hiera_tiny"):
         self.name = 'sam2'
@@ -125,14 +125,19 @@ class SAM2:
         response = SegmentationResp(masks=masks, scores=scores)
         return response
 
-    def auto_annotate(self, req: AutoAnnotationReq) ->SegmentationResp:
-        mask_generator = SAM2AutomaticMaskGenerator(self.sam2_model, min_mask_region_area=req.min_mask_region_area,
+    def auto_annotate(self, req: AutoAnnotationReq) ->AutoAnnotationResp:
+        if req.task not in self.task_to_method:
+            raise ValueError(f"Invalid task type: {req.task}")
+        elif req.image is None:
+            raise ValueError("Image is required for any vision task")
+
+        mask_generator =  SAM2AutomaticMaskGenerator.from_pretrained(self.variant_to_id[self.variant], min_mask_region_area=req.min_mask_region_area,
         pred_iou_thresh=req.pred_iou_thresh,
         output_mode=req.output_mode)
-        image_np = np.array(image.convert("RGB"))
+        image_np = np.array(req.image.convert("RGB"))
         masks = mask_generator.generate(image_np)
 
-        response = SegmentationResp(masks=masks)
+        response = AutoAnnotationResp(prediction=SegmentationResp(masks=masks))
         return response
 
     def predict_with_clickpoint_and_bbox(self, req: PredictionReq):

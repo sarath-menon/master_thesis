@@ -66,11 +66,14 @@ class PredictionResp(BaseModel):
     prediction: Union[LocalizationResp, SegmentationResp]
 
 class AutoAnnotationReq(BaseModel):
+    image: Image.Image
     task: TaskType
     min_mask_region_area: int 
     pred_iou_thresh: float 
     output_mode: str 
 
-# class AutoAnnotationResp(BaseModel):
-#     prediction: SegmentationResp
-#     inference_time: Optional[float] = 0.0
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+class AutoAnnotationResp(BaseModel):
+    prediction: SegmentationResp
+    inference_time: Optional[float] = 0.0
