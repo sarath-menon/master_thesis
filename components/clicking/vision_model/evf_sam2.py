@@ -27,6 +27,7 @@ class EVF_SAM:
         self.name = 'evf_sam2'
         self.variant = variant
         self.version = version
+        self.device = None
         
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.version,
@@ -49,11 +50,20 @@ class EVF_SAM:
     def load_model(self, variant):
         if variant not in self.variant_to_id:
             raise HTTPException(status_code=400, detail=f"Invalid variant: {variant}. Please choose from: {list(self.variant_to_id.keys())}")
-            
+
+         # select the device for computation
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+        else:
+            self.device = torch.device("cpu")
+        print(f"Using {self.device} for inference")
+                
         model = EvfSam2Model.from_pretrained(self.version, low_cpu_mem_usage=True, **self.kwargs)
         del model.visual_model.memory_encoder
         del model.visual_model.memory_attention
-        model = model.cuda().eval()
+        model = model.to(self.device).eval()
         return model
 
     def sam_preprocess(
@@ -104,12 +114,12 @@ class EVF_SAM:
         image_np = np.array(req.image)
         original_size_list = [image_np.shape[:2]]
 
-        image_beit = self.beit3_preprocess(image_np, 224).to(dtype=self.model.dtype, device=self.model.device)
+        image_beit = self.beit3_preprocess(image_np, 224).to(dtype=self.model.dtype, device=self.device)
 
         image_sam, resize_shape = self.sam_preprocess(image_np)
-        image_sam = image_sam.to(dtype=self.model.dtype, device=self.model.device)
+        image_sam = image_sam.to(dtype=self.model.dtype, device=self.device)
 
-        input_ids = self.tokenizer(req.input_text, return_tensors="pt")["input_ids"].to(device=self.model.device)
+        input_ids = self.tokenizer(req.input_text, return_tensors="pt")["input_ids"].to(device=self.device)
 
         pred_mask = self.model.inference(
             image_sam.unsqueeze(0),
