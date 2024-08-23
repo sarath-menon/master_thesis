@@ -65,91 +65,51 @@ from clicking_client.models  import SetModelReq
 from clicking_client.api.default import set_model
 from clicking.vision_model.types import TaskType
 
-
 api_response = get_models.sync(client=client)
 print(api_response)
-
-#%% set localization model
-
-request = SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_GROUNDED)
-
-set_model.sync(client=client, body=request)
-
-#%% get localization prediction
-
-from clicking_client.api.default import get_prediction
-from clicking_client.models import BodyGetPrediction
-from clicking_client.types import File
-import io
-import json
-from clicking.visualization.bbox import BoundingBox
-
-# Convert PIL Image to bytes and create a File object
-image_byte_arr = io.BytesIO()
-image.save(image_byte_arr, format='JPEG')
-image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
-
-# Create the request object
-request = BodyGetPrediction(
-    image=image_file,
-    task= TaskType.LOCALIZATION_WITH_TEXT_GROUNDED,
-    input_text=text_input
-)
-localization_resp = get_prediction.sync(client=client, body=request)
-print(f"inference time: {localization_resp.inference_time}")
-
-prediction = localization_resp.prediction
-show_localization_prediction(image.copy(), prediction.bboxes, prediction.labels)
-
-#%% verify bounding boxes
-# convert bboxes to BoundingBox type
-from clicking.visualization.bbox import BoundingBox, BBoxMode
-import matplotlib.pyplot as plt
-from clicking.visualization.core import overlay_bounding_box
-from clicking.visualization.bbox import BoundingBox, BBoxMode
-from clicking.output_corrector.core import OutputCorrector
-
-bboxes = [BoundingBox((bbox[0], bbox[1], bbox[2], bbox[3]), BBoxMode.XYXY) for bbox in prediction.bboxes]
-
-overlayed_image = overlay_bounding_box(image.copy(), bboxes[0], thickness=10, padding=20)
-
-plt.grid(False)
-plt.axis('off')
-plt.imshow(overlayed_image)
-
-output_corrector = OutputCorrector()
-response = output_corrector.verify_bbox(overlayed_image, text_input)
-print(response)
-
 #%% set segmentation model
 
-request = SetModelReq(name="sam2", variant="sam2_hiera_tiny", task=TaskType.SEGMENTATION_WITH_BBOX)
+request = SetModelReq(name="sam2", variant="sam2_hiera_large", task=TaskType.SEGMENTATION_AUTO_ANNOTATION)
 set_model.sync(client=client, body=request)
+
 #%% Segmentation
-from clicking_client.api.default import get_prediction
-from clicking_client.models import BodyGetPrediction
+from clicking_client.api.default import get_auto_annotation
+from clicking_client.models import BodyGetAutoAnnotation
 from clicking_client.types import File
 import io
 import json
 from clicking.visualization.mask import SegmentationMask, SegmentationMode
 
+# import requests
+# from io import BytesIO
+
+# def get_image_from_url(url):
+#   response = requests.get(url)
+#   return Image.open(BytesIO(response.content))
+
+# # image = Image.open('images/cars.jpg')
+# image = get_image_from_url("https://nichegamer.com/wp-content/uploads/2022/12/hogwarts-legacy-12-18-22-1.jpg")
+
 # Convert PIL Image to bytes and create a File object
 image_byte_arr = io.BytesIO()
 image.save(image_byte_arr, format='JPEG')
 image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
 
 # Create the request object
-request = BodyGetPrediction(
+request = BodyGetAutoAnnotation(
     image=image_file,
-    task=TaskType.SEGMENTATION_WITH_BBOX,
-    input_boxes=json.dumps(prediction.bboxes)  # Convert bboxes to JSON string
+    task=TaskType.SEGMENTATION_AUTO_ANNOTATION,
+    min_mask_region_area=400,
+    pred_iou_thresh=0.80,
+    output_mode='coco_rle'
 )
 
-segmentation_resp = get_prediction.sync(client=client, body=request)
+segmentation_resp = get_auto_annotation.sync(client=client, body=request)
 print(f"inference time: {segmentation_resp.inference_time}")
 
 prediction = segmentation_resp.prediction
-masks = [SegmentationMask(mask, mode=SegmentationMode.COCO_RLE) for mask in prediction.masks]
+masks = [SegmentationMask(mask['segmentation'], mode=SegmentationMode.COCO_RLE) for mask in prediction.masks]
+
 show_segmentation_prediction(image, masks)
 
 # %% verify masks
