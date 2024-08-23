@@ -7,6 +7,7 @@ import io
 from enum import Enum, auto
 from components.clicking.prompt_manager.core import PromptManager
 import asyncio
+import nest_asyncio
 from typing import List
 
 # set API keys
@@ -88,7 +89,9 @@ class PromptRefiner:
 
 if __name__ == "__main__":
     from PIL import Image
-    from matplotlib import pyplot as plt
+    import asyncio
+    import nest_asyncio
+    nest_asyncio.apply()
 
     image = Image.open("./datasets/resized_media/gameplay_images/mario_odessey/8.jpg")
 
@@ -113,4 +116,5 @@ if __name__ == "__main__":
             print(result)
 
     # Run the asynchronous function
-    await process_batch_prompts()
+    asyncio.get_event_loop().run_until_complete(process_batch_prompts())
+# %%

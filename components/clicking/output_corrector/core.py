@@ -74,10 +74,13 @@ class OutputCorrector:
 #%% Load test image
 
 if __name__ == "__main__":
-    from PIL import ImageDraw, Image
+    from PIL import Image
     import matplotlib.pyplot as plt
     from clicking.visualization.core import overlay_bounding_box
     from clicking.visualization.bbox import BoundingBox, BBoxMode
+    import asyncio
+    import nest_asyncio
+    nest_asyncio.apply()
 
     image = Image.open("./datasets/resized_media/gameplay_images/mario_odessey/8.jpg")
     plt.grid(False)
@@ -111,5 +114,5 @@ if __name__ == "__main__":
             print(f"Result: {result}")
 
     # Run the asynchronous function
-    await process_batch_prompts()
+    asyncio.get_event_loop().run_until_complete(process_batch_prompts())
 # %%
