@@ -98,6 +98,7 @@ from clicking.visualization.core import show_localization_prediction, show_segme
 show_segmentation_prediction(image, masks)
 
 
-
+#%%
+masks
 
 
