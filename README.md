@@ -103,7 +103,7 @@ python setup.py sdist bdist_wheel --dist-dir ../wheels/evf_sam2
 
 Install wheel
 ```
-pip install ./wheels/evf_sam2
+pip install ./wheels/evf_sam2/evf_sam-1.0-py3-none-any.whl
 ```
 
 ## SAM2
@@ -115,5 +115,5 @@ python setup.py sdist bdist_wheel --dist-dir ../wheels/sam2
 
 Install wheel
 ```
-pip install ./wheels/evf_sam2
+pip install ./wheels/sam2/SAM_2-1.0-py3-none-any.whl
 ```
