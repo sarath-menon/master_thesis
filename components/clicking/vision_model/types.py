@@ -55,6 +55,20 @@ class SegmentationResp(BaseModel):
 class PredictionReq(BaseModel):
     image: Image.Image
     task: TaskType
+    input_point: Optional[list] = None
+    input_label: Optional[list] = None
+    input_box: Optional[list] = None
+    input_text: Optional[str] = None
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+class PredictionResp(BaseModel):
+    inference_time: Optional[float] = 0.0
+    prediction: Union[LocalizationResp, SegmentationResp]
+
+class AutoAnnotationReq(BaseModel):
+    image: Image.Image
+    task: TaskType
     points_per_side: Optional[int] = 32,
     points_per_batch: Optional[int] = 64,
     pred_iou_thresh: Optional[float] = 0.8,
@@ -71,19 +85,6 @@ class PredictionReq(BaseModel):
     output_mode: Optional[str] = "coco_rle",
     use_m2m: Optional[bool] = False,
     multimask_output: Optional[bool] = True,
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-class PredictionResp(BaseModel):
-    inference_time: Optional[float] = 0.0
-    prediction: Union[LocalizationResp, SegmentationResp]
-
-class AutoAnnotationReq(BaseModel):
-    image: Image.Image
-    task: TaskType
-    min_mask_region_area: int 
-    pred_iou_thresh: float 
-    output_mode: str 
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

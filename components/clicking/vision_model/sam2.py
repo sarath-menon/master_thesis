@@ -131,24 +131,8 @@ class SAM2:
         elif req.image is None:
             raise ValueError("Image is required for any vision task")
 
-        mask_generator =  SAM2AutomaticMaskGenerator.from_pretrained(self.variant_to_id[self.variant], min_mask_region_area=req.min_mask_region_area,
-        pred_iou_thresh=req.pred_iou_thresh,
-        output_mode=req.output_mode)
-        image_np = np.array(req.image.convert("RGB"))
-        masks = mask_generator.generate(image_np)
-
-        response = AutoAnnotationResp(prediction=SegmentationResp(masks=masks))
-        return response
-
-    def predict_with_clickpoint_and_bbox(self, req: PredictionReq):
-        if req.click_point is None:
-            raise ValueError("Click point is required for clickpoint task")
-        if req.bbox is None:
-            raise ValueError("Bbox is required for bbox task")
-
-        self.predictor.set_image(req.image)
-        masks, scores, logits = self.predictor.predict(
-            box=req.bbox[None, :],
+        mask_generator =  SAM2AutomaticMaskGenerator.from_pretrained(
+            self.variant_to_id[self.variant],
             point_coords=req.click_point,
             point_labels=req.click_label,
             points_per_side = req.points_per_side,
@@ -167,7 +151,27 @@ class SAM2:
             output_mode = req.output_mode,
             use_m2m = req.use_m2m,
             multimask_output = req.multimask_output,
+        )
 
+        image_np = np.array(req.image.convert("RGB"))
+        masks = mask_generator.generate(image_np)
+
+        response = AutoAnnotationResp(prediction=SegmentationResp(masks=masks))
+
+        return response
+
+    def predict_with_clickpoint_and_bbox(self, req: PredictionReq):
+        if req.click_point is None:
+            raise ValueError("Click point is required for clickpoint task")
+        if req.bbox is None:
+            raise ValueError("Bbox is required for bbox task")
+
+        self.predictor.set_image(req.image)
+        masks, scores, logits = self.predictor.predict(
+            point_coords=req.click_point,
+            point_labels=req.click_label,
+            box=req.bbox[None, :],
+            multimask_output=False,
         )
         return masks, scores, logits
 
