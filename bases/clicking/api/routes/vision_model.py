@@ -4,6 +4,7 @@ from PIL import Image
 import io
 import json
 import time
+from fastapi import Depends
 
 vision_model_router = APIRouter()
 vision_model = VisionModel()
@@ -56,54 +57,46 @@ async def prediction(image: UploadFile = File(...),
     response = await vision_model.get_prediction(req)
     return response
 
+# @vision_model_router.post("/auto_annotation",operation_id="get_auto_annotation")
+# async def auto_annotation(params: TestReq = Form(...)) -> Dict:
 
-@vision_model_router.post("/auto_annotation",operation_id="get_auto_annotation", response_model=AutoAnnotationResp)
-async def auto_annotation(image: UploadFile = File(...),
-    task: TaskType = Form(None),
-    min_mask_region_area: Optional[int] = Form(None),
-    pred_iou_thresh: Optional[float] = Form(None),
-    output_mode: Optional[str] = Form(None),
-    points_per_side: Optional[int] = Form(None),
-    points_per_batch: Optional[int] = Form(None),
-    stability_score_thresh: Optional[float] = Form(None),
-    stability_score_offset: Optional[float] = Form(None),
-    mask_threshold: Optional[float] = Form(None),
-    box_nms_thresh: Optional[float] = Form(None),
-    crop_n_layers: Optional[int] = Form(None),
-    crop_nms_thresh: Optional[float] = Form(None),
-    crop_overlap_ratio: Optional[float] = Form(None),
-    crop_n_points_downscale_factor: Optional[int] = Form(None),
-    # point_grids: Optional[List[np.ndarray]] = None,
-    use_m2m: Optional[bool] = Form(None),
-    multimask_output: Optional[bool] = Form(None),
-    ):
+#     # if task is None:
+#     #     raise HTTPException(status_code=400, detail="Task is required")
 
-    if task is None:
-        raise HTTPException(status_code=400, detail="Task is required")
+#     print(params.name)
 
-    #Convert to a PIL image
-    image_data = await image.read()
-    image = Image.open(io.BytesIO(image_data))
+#     # #Convert to a PIL imagex
+#     # image_data = await image.read()
+#     # image = Image.open(io.BytesIO(image_data))
 
-    req = AutoAnnotationReq(image=image,
-    task=task,
-    min_mask_region_area = min_mask_region_area,
-    pred_iou_thresh = pred_iou_thresh,
-    output_mode = output_mode,
-    points_per_side = points_per_side,
-    points_per_batch = points_per_batch,
-    stability_score_thresh = stability_score_thresh,
-    stability_score_offset = stability_score_offset,
-    mask_threshold = mask_threshold,
-    box_nms_thresh = box_nms_thresh,
-    crop_n_layers = crop_n_layers,
-    crop_nms_thresh = crop_nms_thresh,
-    crop_overlap_ratio = crop_overlap_ratio,
-    crop_n_points_downscale_factor = crop_n_points_downscale_factor,
-    # point_grids: Optional[List[np.ndarray]] = None,
-    use_m2m = use_m2m,
-    multimask_output = multimask_output,
-    )
-    print(req)
-    response = await vision_model.get_auto_annotation(req)
-    return response
+#     # req = AutoAnnotationReq(image=image,
+#     # task=task,
+#     # min_mask_region_area = min_mask_region_area,
+#     # pred_iou_thresh = pred_iou_thresh,
+#     # output_mode = output_mode,
+#     # points_per_side = points_per_side,
+#     # points_per_batch = points_per_batch,
+#     # stability_score_thresh = stability_score_thresh,
+#     # stability_score_offset = stability_score_offset,
+#     # mask_threshold = mask_threshold,
+#     # box_nms_thresh = box_nms_thresh,
+#     # crop_n_layers = crop_n_layers,
+#     # crop_nms_thresh = crop_nms_thresh,
+#     # crop_overlap_ratio = crop_overlap_ratio,
+#     # crop_n_points_downscale_factor = crop_n_points_downscale_factor,
+#     # # point_grids: Optional[List[np.ndarray]] = None,
+#     # use_m2m = use_m2m,
+#     # multimask_output = multimask_output,
+#     # )
+#     # print(req)
+#     # response = await vision_model.get_auto_annotation(req)
+#     # return response
+
+#     return {"message": "Auto annotation completed successfully", "status_code": 200}
+
+
+
+@vision_model_router.post("/auto_annotation", operation_id="get_auto_annotation")
+async def auto_annotation(params: AutoAnnotationReq = Depends()) -> Dict:
+    print(params.name)
+    return {"message": "Auto annotation completed successfully", "status_code": 200}

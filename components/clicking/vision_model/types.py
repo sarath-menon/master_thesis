@@ -1,8 +1,9 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Any, Union, Optional, List
 from enum import Enum, auto
 from PIL import Image
 import numpy as np
+from fastapi import Form, File, UploadFile, Depends
 
 class TaskType(str, Enum):
     LOCALIZATION_WITH_TEXT = "LOCALIZATION_WITH_TEXT"
@@ -67,8 +68,9 @@ class PredictionResp(BaseModel):
     prediction: Union[LocalizationResp, SegmentationResp]
 
 class AutoAnnotationReq(BaseModel):
-    image: Image.Image
-    task: TaskType
+    image: UploadFile = Field(..., description="Uploaded image file")
+    name: str = Field(..., description="Name of the test")
+    task: Optional[TaskType] = None
     points_per_side: Optional[int] = 32,
     points_per_batch: Optional[int] = 64,
     pred_iou_thresh: Optional[float] = 0.8,
@@ -80,13 +82,15 @@ class AutoAnnotationReq(BaseModel):
     crop_nms_thresh: Optional[float] = 0.7,
     crop_overlap_ratio: Optional[float] = 512 / 1500,
     crop_n_points_downscale_factor: Optional[int] = 1,
-    point_grids: Optional[List[np.ndarray]] = None,
+    # point_grids: Optional[List[np.ndarray]] = None,
     min_mask_region_area: Optional[int] = 0,
-    output_mode: Optional[str] = "coco_rle",
+    output_mode: Optional[str] = "binary_mask",
     use_m2m: Optional[bool] = False,
     multimask_output: Optional[bool] = True,
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
 
 class AutoAnnotationResp(BaseModel):
     prediction: SegmentationResp
