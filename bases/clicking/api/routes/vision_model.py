@@ -57,46 +57,11 @@ async def prediction(image: UploadFile = File(...),
     response = await vision_model.get_prediction(req)
     return response
 
-# @vision_model_router.post("/auto_annotation",operation_id="get_auto_annotation")
-# async def auto_annotation(params: TestReq = Form(...)) -> Dict:
-
-#     # if task is None:
-#     #     raise HTTPException(status_code=400, detail="Task is required")
-
-#     print(params.name)
-
-#     # #Convert to a PIL imagex
-#     # image_data = await image.read()
-#     # image = Image.open(io.BytesIO(image_data))
-
-#     # req = AutoAnnotationReq(image=image,
-#     # task=task,
-#     # min_mask_region_area = min_mask_region_area,
-#     # pred_iou_thresh = pred_iou_thresh,
-#     # output_mode = output_mode,
-#     # points_per_side = points_per_side,
-#     # points_per_batch = points_per_batch,
-#     # stability_score_thresh = stability_score_thresh,
-#     # stability_score_offset = stability_score_offset,
-#     # mask_threshold = mask_threshold,
-#     # box_nms_thresh = box_nms_thresh,
-#     # crop_n_layers = crop_n_layers,
-#     # crop_nms_thresh = crop_nms_thresh,
-#     # crop_overlap_ratio = crop_overlap_ratio,
-#     # crop_n_points_downscale_factor = crop_n_points_downscale_factor,
-#     # # point_grids: Optional[List[np.ndarray]] = None,
-#     # use_m2m = use_m2m,
-#     # multimask_output = multimask_output,
-#     # )
-#     # print(req)
-#     # response = await vision_model.get_auto_annotation(req)
-#     # return response
-
-#     return {"message": "Auto annotation completed successfully", "status_code": 200}
-
-
 
 @vision_model_router.post("/auto_annotation", operation_id="get_auto_annotation")
-async def auto_annotation(params: AutoAnnotationReq = Depends()) -> Dict:
-    print(params.name)
-    return {"message": "Auto annotation completed successfully", "status_code": 200}
+async def auto_annotation(req: AutoAnnotationReq = Depends()) -> AutoAnnotationResp:
+    if req.task is None:
+        raise HTTPException(status_code=400, detail="Task is required")
+
+    response = await vision_model.get_auto_annotation(req)
+    return response
