@@ -44,7 +44,7 @@ def image_to_base64(img):
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 #%% set image and text input
-index = 5
+index = 2
 image_tensor, annotations = coco_dataset[index]
 to_pil = transforms.ToPILImage()
 image = to_pil(image_tensor)
@@ -52,9 +52,10 @@ text_input = create_text_input(annotations)
 print(text_input)
 #%% get refines prompt
 from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
+import json
 
 labeller =  PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
-response = labeller.process_prompt(image, text_input, PromptMode.EXPANDED_DESCRIPTION)
+response = await labeller.process_prompt(image, text_input, PromptMode.EXPANDED_DESCRIPTION)
 response = json.loads(response)
 refined_text_input = response["expanded_description"]
 refined_text_input 
@@ -64,7 +65,7 @@ from clicking_client.models import PredictionResp
 import io
 import base64
 
-client = Client(base_url="http://localhost:8083")
+client = Client(base_url="http://localhost:808")
 
 #%% Get available models
 from clicking_client.api.default import get_models
@@ -110,9 +111,8 @@ show_segmentation_prediction(image, masks)
 # %% get click point
 
 from clicking.visualization.core import show_clickpoint
-from clicking.segmentation.utils import get_mask_centroid
+# from clicking.vision_model.utils import get_mask_centroid
 
 centroid = get_mask_centroid(masks[0].get(mode=SegmentationMode.BINARY_MASK))
 show_clickpoint(image, centroid, text_input)
 
-# %%
