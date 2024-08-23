@@ -92,11 +92,28 @@ Doesn't work with OpenAPI specification version '3.1.0'
 kiota generate --language python --openapi http://localhost:8082/openapi.json -o ./generated_client --namespace-name clicking_client_kiota
 ```
 
+
 # Model packages
 ## EVF SAM
 
 Generate wheel
-
 ```  
 python setup.py sdist bdist_wheel --dist-dir ../wheels/evf_sam2
 ```  
+
+Install wheel
+```
+pip install ./wheels/evf_sam2
+```
+
+## SAM2
+
+Generate wheel
+```  
+python setup.py sdist bdist_wheel --dist-dir ../wheels/sam2
+```  
+
+Install wheel
+```
+pip install ./wheels/evf_sam2
+```
