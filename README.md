@@ -98,5 +98,5 @@ kiota generate --language python --openapi http://localhost:8082/openapi.json -o
 Generate wheel
 
 ```  
-python setup.py sdist --dist-dir ../wheels/evf_sam2
+python setup.py sdist bdist_wheel --dist-dir ../wheels/evf_sam2
 ```  

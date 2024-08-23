@@ -1,7 +1,7 @@
 #%%
 import os
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
-import numpy as np
+import numpy as np 
 import torch
 import matplotlib.pyplot as plt
 from PIL import Image
