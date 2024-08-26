@@ -9,6 +9,7 @@ from components.clicking.prompt_manager.core import PromptManager
 import asyncio
 import nest_asyncio
 from typing import List
+import json
 
 # set API keys
 dotenv.load_dotenv()
@@ -48,7 +49,7 @@ class PromptRefiner:
         async with self.lock: 
             self.messages.append(msg)
 
-        response = await acompletion(model=self.model, messages=self.messages, response_format={ "type": "json_object" }, temperature=self.temperature)
+        response = await acompletion(model=self.model, messages=self.messages, temperature=self.temperature)
         return response["choices"][0]["message"]["content"]
 
     async def process_prompts(self, screenshots: List[str], input_texts: List[str], mode: PromptMode, word_limit: int = 10):
@@ -57,7 +58,10 @@ class PromptRefiner:
             task = self.process_prompt(screenshot, input_text, mode, word_limit)
             tasks.append(task)
         results = await asyncio.gather(*tasks)
-        return results
+
+        # Convert list of results to dict
+        results_dict = {input_text: result for input_text, result in zip(input_texts, results)}
+        return results_dict
 
     async def process_prompt(self, screenshot: str, input_text: str, mode: PromptMode, word_limit: int = 10):
         if mode == PromptMode.LABEL:
@@ -107,13 +111,12 @@ if __name__ == "__main__":
 
     # Define the mode and word limit for the prompts
     mode = PromptMode.EXPANDED_DESCRIPTION
-    word_limit = 15
+    word_limit = 5
 
     # Call process_prompts asynchronously
     async def process_batch_prompts():
         results = await prompt_refiner.process_prompts(screenshots, input_texts, mode, word_limit)
-        for result in results:
-            print(result)
+        print(results)
 
     # Run the asynchronous function
     asyncio.get_event_loop().run_until_complete(process_batch_prompts())

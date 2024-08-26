@@ -107,7 +107,20 @@ body = BodyGetAutoAnnotation(
     image=image_file,
 )
 
-segmentation_resp = get_auto_annotation.sync(client=client, body=body, task=TaskType.SEGMENTATION_AUTO_ANNOTATION)
+segmentation_resp = get_auto_annotation.sync(client=client,
+    body=body,
+    task=TaskType.SEGMENTATION_AUTO_ANNOTATION,
+    # points_per_side=64,
+    min_mask_region_area=400.0,
+    pred_iou_thresh=0.94,
+    # stability_score_thresh=0.94,
+    # stability_score_offset=0.9,
+    crop_n_layers=1,
+    # box_nms_thresh=0.9,
+    crop_n_points_downscale_factor=2,
+    # crop_overlap_ratio = 250/1500,
+    # use_m2m=True,
+    )
 print(f"inference time: {segmentation_resp.inference_time}")
 
 prediction = segmentation_resp.prediction
@@ -116,7 +129,8 @@ masks = [SegmentationMask(mask['segmentation'], mode=SegmentationMode.COCO_RLE) 
 show_segmentation_prediction(image, masks)
 print(f"Number of masks: {len(masks)}")
 
-# %% verify masks
+
+# %% Plot image sections under masks
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -147,7 +161,7 @@ for i, mask in enumerate(prediction.masks):
     cropped_image = crop_using_bbox(image_np, mask['bbox'])
 
     plt.imshow(cropped_image)
-    plt.title(f"i: {i}, area: {str(mask['area'])}")
+    plt.title(f"i: {i}, iou: {mask['predicted_iou']:.2f}, area: {mask['area']:.2f}")
     plt.axis('off')
 
 plt.show()

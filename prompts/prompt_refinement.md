@@ -17,7 +17,4 @@ Analyze the videogame screenshot. For the action "{action}":
     }}
 
 ## prompt_expansion
-Given a videogame screenshot and a brief description of an object, enhance the description by detailing the object's location, shape, color, and appearance. The description is "{input_description}". 
-
-Return JSON: {{
-"expanded_description": "detailed description of the game object in {word_limit} words or less"}}
+Given a videogame screenshot and a brief description of an object, enhance the description by detailing the object's location, shape, color, and appearance. The description is "{input_description}". Give the description in {word_limit} words or less.
