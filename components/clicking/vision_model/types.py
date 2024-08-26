@@ -69,24 +69,23 @@ class PredictionResp(BaseModel):
 
 class AutoAnnotationReq(BaseModel):
     image: UploadFile = Field(..., description="Uploaded image file")
-    name: str = Field(..., description="Name of the test")
-    task: Optional[TaskType] = None
-    points_per_side: Optional[int] = 32,
-    points_per_batch: Optional[int] = 64,
-    pred_iou_thresh: Optional[float] = 0.8,
-    stability_score_thresh: Optional[float] = 0.95,
-    stability_score_offset: Optional[float] = 1.0,
-    mask_threshold: Optional[float] = 0.0,
-    box_nms_thresh: Optional[float] = 0.7,
-    crop_n_layers: Optional[int] = 0,
-    crop_nms_thresh: Optional[float] = 0.7,
-    crop_overlap_ratio: Optional[float] = 512 / 1500,
-    crop_n_points_downscale_factor: Optional[int] = 1,
+    task: TaskType
+    points_per_side: Optional[int] = Field(32)
+    points_per_batch: Optional[int] = Field(64)
+    pred_iou_thresh: Optional[float] = Field(0.8)
+    stability_score_thresh: Optional[float] = Field(0.95)
+    stability_score_offset: Optional[float] = Field(1.0)
+    mask_threshold: Optional[float] = Field(0.0)
+    box_nms_thresh: Optional[float] = Field(0.7)
+    crop_n_layers: Optional[int] = Field(0)
+    crop_nms_thresh: Optional[float] = Field(0.7)
+    crop_overlap_ratio: Optional[float] = Field(512 / 1500)
+    crop_n_points_downscale_factor: Optional[int] = Field(1)
     # point_grids: Optional[List[np.ndarray]] = None,
-    min_mask_region_area: Optional[int] = 0,
-    output_mode: Optional[str] = "binary_mask",
-    use_m2m: Optional[bool] = False,
-    multimask_output: Optional[bool] = True,
+    min_mask_region_area: Optional[int] = Field(0)
+    output_mode: Optional[str] = Field("coco_rle")
+    use_m2m: Optional[bool] = Field(False)
+    multimask_output: Optional[bool] = Field(True)
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

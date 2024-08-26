@@ -10,6 +10,7 @@ from clicking.vision_model.types import *
 from pycocotools import mask as mask_utils
 from typing import Dict, Any
 from clicking.vision_model.utils import coco_encode_rle
+import io
 
 class SAM2:
     variant_to_id = {
@@ -125,11 +126,15 @@ class SAM2:
         response = SegmentationResp(masks=masks, scores=scores)
         return response
 
-    def auto_annotate(self, req: AutoAnnotationReq) ->AutoAnnotationResp:
+    async def auto_annotate(self, req: AutoAnnotationReq) ->AutoAnnotationResp:
         if req.task not in self.task_to_method:
             raise ValueError(f"Invalid task type: {req.task}")
         elif req.image is None:
             raise ValueError("Image is required for any vision task")
+
+        #Convert to a PIL imagex
+        image_pil = await req.image.read()
+        image_pil = Image.open(io.BytesIO(image_pil))
 
         mask_generator =  SAM2AutomaticMaskGenerator.from_pretrained(
             self.variant_to_id[self.variant],
@@ -151,7 +156,7 @@ class SAM2:
             multimask_output = req.multimask_output,
         )
 
-        image_np = np.array(req.image.convert("RGB"))
+        image_np = np.array(image_pil.convert("RGB"))
         masks = mask_generator.generate(image_np)
 
         response = AutoAnnotationResp(prediction=SegmentationResp(masks=masks))
