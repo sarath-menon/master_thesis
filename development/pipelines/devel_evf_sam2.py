@@ -45,7 +45,7 @@ def image_to_base64(img):
     return img_str
 
 #%% set image and text input
-index = 32
+index = 43
 image_tensor, annotations = coco_dataset[index]
 to_pil = transforms.ToPILImage()
 image = to_pil(image_tensor)
@@ -95,7 +95,7 @@ print(api_response)
 request = SetModelReq(name="evf_sam2", variant="sam2", task=TaskType.SEGMENTATION_WITH_TEXT)
 set_model.sync(client=client, body=request)
 
-#%% get masks
+#%% get masks batch 
 
 from clicking_client.api.default import get_prediction
 from clicking_client.models import BodyGetPrediction
@@ -109,22 +109,28 @@ image_byte_arr = io.BytesIO()
 image.save(image_byte_arr, format='JPEG')
 image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
 
-prompt = refined_text_inputs[class_labels[0]]
 
-# Create the request object
-request = BodyGetPrediction(
-    image=image_file,
-    task=TaskType.SEGMENTATION_WITH_TEXT,
-    input_text=prompt
-)
+predictions = {}
+
+for class_label, text_input in refined_text_inputs.items():
+    # Create the request object
+    request = BodyGetPrediction(
+        image=image_file,
+        task=TaskType.SEGMENTATION_WITH_TEXT,
+        input_text=text_input 
+    )
     
-segmentation_resp = get_prediction.sync(client=client, body=request)
-print(f"inference time: {segmentation_resp.inference_time}")
+    segmentation_resp = get_prediction.sync(client=client, body=request)
+    predictions[class_label] = segmentation_resp.prediction
+#%%
 
-prediction = segmentation_resp.prediction
+class_label_id = 3
+
+prediction = predictions[class_labels[class_label_id]]
 masks = [SegmentationMask(mask, mode=SegmentationMode.COCO_RLE) for mask in prediction.masks]
 show_segmentation_prediction(image, masks)
-print(f"prompt: {prompt}")
+print(f"prompt: {refined_text_inputs[class_labels[class_label_id]]}")
+
 # %% get click point
 
 from clicking.visualization.core import show_clickpoint
