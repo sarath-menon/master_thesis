@@ -9,6 +9,7 @@ from torchvision import transforms, datasets
 from matplotlib.path import Path
 import matplotlib.patches as patches
 import torch
+from clicking.vision_model.types import SegmentationResp
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -109,7 +110,6 @@ image_byte_arr = io.BytesIO()
 image.save(image_byte_arr, format='JPEG')
 image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
 
-
 predictions = {}
 
 for class_label, text_input in refined_text_inputs.items():
@@ -120,22 +120,11 @@ for class_label, text_input in refined_text_inputs.items():
         input_text=text_input 
     )
     
-    segmentation_resp = get_prediction.sync(client=client, body=request)
-    predictions[class_label] = segmentation_resp.prediction
+    predictions[class_label] = get_prediction.sync(client=client, body=request)
 #%%
 
 class_label_id = 3
 
 prediction = predictions[class_labels[class_label_id]]
-masks = [SegmentationMask(mask, mode=SegmentationMode.COCO_RLE) for mask in prediction.masks]
-show_segmentation_prediction(image, masks)
+show_clickpoint_predictions(image, predictions)
 print(f"prompt: {refined_text_inputs[class_labels[class_label_id]]}")
-
-# %% get click point
-
-from clicking.visualization.core import show_clickpoint
-from clicking.vision_model.utils import get_mask_centroid
-
-centroid = get_mask_centroid(masks[0].get(mode=SegmentationMode.BINARY_MASK))
-show_clickpoint(image, centroid, text_input)
-
