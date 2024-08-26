@@ -28,12 +28,12 @@ transform = transforms.Compose([
 
 # Create the COCO dataset
 coco_dataset = datasets.CocoDetection(root=data_dir, annFile=annFile, transform=transform)
-class_labels = [cat['name'] for cat in coco_dataset.coco.cats.values()]
+all_class_labels = [cat['name'] for cat in coco_dataset.coco.cats.values()]
 print(f"Dataset size: {len(coco_dataset)}")
 
 # create text input from labels
 def create_text_input(annotations):
-    labels = [class_labels[annotation['category_id']] for annotation in annotations]
+    labels = [all_class_labels[annotation['category_id']] for annotation in annotations]
     text_input = ""
     text_input = ". ".join(labels) + "." if labels else ""
     return text_input
@@ -43,29 +43,45 @@ def image_to_base64(img):
     img.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
+
 #%% set image and text input
-index = 2
+index = 35
 image_tensor, annotations = coco_dataset[index]
 to_pil = transforms.ToPILImage()
 image = to_pil(image_tensor)
 text_input = create_text_input(annotations)
-print(text_input)
-#%% get refines prompt
+ 
+plt.imshow(image)
+plt.axis(False)
+plt.show()
+print(f"text_input: {text_input}")
+
+#%% get refined prompt
+
 from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
 import json
 
-labeller =  PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
-response = await labeller.process_prompt(image, text_input, PromptMode.EXPANDED_DESCRIPTION)
-response = json.loads(response)
-refined_text_input = response["expanded_description"]
-refined_text_input 
+class_labels = text_input.split()
+images = [image for _ in class_labels]
+
+# Call process_prompts asynchronously
+prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
+async def process_batch_prompts():
+    results = await prompt_refiner.process_prompts(images, class_labels, PromptMode.EXPANDED_DESCRIPTION)
+    return results
+
+refined_text_inputs = await process_batch_prompts()
+refined_text_inputs
+
+#%%
+
 #%%
 from clicking_client import Client
 from clicking_client.models import PredictionResp
 import io
 import base64
 
-client = Client(base_url="http://localhost:808")
+client = Client(base_url="http://localhost:8082")
 
 #%% Get available models
 from clicking_client.api.default import get_models
@@ -80,6 +96,7 @@ print(api_response)
 
 request = SetModelReq(name="evf_sam2", variant="sam2", task=TaskType.SEGMENTATION_WITH_TEXT)
 set_model.sync(client=client, body=request)
+
 #%% get masks
 
 from clicking_client.api.default import get_prediction
@@ -94,11 +111,13 @@ image_byte_arr = io.BytesIO()
 image.save(image_byte_arr, format='JPEG')
 image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
 
+prompt = refined_text_inputs[class_labels[0]]
+
 # Create the request object
 request = BodyGetPrediction(
     image=image_file,
     task=TaskType.SEGMENTATION_WITH_TEXT,
-    input_text=refined_text_input
+    input_text=prompt
 )
     
 segmentation_resp = get_prediction.sync(client=client, body=request)
@@ -107,7 +126,7 @@ print(f"inference time: {segmentation_resp.inference_time}")
 prediction = segmentation_resp.prediction
 masks = [SegmentationMask(mask, mode=SegmentationMode.COCO_RLE) for mask in prediction.masks]
 show_segmentation_prediction(image, masks)
-
+print(f"prompt: {prompt}")
 # %% get click point
 
 from clicking.visualization.core import show_clickpoint
