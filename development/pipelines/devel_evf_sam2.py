@@ -45,7 +45,7 @@ def image_to_base64(img):
     return img_str
 
 #%% set image and text input
-index = 35
+index = 32
 image_tensor, annotations = coco_dataset[index]
 to_pil = transforms.ToPILImage()
 image = to_pil(image_tensor)
@@ -72,8 +72,6 @@ async def process_batch_prompts():
 
 refined_text_inputs = await process_batch_prompts()
 refined_text_inputs
-
-#%%
 
 #%%
 from clicking_client import Client
@@ -130,7 +128,7 @@ print(f"prompt: {prompt}")
 # %% get click point
 
 from clicking.visualization.core import show_clickpoint
-# from clicking.vision_model.utils import get_mask_centroid
+from clicking.vision_model.utils import get_mask_centroid
 
 centroid = get_mask_centroid(masks[0].get(mode=SegmentationMode.BINARY_MASK))
 show_clickpoint(image, centroid, text_input)
