@@ -6,8 +6,24 @@ You are a helpful assistant and an expert videogame player.
 ## prompt_expansion
 Given a videogame screenshot and a brief description of an object, enhance the description by detailing the object's location, shape, color, and appearance. The description is "{input_description}". Give the description in {word_limit} words or less.
 
+## IMAGE_TO_OBJECTS_LIST
+Review the videogame screenshot to identify interactive game objects (e.g., doors, chests). Follow these rules strictly:
 
-## image_to_class_label
+1. Exclude the following from your identification: playable and non-playable characters, UI elements (buttons, menus, information displays, status bars), and pervasive background elements (grass, fog, sky, trees, rocks, bushes).
+2. Evaluate the visibility of each object in the screenshot. Classify them based on the ease of identification:
+    - EASY_TO_IDENTIFY: Objects clearly visible and easily distinguishable.
+    - MODERATELY_DIFFICULT_TO_IDENTIFY: Objects that are somewhat obscured or blend slightly with the background.
+    - HARD_TO_IDENTIFY: Objects that are very small, largely hidden, or blend significantly with the background.
+3. Find at least 3 objects that are HARD_TO_IDENTIFY
+4. For each object, provide a brief rationale (up to 10 words) for its classification.
+
+Output the information as a JSON list under the key "objects", with each entry including:
+- "name": "object name (up to 2 words)"
+- "description": "brief details of the object (up to 10 words)"
+- "category": "visibility category",
+- "reasoning": "rationale for classification (up to 10 words)"
+
+## IMAGE_TO_OBJECT_DESCRIPTIONS
 Examine the videogame screenshot to identify crucial game objects for each of the following categories:
 
 1. Game Assets: Objects within the game world that can be interacted with (e.g., door, chest). Identify at least 3 objects. Do not include the following: player character, UI elements such as buttons, menus, information displays, or status bars, background elements the span the entire screen such as grass, fog or sky, generic elements such as trees, rocks, or bushes.
