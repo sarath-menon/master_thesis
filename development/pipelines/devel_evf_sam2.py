@@ -45,25 +45,45 @@ def image_to_base64(img):
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 
-#%% set image and text input
-index = 4
-image_tensor, annotations = coco_dataset[index]
-to_pil = transforms.ToPILImage()
-image = to_pil(image_tensor)
-text_input = create_text_input(annotations)
- 
-plt.imshow(image)
-plt.axis(False)
-plt.show()
-print(f"text_input: {text_input}")
+def sample_dataset(indices=None, batch_size=None):
+    if indices is not None and batch_size is not None:
+        raise ValueError("Only one of 'indices' or 'batch_size' should be provided, not both.")
+    
+    if indices is None and batch_size is None:
+        batch_size = 1
+    
+    if indices is None:
+        indices = np.random.choice(len(coco_dataset), size=batch_size, replace=False)
+
+    images = []
+    text_inputs = []
+    to_pil = transforms.ToPILImage()
+    
+    for index in indices:
+        image_tensor, annotations = coco_dataset[int(index)]
+        image = to_pil(image_tensor)
+        text_input = create_text_input(annotations)
+        images.append(image)
+        text_inputs.append(text_input)
+    
+    return images, text_inputs
+
+
+#%% sample batch for testing
+images, class_labels = sample_dataset(batch_size=3)
+
+# plot first 4 images
+for image, text_input in zip(images, class_labels):
+    plt.imshow(image)
+    plt.axis(False)
+    plt.title(text_input)
+    plt.show()
+
 #%% get clickable objects from image
 from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
 
- # Create an instance of PromptRefiner
+# Create an instance of PromptRefiner
 prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
-
-# Define the batch of screenshots 
-images = [image, image]
 
 # Call process_prompts asynchronously
 async def process_batch_prompts():
@@ -71,14 +91,22 @@ async def process_batch_prompts():
     return results
 results = await process_batch_prompts()
 
+# sort objects by category
+for result in results:
+    result['objects'] = sorted(result['objects'], key=lambda x: x['category'])
+
 # show results
-for image, text_input in zip(images, results):
+for image, class_label, image_result in zip(images, class_labels, results):
     plt.imshow(image)
     plt.axis(False)
+    plt.title(class_label)
     plt.show()
 
-    for object in text_input['objects']:
-        print(f"{object['name']}: {object['description']}")
+    for object in image_result['objects']:
+        print(f"name: {object['name']}")
+        print(f"category: {object['category']}")
+        print(f"description: {object['description']}")
+        print("-" * 50)
 #%% get extended object descriptions from short descriptions
 
 # from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
