@@ -76,12 +76,13 @@ class PromptRefiner:
         }
 
         async with self.lock: 
-            self.messages.append(msg)
+            messages = self.messages.copy()
+            messages.append(msg)
 
         response_format = {"type": "json_object"} if json_mode else None
         response = await acompletion(
             model=self.model, 
-            messages=self.messages, 
+            messages=messages, 
             temperature=self.temperature, 
             response_format=response_format
         )
