@@ -46,6 +46,9 @@ class PromptRefiner:
 
         if mode == PromptMode.IMAGE_TO_CLASS_LABEL:
             response = json.loads(response)
+            # sort objects by category
+            response['objects'] = sorted(response['objects'], key=lambda x: x['category'])
+            
         elif mode == PromptMode.EXPANDED_DESCRIPTION:
             response = {input_text: response}
 

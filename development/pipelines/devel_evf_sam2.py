@@ -10,7 +10,7 @@ from matplotlib.path import Path
 import matplotlib.patches as patches
 import torch
 from clicking.vision_model.types import SegmentationResp
-from clicking.dataset_creator.core import CocoDataset, coc
+from clicking.dataset_creator.core import CocoDataset
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,14 +24,7 @@ coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', '.
 images, class_labels = coco_dataset.sample_dataset(batch_size=3)
     
 #%% sample batch for testing
-images, class_labels = coco_dataset.sample_dataset(batch_size=3)
-
-# plot first 4 images
-for image, text_input in zip(images, class_labels):
-    plt.imshow(image)
-    plt.axis(False)
-    plt.title(text_input)
-    plt.show()
+images, class_labels = coco_dataset.sample_dataset(batch_size=3, show_images=True)
 
 #%% get clickable objects from image
 from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
@@ -40,14 +33,7 @@ from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
 prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
 
 # Call process_prompts asynchronously
-async def process_batch_prompts():
-    results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_CLASS_LABEL)
-    return results
-results = await process_batch_prompts()
-
-# sort objects by category
-for result in results:
-    result['objects'] = sorted(result['objects'], key=lambda x: x['category'])
+results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_CLASS_LABEL) 
 
 # show results
 for image, class_label, image_result in zip(images, class_labels, results):
@@ -61,23 +47,6 @@ for image, class_label, image_result in zip(images, class_labels, results):
         print(f"category: {object['category']}")
         print(f"description: {object['description']}")
         print("-" * 50)
-#%% get extended object descriptions from short descriptions
-
-# from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
-# import json
-
-# class_labels = text_input.split()
-# images = [image for _ in class_labels]
-
-# # Call process_prompts asynchronously
-# prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
-# async def process_batch_prompts():
-#     results = await prompt_refiner.process_prompts(images, class_labels, PromptMode.EXPANDED_DESCRIPTION)
-#     return results
-
-# refined_text_inputs = await process_batch_prompts()
-# refined_text_inputs
-
 #%%
 from clicking_client import Client
 from clicking_client.models import PredictionResp
