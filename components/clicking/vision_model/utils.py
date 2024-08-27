@@ -4,6 +4,9 @@ from pycocotools import mask as mask_utils
 import numpy as np
 from scipy.ndimage import center_of_mass
 from scipy.ndimage import distance_transform_edt
+import io
+import base64
+
 
 
 def coco_encode_rle(mask: np.ndarray) -> Dict[str, Any]:
@@ -22,3 +25,9 @@ def get_mask_centroid(mask):
     circle_center = (max_dist_idx[1], max_dist_idx[0])  # (x, y) format
 
     return circle_center
+
+def image_to_base64(img):
+    buffered = io.BytesIO()
+    img.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    return img_str

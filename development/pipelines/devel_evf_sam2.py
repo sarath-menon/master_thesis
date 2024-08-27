@@ -10,6 +10,7 @@ from matplotlib.path import Path
 import matplotlib.patches as patches
 import torch
 from clicking.vision_model.types import SegmentationResp
+from clicking.dataset_creator.core import CocoDataset, coc
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,60 +18,13 @@ load_dotenv()
 if 'get_ipython' in globals():
     get_ipython().run_line_magic('matplotlib', 'inline')
 
-#%%
-# Define the path to the COCO dataset
-data_dir = './datasets/label_studio_gen/coco_dataset/images'
-annFile = './datasets/label_studio_gen/coco_dataset/result.json'
+#%% Load dataset
 
-# Define the transformations to be applied to the images
-transform = transforms.Compose([
-    transforms.ToTensor(),
-])
-
-# Create the COCO dataset
-coco_dataset = datasets.CocoDetection(root=data_dir, annFile=annFile, transform=transform)
-all_class_labels = [cat['name'] for cat in coco_dataset.coco.cats.values()]
-print(f"Dataset size: {len(coco_dataset)}")
-
-# create text input from labels
-def create_text_input(annotations):
-    labels = [all_class_labels[annotation['category_id']] for annotation in annotations]
-    text_input = ""
-    text_input = ". ".join(labels) + "." if labels else ""
-    return text_input
-
-def image_to_base64(img):
-    buffered = io.BytesIO()
-    img.save(buffered, format="PNG")
-    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    return img_str
-
-def sample_dataset(indices=None, batch_size=None):
-    if indices is not None and batch_size is not None:
-        raise ValueError("Only one of 'indices' or 'batch_size' should be provided, not both.")
+coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', './datasets/label_studio_gen/coco_dataset/result.json')
+images, class_labels = coco_dataset.sample_dataset(batch_size=3)
     
-    if indices is None and batch_size is None:
-        batch_size = 1
-    
-    if indices is None:
-        indices = np.random.choice(len(coco_dataset), size=batch_size, replace=False)
-
-    images = []
-    text_inputs = []
-    to_pil = transforms.ToPILImage()
-    
-    for index in indices:
-        image_tensor, annotations = coco_dataset[int(index)]
-        image = to_pil(image_tensor)
-        text_input = create_text_input(annotations)
-        images.append(image)
-        text_inputs.append(text_input)
-    
-    return images, text_inputs
-
-
 #%% sample batch for testing
-images, class_labels = sample_dataset(batch_size=3)
+images, class_labels = coco_dataset.sample_dataset(batch_size=3)
 
 # plot first 4 images
 for image, text_input in zip(images, class_labels):
