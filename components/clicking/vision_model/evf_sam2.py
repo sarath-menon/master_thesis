@@ -23,7 +23,7 @@ class EVF_SAM:
     }
     task_prompts = {TaskType.SEGMENTATION_WITH_TEXT: ""}
 
-    def __init__(self, version='./EVF-SAM/checkpoints', variant='sam2'):
+    def __init__(self, version='./checkpoints/evf_sam2', variant='sam2'):
         self.name = 'evf_sam2'
         self.variant = variant
         self.version = version
