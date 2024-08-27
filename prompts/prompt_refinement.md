@@ -10,10 +10,10 @@ Given a videogame screenshot and a brief description of an object, enhance the d
 ## image_to_class_label
 Examine the videogame screenshot to identify crucial game objects for each of the following categories:
 
-1. Game Assets: Objects within the game world that can be interacted with (e.g., door, chest, button). Identify exactly 5 objects.
-2. Navigation Controls: Elements that help players navigate the game or menus (e.g., directional pad, joystick, back button, menu button). Identify 3 objects or less.
+1. Game Assets: Objects within the game world that can be interacted with (e.g., door, chest, button). Identify exactly 5 objects. Do not include any UI elements such as buttons, menus, information displays, or status bars
+<!-- 2. Navigation Controls: Elements that help players navigate the game or menus (e.g., directional pad, joystick, back button, menu button). Identify 3 objects or less.
 3. Information Displays: Elements that provide real-time game state information (e.g., health bar, ammo count, minimap, score, notification pop-ups). Identify 3 objects or less.
-4. Interactive UI Elements: UI elements that players interact with to perform actions (e.g., action buttons like jump or shoot, inventory slots, dialogue options). Identify 3 objects or less.
+4. Interactive UI Elements: UI elements that players interact with to perform actions (e.g., action buttons like jump or shoot, inventory slots, dialogue options). Identify 3 objects or less. -->
 
 For each object, provide:
 - Name: A name for the object in 2 words or less.
