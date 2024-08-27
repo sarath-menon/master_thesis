@@ -50,8 +50,8 @@ class PromptRefiner:
         elif mode == PromptMode.EXPANDED_DESCRIPTION:
             response = {input_text: response}
 
-         # add input image and input text to response
-        response['input_image'] = screenshot
+        #  # add input image and input text to response
+        # response['input_image'] = screenshot
 
         return response
 
@@ -132,14 +132,17 @@ if __name__ == "__main__":
 if __name__ == "__main__":
     from PIL import Image
     import asyncio
+    import nest_asyncio
+    nest_asyncio.apply()
 
-    image = Image.open("./datasets/resized_media/gameplay_images/unpacking/1.jpg")
+    image_1 = Image.open("./datasets/resized_media/gameplay_images/unpacking/1.jpg")
+    image_2 = Image.open("./datasets/resized_media/gameplay_images/mario_odessey/8.jpg")
 
     # Create an instance of PromptRefiner
     prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
 
     # Define the batch of screenshots 
-    images = [image, image]
+    images = [image_1, image_2]
 
     # Define the mode and word limit for the prompts
     mode = PromptMode.IMAGE_TO_CLASS_LABEL

@@ -56,24 +56,45 @@ plt.imshow(image)
 plt.axis(False)
 plt.show()
 print(f"text_input: {text_input}")
-
-
-#%% get refined prompt
-
+#%% get clickable objects from image
 from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
-import json
 
-class_labels = text_input.split()
-images = [image for _ in class_labels]
+ # Create an instance of PromptRefiner
+prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
+
+# Define the batch of screenshots 
+images = [image, image]
 
 # Call process_prompts asynchronously
-prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
 async def process_batch_prompts():
-    results = await prompt_refiner.process_prompts(images, class_labels, PromptMode.EXPANDED_DESCRIPTION)
+    results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_CLASS_LABEL)
     return results
+results = await process_batch_prompts()
 
-refined_text_inputs = await process_batch_prompts()
-refined_text_inputs
+# show results
+for image, text_input in zip(images, results):
+    plt.imshow(image)
+    plt.axis(False)
+    plt.show()
+
+    for object in text_input['objects']:
+        print(f"{object['name']}: {object['description']}")
+#%% get extended object descriptions from short descriptions
+
+# from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
+# import json
+
+# class_labels = text_input.split()
+# images = [image for _ in class_labels]
+
+# # Call process_prompts asynchronously
+# prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
+# async def process_batch_prompts():
+#     results = await prompt_refiner.process_prompts(images, class_labels, PromptMode.EXPANDED_DESCRIPTION)
+#     return results
+
+# refined_text_inputs = await process_batch_prompts()
+# refined_text_inputs
 
 #%%
 from clicking_client import Client
