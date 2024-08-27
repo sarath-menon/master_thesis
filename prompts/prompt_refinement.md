@@ -17,8 +17,21 @@ Given a videogame screenshot and a brief description of an object, enhance the d
 
 
 ## image_to_class_label
-Examine the videogame screenshot to pinpoint up to five crucial interactive objects, which may include both game objects and UI elements. For each object, provide a description that covers its location, shape, color, and appearance, using no more than {description_length} words. Use full sentences to describe the object rather than short phrases. Additionally, include a concise explanation, limited to 10 words, detailing why each object is important for interaction. The output should be formatted as a JSON list under the key "objects", with each entry containing:
+Examine the videogame screenshot to identify up to 5 crucial interactive objects for each of the following categories:
+
+1. Game Assets: Objects within the game world that can be interacted with (e.g., door, chest, button).
+2. Navigation Controls: Elements that help players navigate the game or menus (e.g., directional pad, joystick, back button, menu button).
+3. Information Displays: Elements that provide real-time game state information (e.g., health bar, ammo count, minimap, score, notification pop-ups).
+4. Interactive UI Elements: UI elements that players interact with to perform actions (e.g., action buttons like jump or shoot, inventory slots, dialogue options).
+
+For each object, provide:
+- Name: A name for the object in 2 words or less.
+- Description: A detailed description of the object's location, shape, color, and appearance, using no more than {description_length} words. Use full sentences.
+- Category: The category the object belongs to (Game Asset, Navigation Control, Information Display, Interactive UI Element).
+- Reasoning: A concise 10-word explanation of why the object is important for interaction.
+
+Format the output as a JSON list under the key "objects", with each entry containing:
 - "name": "object name in 2 words or less",
 - "description": "details of the object including location, shape, color, and appearance",
-- "category": "game object or UI element",
+- "category": "category name",
 - "reasoning": "10-word explanation of its significance"
