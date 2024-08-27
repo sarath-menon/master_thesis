@@ -16,7 +16,6 @@ dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 class PromptMode(Enum):
-    LABEL = "prompt_to_class_label"
     EXPANDED_DESCRIPTION = "prompt_expansion"
     IMAGE_TO_CLASS_LABEL = "image_to_class_label"
 
@@ -58,8 +57,6 @@ class PromptRefiner:
     def _get_template_values(self, mode: PromptMode, input_text: str, **kwargs) -> Dict[str, Any]:
         if input_text is None:
             return {}
-        elif mode == PromptMode.LABEL:
-            return {"action": input_text}
         elif mode == PromptMode.EXPANDED_DESCRIPTION:
             return {"input_description": input_text, "word_limit": str(kwargs.get('word_limit', 10))}
         elif mode == PromptMode.IMAGE_TO_CLASS_LABEL:
