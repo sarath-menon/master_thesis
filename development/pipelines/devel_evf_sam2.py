@@ -46,7 +46,7 @@ def image_to_base64(img):
     return img_str
 
 #%% set image and text input
-index = 43
+index = 4
 image_tensor, annotations = coco_dataset[index]
 to_pil = transforms.ToPILImage()
 image = to_pil(image_tensor)
@@ -56,6 +56,7 @@ plt.imshow(image)
 plt.axis(False)
 plt.show()
 print(f"text_input: {text_input}")
+
 
 #%% get refined prompt
 
@@ -104,6 +105,7 @@ from clicking_client.types import File
 import io
 import json
 from clicking.visualization.mask import SegmentationMask, SegmentationMode
+# from clicking.visualization.core import show_clickpoint_predictions
 
 # Convert PIL Image to bytes and create a File object
 image_byte_arr = io.BytesIO()
@@ -121,10 +123,5 @@ for class_label, text_input in refined_text_inputs.items():
     )
     
     predictions[class_label] = get_prediction.sync(client=client, body=request)
-#%%
 
-class_label_id = 3
-
-prediction = predictions[class_labels[class_label_id]]
 show_clickpoint_predictions(image, predictions)
-print(f"prompt: {refined_text_inputs[class_labels[class_label_id]]}")
