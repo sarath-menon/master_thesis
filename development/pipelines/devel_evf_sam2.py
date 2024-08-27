@@ -33,7 +33,7 @@ from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
 prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
 
 # Call process_prompts asynchronously
-results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_CLASS_LABEL) 
+results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS) 
 
 # show results
 for image, class_label, image_result in zip(images, class_labels, results):
@@ -46,6 +46,7 @@ for image, class_label, image_result in zip(images, class_labels, results):
         print(f"name: {object['name']}")
         print(f"category: {object['category']}")
         print(f"description: {object['description']}")
+        # print(f"Reasoning: {object['reasoning']}")
         print("-" * 50)
 #%%
 from clicking_client import Client
