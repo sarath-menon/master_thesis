@@ -51,9 +51,8 @@ for image, class_label, image_result in zip(images, class_labels, results):
 from clicking_client import Client
 from clicking_client.models import PredictionResp
 import io
-import base64
 
-client = Client(base_url="http://localhost:8082")
+client = Client(base_url="http://localhost:8083")
 
 #%% Get available models
 from clicking_client.api.default import get_models
@@ -63,7 +62,6 @@ from clicking.vision_model.types import TaskType
 
 api_response = get_models.sync(client=client)
 print(api_response)
-
 #%% set model
 
 request = SetModelReq(name="evf_sam2", variant="sam2", task=TaskType.SEGMENTATION_WITH_TEXT)
@@ -73,27 +71,34 @@ set_model.sync(client=client, body=request)
 
 from clicking_client.api.default import get_prediction
 from clicking_client.models import BodyGetPrediction
-from clicking_client.types import File
 import io
 import json
 from clicking.visualization.mask import SegmentationMask, SegmentationMode
-# from clicking.visualization.core import show_clickpoint_predictions
+from clicking.visualization.core import show_clickpoint_predictions
+# from clicking.vision_model.utils import image_to_http_file
+from clicking_client.types import File
 
-# Convert PIL Image to bytes and create a File object
-image_byte_arr = io.BytesIO()
-image.save(image_byte_arr, format='JPEG')
-image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
+def image_to_http_file(image) -> File:
+    # Convert PIL Image to bytes and create a File object
+    image_byte_arr = io.BytesIO()
+    image.save(image_byte_arr, format='JPEG')
+    image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
+    return image_file
 
-predictions = {}
 
-for class_label, text_input in refined_text_inputs.items():
-    # Create the request object
-    request = BodyGetPrediction(
-        image=image_file,
-        task=TaskType.SEGMENTATION_WITH_TEXT,
-        input_text=text_input 
-    )
-    
-    predictions[class_label] = get_prediction.sync(client=client, body=request)
+for image, class_label, image_result in zip(images, class_labels, results):
+    image_file:File = image_to_http_file(image)
+    predictions = {}
 
-show_clickpoint_predictions(image, predictions)
+    for object in image_result['objects']:
+        # Create the request object
+        request = BodyGetPrediction(
+            image=image_file,
+            task=TaskType.SEGMENTATION_WITH_TEXT,
+            input_text=object['description']
+        )
+
+        predictions[object['name']] = get_prediction.sync(client=client, body=request)
+
+    show_clickpoint_predictions(image, predictions)
+#%%
