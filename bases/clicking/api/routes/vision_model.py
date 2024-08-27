@@ -48,7 +48,8 @@ async def prediction(image: UploadFile = File(...),
     image = Image.open(io.BytesIO(image_data))
 
     # convert input_boxes to a list of lists
-    input_boxes = json.loads(input_boxes) if input_boxes else []
+    if input_boxes is not None:
+        input_boxes = json.loads(input_boxes)
 
     req = PredictionReq(image=image, task=task, input_point=input_point, input_label=input_label, input_box=input_boxes, input_text=input_text)
     print(req)
