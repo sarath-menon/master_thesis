@@ -58,11 +58,11 @@ client = Client(base_url="http://localhost:8083")
 from clicking_client.api.default import get_models
 from clicking_client.models  import SetModelReq
 from clicking_client.api.default import set_model
-from clicking.vision_model.types import TaskType
 
 api_response = get_models.sync(client=client)
 print(api_response)
 #%% set model
+from clicking.vision_model.types import TaskType
 
 request = SetModelReq(name="evf_sam2", variant="sam2", task=TaskType.SEGMENTATION_WITH_TEXT)
 set_model.sync(client=client, body=request)
@@ -72,7 +72,7 @@ set_model.sync(client=client, body=request)
 from clicking_client.api.default import get_prediction
 from clicking_client.models import BodyGetPrediction
 import io
-import json
+from clicking.vision_model.types import TaskType
 from clicking.visualization.mask import SegmentationMask, SegmentationMode
 from clicking.visualization.core import show_clickpoint_predictions
 # from clicking.vision_model.utils import image_to_http_file
