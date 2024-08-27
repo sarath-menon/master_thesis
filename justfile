@@ -5,7 +5,9 @@ start_server PORT='8082':
 install_wheels:
     pip install ./wheels/evf_sam2/evf_sam-1.0-py3-none-any.whl
     pip install ./wheels/sam2/SAM_2-1.0-py3-none-any.whl
-    # git clone https://huggingface.co/YxZhang/evf-sam2 checkpoints
+
+download_weights:
+    git clone https://huggingface.co/YxZhang/evf-sam2 checkpoints/evf_sam2
 
 download_sam2_checkpoint VARIANT:
     mkdir -p ./checkpoints/sam2
