@@ -76,15 +76,15 @@ import io
 from clicking.vision_model.types import TaskType
 from clicking.visualization.mask import SegmentationMask, SegmentationMode
 from clicking.visualization.core import show_clickpoint_predictions
-# from clicking.vision_model.utils import image_to_http_file
+from clicking.vision_model.utils import image_to_http_file
 from clicking_client.types import File
 
-def image_to_http_file(image) -> File:
-    # Convert PIL Image to bytes and create a File object
-    image_byte_arr = io.BytesIO()
-    image.save(image_byte_arr, format='JPEG')
-    image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
-    return image_file
+# def image_to_http_file(image) -> File:
+#     # Convert PIL Image to bytes and create a File object
+#     image_byte_arr = io.BytesIO()
+#     image.save(image_byte_arr, format='JPEG')
+#     image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
+#     return image_file
 
 
 for image, class_label, image_result in zip(images, class_labels, results):
