@@ -239,13 +239,15 @@ from clicking.visualization.core import show_localization_predictions
 
 all_predictions = []
 
-for image, class_label, image_result in zip(images, class_labels, results):
+for result in exp_tracker.results:
+
+    image = result.image
     image_file:File = image_to_http_file(image)
 
     predictions = {}
     categories = {}
 
-    for object, id in zip(image_result['objects'], image_ids):
+    for object in result.description['objects']:
         # Create the request object
         request = BodyGetPrediction(
             image=image_file,
@@ -260,10 +262,6 @@ for image, class_label, image_result in zip(images, class_labels, results):
 
     show_localization_predictions(image, predictions, categories)
 
-#%%
-
-
-exp_tracker.print_localization_result(image_ids) 
 #%%
 for prediction in all_predictions:
     print(prediction)
