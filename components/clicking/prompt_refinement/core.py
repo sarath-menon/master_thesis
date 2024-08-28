@@ -1,4 +1,5 @@
 #%%
+from components.clicking.common.image_utils import ImageProcessorBase
 from litellm import completion, acompletion
 import os
 import dotenv
@@ -16,21 +17,17 @@ dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 class PromptMode(Enum):
-    EXPANDED_DESCRIPTION = "prompt_expansion"
+    OBJECTS_LIST_TO_DESCRIPTIONS = "OBJECTS_LIST_TO_DESCRIPTIONS"
     IMAGE_TO_OBJECT_DESCRIPTIONS = "IMAGE_TO_OBJECT_DESCRIPTIONS"
     IMAGE_TO_OBJECTS_LIST = "IMAGE_TO_OBJECTS_LIST"
 
-class PromptRefiner:    
+class PromptRefiner(ImageProcessorBase):
     def __init__(self, prompt_path: str, model: str = "gpt-4o", temperature: float = 0.0):
-        self.model = model
-        self.temperature = temperature
+        super().__init__(model, temperature)
         self.prompt_manager = PromptManager(prompt_path)
         self.messages = [{"role": "system", "content": self.prompt_manager.get_prompt(type='system')}]
-        self.lock = asyncio.Lock()
     
     async def process_prompts(self, screenshots: List[str], mode: PromptMode, input_texts: Optional[List[str]] = None, **kwargs):
-
-        # handle case where input_texts is None
         if input_texts is None:
             input_texts = [None] * len(screenshots)
 
@@ -42,57 +39,30 @@ class PromptRefiner:
     async def _process_single_prompt(self, screenshot: str, mode: PromptMode, input_text: Optional[str] = None, **kwargs):
         base64_image = self._pil_to_base64(screenshot)
         template_values = self._get_template_values(mode, input_text, **kwargs)
+
         prompt = self.prompt_manager.get_prompt(type='user', prompt_key=mode.value, template_values=template_values)
-        response = await self._get_image_response(base64_image, prompt, json_mode=mode != PromptMode.EXPANDED_DESCRIPTION)
+
+        response = await super()._get_image_response(base64_image, prompt, self.messages, json_mode=True)
+
+        try:
+            response = json.loads(response)
+        except json.JSONDecodeError as e:
+            return {"Failed to parse JSON response": {e}, "raw_response": response}
 
         if mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
-            response = json.loads(response)
             # sort objects by category
             response['objects'] = sorted(response['objects'], key=lambda x: x['category'])
-            
-        elif mode == PromptMode.EXPANDED_DESCRIPTION:
-            response = {input_text: response}
-
-        #  # add input image and input text to response
-        # response['input_image'] = screenshot
 
         return response
 
     def _get_template_values(self, mode: PromptMode, input_text: str, **kwargs) -> Dict[str, Any]:
         if input_text is None:
             return {}
-        elif mode == PromptMode.EXPANDED_DESCRIPTION:
+        elif mode == PromptMode.OBJECTS_LIST_TO_DESCRIPTIONS:
             return {"input_description": input_text, "word_limit": str(kwargs.get('word_limit', 10))}
         elif mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
             return {"description_length": kwargs.get('description_length', 20)}
         raise ValueError(f"Invalid mode: {mode}")
-
-    async def _get_image_response(self, base64_image: str, text_prompt: str, json_mode: bool = False):
-        msg = {
-            "role": "user", 
-            "content": [
-                {"type": "text", "text": text_prompt},
-                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{base64_image}"}}
-            ]
-        }
-
-        async with self.lock: 
-            messages = self.messages.copy()
-            messages.append(msg)
-
-        response_format = {"type": "json_object"} if json_mode else None
-        response = await acompletion(
-            model=self.model, 
-            messages=messages, 
-            temperature=self.temperature, 
-            response_format=response_format
-        )
-        return response["choices"][0]["message"]["content"]
-
-    def _pil_to_base64(self, image):
-        with io.BytesIO() as buffer:
-            image.save(buffer, format="PNG")
-            return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
     def show_messages(self):
         for message in self.messages:
@@ -118,7 +88,7 @@ if __name__ == "__main__":
     ]
 
     # Define the mode and word limit for the prompts
-    mode = PromptMode.EXPANDED_DESCRIPTION
+    mode = PromptMode.OBJECTS_LIST_TO_DESCRIPTIONS
     word_limit = 5
 
     # Call process_prompts asynchronously

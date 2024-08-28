@@ -9,35 +9,20 @@ from PIL import Image
 from clicking.visualization.mask import SegmentationMask, SegmentationMode
 from components.clicking.prompt_manager.core import PromptManager
 import asyncio
+from components.clicking.common.image_utils import ImageProcessorBase
 
 # set API keys
 dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
-class OutputCorrector:
+class OutputCorrector(ImageProcessorBase):
     def __init__(self, prompt_path: str, model: str = "gpt-4o", temperature: float = 0.0):
-        self.model = model
-        self.temperature = temperature
+        super().__init__(model, temperature)
         self.PROMPT_PATH = prompt_path
-        
         self.prompt_manager = PromptManager(self.PROMPT_PATH)
-
         self.messages = [
             {"role": "system", "content": self.prompt_manager.get_prompt(type='system')},
         ]
-
-    def _pil_to_base64(self, image):
-        with io.BytesIO() as buffer:
-            image.save(buffer, format="PNG")
-            return base64.b64encode(buffer.getvalue()).decode("utf-8")
-
-    async def _get_text_response(self, class_label: str):
-        template_values = {"class_label": class_label}
-        prompt = self.prompt_manager.get_prompt(type='user', prompt_key='correct_class_label', template_values=template_values)
-        self.add_message(prompt)
-
-        response = await acompletion(model=self.model, messages=self.messages, response_format={"type": "json_object"}, temperature=self.temperature)
-        return response["choices"][0]["message"]["content"]
 
     async def _get_image_responses(self, base64_images: list, class_labels: list):
         tasks = []
@@ -45,20 +30,11 @@ class OutputCorrector:
         for base64_image, class_label in zip(base64_images, class_labels):
             template_values = {"class_label": class_label}
             prompt = self.prompt_manager.get_prompt(type='user', prompt_key='correct_class_label', template_values=template_values)
-
-            msg = {"role": "user", "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {
-                        "url": f"data:image/png;base64,{base64_image}"}
-                    }
-                ]}
-            messages_copy = self.messages.copy()
-            messages_copy.append(msg)
-            task = acompletion(model=self.model, messages=messages_copy)
+            task = self._get_image_response(base64_image, prompt, self.messages)
             tasks.append(task)
         
         responses = await asyncio.gather(*tasks)
-        return [resp["choices"][0]["message"]["content"] for resp in responses]
+        return responses
 
     async def verify_bboxes(self, screenshots: list[Image.Image], class_labels: list[str]):
         base64_images = [self._pil_to_base64(screenshot) for screenshot in screenshots]
