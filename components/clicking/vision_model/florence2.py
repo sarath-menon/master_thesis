@@ -1,3 +1,5 @@
+#%%
+
 from transformers import AutoProcessor, AutoModelForCausalLM
 from PIL import Image
 import os
@@ -8,13 +10,14 @@ from dataclasses import dataclass
 from clicking.vision_model.types import TaskType
 from clicking.vision_model.types import TaskType, PredictionReq, SegmentationResp, PredictionResp, LocalizationResp
 
+#%%
 class Florence2():
     variant_to_id = {
         'florence-2-base': "microsoft/Florence-2-base",
         'florence-2-large': "microsoft/Florence-2-large"
         }
 
-    task_prompts = {TaskType.LOCALIZATION_WITH_TEXT_GROUNDED: '<CAPTION_TO_PHRASE_GROUNDING>', TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB: '<OPEN_VOCABULARY_DETECTION>', TaskType.LOCALIZATION_WITH_TEXT: '<OD>', TaskType.CAPTIONING: '<MORE_DETAILED_CAPTION>'}
+    task_prompts_map = {TaskType.LOCALIZATION_WITH_TEXT_GROUNDED: '<CAPTION_TO_PHRASE_GROUNDING>', TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB: '<OPEN_VOCABULARY_DETECTION>', TaskType.CAPTIONING: '<MORE_DETAILED_CAPTION>'}
 
     def __init__(self, variant='florence-2-base'):
         self.name = 'florence2'
@@ -40,7 +43,7 @@ class Florence2():
     
     @staticmethod
     def tasks():
-        return list(Florence2.task_prompts.keys())
+        return list(Florence2.task_prompts_map.keys())
         
     def load_model_gpu(self, model_id):
         if self.device == 'cuda':
@@ -65,18 +68,20 @@ class Florence2():
             return model, processor
 
     def predict(self, req: PredictionReq) -> PredictionResp:
-        if req.task not in self.task_prompts:
+        if req.task not in self.task_prompts_map:
             raise ValueError(f"Invalid task type: {req.task}")
         elif req.image is None:
             raise ValueError("Image is required for any vision task")
         elif req.input_text is None:
             raise ValueError("Text input is required for florence2 vision tasks")
 
-        task_prompt = self.task_prompts[req.task]
-        response = self.run_inference(req.image, task_prompt, req.input_text)
+        # task_prompts = self.task_prompts_map[req.task]
+        response = self.run_inference(req.image, req.task, req.input_text)
         return PredictionResp(prediction=response)
 
-    def run_inference(self, image, task_prompt, text_input=None) -> LocalizationResp:
+    def run_inference(self, image, task, text_input=None) -> LocalizationResp:
+
+        task_prompt = self.task_prompts_map[task]
 
         if text_input is None:
             prompt = task_prompt
@@ -103,34 +108,40 @@ class Florence2():
         bboxes = []
         labels = []
 
-        if task_prompt == '<OPEN_VOCABULARY_DETECTION>':
+        if task == TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB:
             print(result[task_prompt], flush=True)
             bboxes = result[task_prompt]["bboxes"]
             labels = result[task_prompt]["bboxes_labels"]
-        elif task_prompt == '<CAPTION_TO_PHRASE_GROUNDING>':
+        elif task == TaskType.LOCALIZATION_WITH_TEXT_GROUNDED:
             bboxes = result[task_prompt]["bboxes"]
             labels = result[task_prompt]["labels"]
+        else:
+            raise ValueError(f"Invalid task type: {task}")
 
         return LocalizationResp(bboxes=bboxes, labels=labels)
 
-## For profiling
+#%% For profiling
 
-# def main():
-#     model = Florence2Model()
-#     image = Image.open("/Users/sarathmenon/Documents/master_thesis/datasets/resized_media/gameplay_images/hogwarts_legacy/0.jpg")
+import cProfile
+import pstats
+if __name__ == "__main__":
+    model = Florence2()
+    image = Image.open("/Users/sarathmenon/Documents/master_thesis/datasets/resized_media/gameplay_images/hogwarts_legacy/0.jpg")
 
 
-#     # phrase grounded detection
-#     prompt = 'sword.'
-#     task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
-#     results = model.run_inference(image, task_prompt, text_input=prompt)
-#     print(results)
+    # phrase grounded detection
+    req = PredictionReq(image=image, task=TaskType.LOCALIZATION_WITH_TEXT_GROUNDED, input_text='book')
+    results = model.predict(req)
+    print(f"Grounded detection: {results}")
 
-# import cProfile
-# import pstats
-# if __name__ == "__main__":
-#     # main()
-#     cProfile.run('main()', filename='profile_results.prof')
-#     stats = pstats.Stats('profile_results.prof')
-#     stats.sort_stats('cumulative')
-#     stats.print_stats(10)  # Print the top 10 results
+    # open vocabulary detection
+    req = PredictionReq(image=image, task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB, input_text='book')
+    results = model.predict(req)
+    print(f"Open vocabulary detection: {results}")
+
+    # main()
+    # cProfile.run('main()', filename='profile_results.prof')
+    # stats = pstats.Stats('profile_results.prof')
+    # stats.sort_stats('cumulative')
+    # stats.print_stats(10)  # Print the top 10 results
+# %%
