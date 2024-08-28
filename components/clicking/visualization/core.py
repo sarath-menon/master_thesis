@@ -211,6 +211,47 @@ def show_localization_predictions(image, responses: List[LocalizationResp]):
 from clicking.vision_model.types import LocalizationResp
 from typing import List, Dict
 
+def show_localization_predictions(image, responses: List[LocalizationResp], categories: Dict[str, str], descriptions: Dict[str, str], text_color='white'):
+    fig, ax = plt.subplots()
+
+    ax.imshow(image)
+
+    # Enumerate the descriptions dict 
+    description_ids = {description: i for i, description in enumerate(set(descriptions))}
+
+    # Plot each bounding box
+    for (object_name, response) in responses.items():
+        bboxes = response.prediction.bboxes
+        category = categories[object_name]
+
+        for (i, bbox) in enumerate(bboxes):
+            # Unpack the bounding box coordinates
+            x1, y1, x2, y2 = bbox
+            bg_color = object_category_color_map(category)
+            
+            # Create a Rectangle patch
+            rect = patches.Rectangle((x1, y1), x2-x1, y2-y1, linewidth=1, edgecolor=bg_color, facecolor='none')
+            
+            # Add the rectangle to the Axes
+            ax.add_patch(rect)
+
+            # Annotate the label
+            description_id = description_ids[object_name]
+            plt.text(x1, y1, str(description_id), color=text_color, fontsize=8, bbox=dict(facecolor=bg_color, alpha=0.9))
+
+    # legend (object_name: description)
+    # object_names = list(responses.keys())
+    # for object_name in object_names:
+    #     print(f"{object_name}: {descriptions[object_name]}")
+
+    # legend (id: object_name)
+    for id, object_name in description_ids.items():
+        print(f"{id}: {object_name}")
+
+    # Remove the axis ticks and labels
+    ax.axis('off')
+    plt.show()
+
 def object_category_color_map(category):
     # Create a dictionary to store color indices
     color_dict = {
@@ -220,34 +261,3 @@ def object_category_color_map(category):
     }
 
     return color_dict[category]
-
-def show_localization_predictions(image, responses: List[LocalizationResp], categories: Dict[str, str], text_color='white'):
-    fig, ax = plt.subplots()
-
-    # Display the image
-    ax.imshow(image)
-
-    # Plot each bounding box
-    for (object_name, response) in responses.items():
-        bboxes = response.prediction.bboxes
-        labels = response.prediction.labels
-        category = categories[object_name]
-
-        for bbox, label in zip(bboxes, labels):
-            # Unpack the bounding box coordinates
-            x1, y1, x2, y2 = bbox
-            
-            # Create a Rectangle patch
-            bg_color = object_category_color_map(category)
-            rect = patches.Rectangle((x1, y1), x2-x1, y2-y1, linewidth=1, edgecolor=bg_color, facecolor='none')
-            # Add the rectangle to the Axes
-            ax.add_patch(rect)
-
-            # Annotate the label
-            plt.text(x1, y1, label, color=text_color, fontsize=8, bbox=dict(facecolor=bg_color, alpha=0.5))
-
-    # Remove the axis ticks and labels
-    ax.axis('off')
-    
-    # Show the plot
-    plt.show()

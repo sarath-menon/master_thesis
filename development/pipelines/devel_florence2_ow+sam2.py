@@ -240,65 +240,6 @@ request = SetModelReq(name="florence2", variant="florence-2-base", task=TaskType
 
 set_model.sync(client=client, body=request)
 
-#%%
-exp_tracker.print_description(image_ids)
-# exp_tracker.get_localization_result(image_ids)
-
-#%%
-
-def show_localization_predictions_(image, responses: List[LocalizationResp], categories: Dict[str, str], descriptions: Dict[str, str], text_color='white'):
-    fig, ax = plt.subplots()
-
-    ax.imshow(image)
-
-    # Print the legend below the image as text
-    from tabulate import tabulate
-
-    # Enumerate the descriptions dict 
-    description_ids = {description: i for i, description in enumerate(set(descriptions))}
-
-    # Plot each bounding box
-    for (object_name, response) in responses.items():
-        bboxes = response.prediction.bboxes
-        category = categories[object_name]
-
-        for (i, bbox) in enumerate(bboxes):
-            # Unpack the bounding box coordinates
-            x1, y1, x2, y2 = bbox
-            bg_color = object_category_color_map(category)
-            
-            # Create a Rectangle patch
-            rect = patches.Rectangle((x1, y1), x2-x1, y2-y1, linewidth=1, edgecolor=bg_color, facecolor='none')
-            
-            # Add the rectangle to the Axes
-            ax.add_patch(rect)
-
-            # Annotate the label
-            description_id = description_ids[object_name]
-            plt.text(x1, y1, str(description_id), color=text_color, fontsize=8, bbox=dict(facecolor=bg_color, alpha=0.9))
-
-    # legend (object_name: description)
-    # object_names = list(responses.keys())
-    # for object_name in object_names:
-    #     print(f"{object_name}: {descriptions[object_name]}")
-
-    # legend (id: object_name)
-    for id, object_name in description_ids.items():
-        print(f"{id}: {object_name}")
-
-    # Remove the axis ticks and labels
-    ax.axis('off')
-    plt.show()
-
-def object_category_color_map(category):
-    # Create a dictionary to store color indices
-    color_dict = {
-        'Game Asset': (1, 0, 0),    # Red
-        'Non-playable Character': (0, 1, 0),    # Green
-        'Information Display': (0, 0, 1),    # Blue
-    }
-
-    return color_dict[category]
 
 #%% get localization prediction
 
@@ -333,7 +274,7 @@ for result in exp_tracker.results:
         descriptions[object['name']] = object['description']
 
     exp_tracker.add_localization_result(result.id, predictions)
-    show_localization_predictions_(image, predictions, categories, descriptions)
+    show_localization_predictions(image, predictions, categories, descriptions)
 
 #%% verify bounding boxes
 # convert bboxes to BoundingBox type
