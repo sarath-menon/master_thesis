@@ -6,6 +6,7 @@ import dotenv
 import base64
 import io
 from PIL import Image
+import numpy as np
 from clicking.visualization.mask import SegmentationMask, SegmentationMode
 from components.clicking.prompt_manager.core import PromptManager
 import asyncio
@@ -30,7 +31,7 @@ class OutputCorrector(ImageProcessorBase):
         for base64_image, class_label in zip(base64_images, class_labels):
             template_values = {"class_label": class_label}
             prompt = self.prompt_manager.get_prompt(type='user', prompt_key='correct_class_label', template_values=template_values)
-            task = self._get_image_response(base64_image, prompt, self.messages)
+            task = self._get_image_response(base64_image, prompt, self.messages, json_mode=True)
             tasks.append(task)
         
         responses = await asyncio.gather(*tasks)
@@ -47,7 +48,7 @@ class OutputCorrector(ImageProcessorBase):
             base64_images.append(self._pil_to_base64(extracted_area))
         return await self._get_image_responses(base64_images, class_labels)
 
-#%% Load test image
+#%% Demo
 
 if __name__ == "__main__":
     from PIL import Image
@@ -63,21 +64,17 @@ if __name__ == "__main__":
     plt.axis('off')
     plt.imshow(image)
 
+    
+    #%% Verify bounding boxes
     bboxes = [
         BoundingBox((1000, 400, 200, 200), BBoxMode.XYWH),
         BoundingBox((1000, 400, 200, 200), BBoxMode.XYWH)
     ]
     class_labels = ["building", "flat"]
-    
 
     # Load images and apply bounding boxes
     images = [image, image]
     images_overlayed = [overlay_bounding_box(img.copy(), bbox) for img, bbox in zip(images, bboxes)]
-
-    # Display images
-    plt.imshow(images_overlayed[0])
-    plt.axis(False)
-    plt.axis('off')
 
     # Batch verify bounding boxes
     output_corrector = OutputCorrector(prompt_path="./prompts/output_corrector.md")
@@ -91,4 +88,45 @@ if __name__ == "__main__":
 
     # Run the asynchronous function
     asyncio.get_event_loop().run_until_complete(process_batch_prompts())
+
+    #%% Verify masks
+    masks = []
+    mask_class_labels = ["flag", "building"]
+
+    for _ in range(2):
+        mask_array = np.zeros((image.height, image.width), dtype=bool)
+        rect_width, rect_height = 120, 100
+        x_start, y_start = 1020, 440
+        mask_array[y_start:y_start+rect_height, x_start:x_start+rect_width] = True
+        masks.append(SegmentationMask(mask_array, mode=SegmentationMode.BINARY_MASK))
+
+    # Batch verify masks
+    async def process_batch_masks():
+        results = await output_corrector.verify_masks(images, masks, mask_class_labels)
+        for result, class_label in zip(results, mask_class_labels):
+            print(f"Mask class label: {class_label}")
+            print(f"Mask verification result: {result}")
+
+    # Run the asynchronous function for mask verification
+    asyncio.get_event_loop().run_until_complete(process_batch_masks())
+
+
+    fig, axs = plt.subplots(len(images), len(masks) + 1, figsize=(18, 12))
+
+    for row, (img, img_label) in enumerate(zip(images, class_labels)):
+        # Display original images in the first column
+        axs[row, 0].imshow(img)
+        axs[row, 0].set_title(f'Original Image ({img_label})')
+        axs[row, 0].axis('off')
+
+        # Display extracted areas in the subsequent columns
+        for col, (mask, class_label) in enumerate(zip(masks, mask_class_labels)):
+            extracted_area = mask.extract_area(img, padding=10)
+            axs[row, col + 1].imshow(extracted_area)
+            axs[row, col + 1].set_title(f'Extracted Area ({class_label})')
+            axs[row, col + 1].axis('off')
+
+    plt.tight_layout()
+    plt.show()
+
 # %%
