@@ -25,32 +25,41 @@ from typing import List, Dict
 import json
 from datetime import datetime
 from typing import Optional
+import uuid
 
-class ExperimentTracker(BaseModel):
-    images: Optional[List[Image.Image]] = []
-    class_labels: Optional[List[str]] = []
-    prediction_results: Optional[List[PredictionResp]] = []
-    localization_results: Optional[List[LocalizationResp]] = []
-    segmentation_results: Optional[List[SegmentationResp]] = []
-    experiment_id: str = datetime.now().strftime("%Y%m%d_%H%M%S")
+class ImagePredictionResult(BaseModel):
+    id: int
+    image: Optional[Image.Image] = None
+    description: Optional[List[Dict]] = []
+    localization_result: Optional[List[LocalizationResp]] = []
+    segmentation_result: Optional[List[SegmentationResp]] = []
 
     model_config = {
         "arbitrary_types_allowed": True
     }
 
-    def log_images(self, images: List[Image.Image]):
+
+class ExperimentTracker(BaseModel):
+    results: Optional[List[ImagePredictionResult]] = []
+    experiment_id: str = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    def add_images(self, images: List[Image.Image]):
         for i, image in enumerate(images):
-            self.images.append(image)
+            self.results.append(ImagePredictionResult(id=i, image=image))
         
         print(f"Logged {len(images)} images.")
 
-    def log_localization(self, image_id: str, predictions: Dict[str, PredictionResp], categories: Dict[str, str]):
+    def add_image_descriptions(self, descriptions: list):
+        for result, description in zip(self.results, descriptions):
+            result.description = description
+
+    def add_localization_results(self, image_id: str, predictions: Dict[str, PredictionResp], categories: Dict[str, str]):
         self.localization_results[image_id] = {
             "predictions": {name: pred.dict() for name, pred in predictions.items()},
             "categories": categories
         }
 
-    def log_segmentation(self, image_id: str, segmentation_resp: PredictionResp):
+    def add_segmentation_results(self, image_id: str, segmentation_resp: PredictionResp):
         self.segmentation_results[image_id] = segmentation_resp.dict()
 
     def save_results(self, filepath: str):
@@ -72,14 +81,53 @@ class ExperimentTracker(BaseModel):
         self.segmentation_results = data["segmentation_results"]
 
     def show_images(self):
-        for (i, image) in enumerate(self.images):
-            plt.imshow(image)
+        for (i, result) in enumerate(self.results):
+            plt.imshow(result.image)
             plt.axis(False)
             plt.title(f"image_{i}")
             plt.show()
 
+    def show_image_descriptions(self):
+        for (i, result) in enumerate(self.results):
+            print(f"image_{i}")
+            print(result.description)
+
+    def generate_print_functions(self):
+        def create_print_function(field_name):
+            def print_function(self, image_ids: List[str]):
+                for image_id in image_ids:
+                    self._print_field_for_image(image_id, field_name)
+            return print_function
+
+        fields = [field for field in ImagePredictionResult.__fields__ if field != 'id']
+        for field in fields:
+            setattr(ExperimentTracker, f"print_{field}", create_print_function(field))
+
+    def _print_field_for_image(self, image_id: str, field_name: str):
+        result = self._get_result_by_id(image_id)
+        if not result:
+            print(f"No result found for image ID: {image_id}")
+            return
+
+        value = getattr(result, field_name)
+        print(f"Image ID: {image_id}, {field_name.capitalize()}:")
+        self._display_value(value)
+        print("-" * 50)
+
+    def _get_result_by_id(self, image_id: str):
+        return next((r for r in self.results if r.id == image_id), None)
+
+    def _display_value(self, value):
+        if isinstance(value, Image.Image):
+            plt.imshow(value)
+            plt.axis('off')
+            plt.show()
+        else:
+            print(value)
+
 # Usage example:
 exp_tracker = ExperimentTracker()
+exp_tracker.generate_print_functions()
 print(exp_tracker.experiment_id)
 
 # # After segmentation
@@ -99,9 +147,13 @@ print(exp_tracker.experiment_id)
 # Load dataset
 coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', './datasets/label_studio_gen/coco_dataset/result.json')
 images, class_labels = coco_dataset.sample_dataset(batch_size=3)
-exp_tracker.log_images(images)
-exp_tracker.show_images()
+exp_tracker.add_images(images)
+# exp_tracker.show_images()
+exp_tracker.print_image([0, 1, 2])
+
 #%%
+exp_tracker.add_image_descriptions(results)
+exp_tracker.print_description([0, 1, 2])
 
 #%% get clickable objects from image
 from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
@@ -124,6 +176,7 @@ for image, class_label, image_result in zip(images, class_labels, results):
         print(f"description: {object['description']}")
         # print(f"Reasoning: {object['reasoning']}")
         print("-" * 50)
+
 
 #%%
 from clicking_client import Client
