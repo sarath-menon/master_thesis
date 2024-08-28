@@ -237,8 +237,6 @@ from clicking.visualization.bbox import BoundingBox
 from clicking.vision_model.utils import image_to_http_file
 from clicking.visualization.core import show_localization_predictions
 
-all_predictions = []
-
 for result in exp_tracker.results:
 
     image = result.image
@@ -258,13 +256,8 @@ for result in exp_tracker.results:
         predictions[object['name']] = get_prediction.sync(client=client, body=request)
         categories[object['name']] = object['category']
 
-        exp_tracker.add_localization_result(id, predictions)
-
+    exp_tracker.add_localization_result(result.id, predictions)
     show_localization_predictions(image, predictions, categories)
-
-#%%
-for prediction in all_predictions:
-    print(prediction)
 
 #%% verify bounding boxes
 # convert bboxes to BoundingBox type
@@ -274,16 +267,29 @@ from clicking.visualization.core import overlay_bounding_box
 from clicking.visualization.bbox import BoundingBox, BBoxMode
 from clicking.output_corrector.core import OutputCorrector
 
-for image, predictions in zip(images, all_predictions):
-    for prediction in all_predictions:
-        bboxes = prediction.bboxes
-        bboxes = [BoundingBox((bbox[0], bbox[1], bbox[2], bbox[3]), BBoxMode.XYXY) for bbox in prediction.bboxes]
+for result in exp_tracker.results:
+    if len(result.localization_result) == 0:
+        print(f"No localization result for image {result.id}")
+        continue
 
-    overlayed_image = overlay_bounding_box(image.copy(), bboxes[0], thickness=10, padding=20)
+    bboxes_list = []
+    image_list = []
+    for object_name, prediction in result.localization_result.items():
+        print(F"Object name: {object_name}")
+        bboxes = prediction.prediction.bboxes
+        bboxes = [BoundingBox((bbox[0], bbox[1], bbox[2], bbox[3]), BBoxMode.XYXY) for bbox in bboxes]
 
-    plt.grid(False)
-    plt.axis('off')
-    plt.imshow(overlayed_image)
+        bboxes_list.append(bboxes)
+        image_list.append(result.image)
+
+        if len(bboxes) == 0:
+            continue
+        
+        overlayed_image = overlay_bounding_box(result.image, bboxes[0], thickness=10, padding=20)
+
+        plt.grid(False)
+        plt.axis('off')
+        plt.imshow(overlayed_image)
 
 # output_corrector = OutputCorrector()
 # response = output_corrector.verify_bbox(overlayed_image, text_input)
