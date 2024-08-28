@@ -31,8 +31,8 @@ class ImagePredictionResult(BaseModel):
     id: int
     image: Optional[Image.Image] = None
     description: Optional[List[Dict]] = []
-    localization_result: Optional[List[LocalizationResp]] = []
-    segmentation_result: Optional[List[SegmentationResp]] = []
+    localization_result: Optional[LocalizationResp] = None
+    segmentation_result: Optional[SegmentationResp] = None
 
     model_config = {
         "arbitrary_types_allowed": True
@@ -222,7 +222,6 @@ exp_tracker.print_description(image_ids)
 from clicking_client import Client
 from clicking_client.models import PredictionResp
 import io
-import base64
 
 client = Client(base_url="http://localhost:8082")
 
@@ -242,8 +241,65 @@ request = SetModelReq(name="florence2", variant="florence-2-base", task=TaskType
 set_model.sync(client=client, body=request)
 
 #%%
-exp_tracker.get_description(image_ids)
+exp_tracker.print_description(image_ids)
 # exp_tracker.get_localization_result(image_ids)
+
+#%%
+
+def show_localization_predictions_(image, responses: List[LocalizationResp], categories: Dict[str, str], descriptions: Dict[str, str], text_color='white'):
+    fig, ax = plt.subplots()
+
+    ax.imshow(image)
+
+    # Print the legend below the image as text
+    from tabulate import tabulate
+
+    # Enumerate the descriptions dict 
+    description_ids = {description: i for i, description in enumerate(set(descriptions))}
+
+    # Plot each bounding box
+    for (object_name, response) in responses.items():
+        bboxes = response.prediction.bboxes
+        category = categories[object_name]
+
+        for (i, bbox) in enumerate(bboxes):
+            # Unpack the bounding box coordinates
+            x1, y1, x2, y2 = bbox
+            bg_color = object_category_color_map(category)
+            
+            # Create a Rectangle patch
+            rect = patches.Rectangle((x1, y1), x2-x1, y2-y1, linewidth=1, edgecolor=bg_color, facecolor='none')
+            
+            # Add the rectangle to the Axes
+            ax.add_patch(rect)
+
+            # Annotate the label
+            description_id = description_ids[object_name]
+            plt.text(x1, y1, str(description_id), color=text_color, fontsize=8, bbox=dict(facecolor=bg_color, alpha=0.9))
+
+    # legend (object_name: description)
+    # object_names = list(responses.keys())
+    # for object_name in object_names:
+    #     print(f"{object_name}: {descriptions[object_name]}")
+
+    # legend (id: object_name)
+    for id, object_name in description_ids.items():
+        print(f"{id}: {object_name}")
+
+    # Remove the axis ticks and labels
+    ax.axis('off')
+    plt.show()
+
+def object_category_color_map(category):
+    # Create a dictionary to store color indices
+    color_dict = {
+        'Game Asset': (1, 0, 0),    # Red
+        'Non-playable Character': (0, 1, 0),    # Green
+        'Information Display': (0, 0, 1),    # Blue
+    }
+
+    return color_dict[category]
+
 #%% get localization prediction
 
 from clicking_client.api.default import get_prediction
@@ -253,7 +309,7 @@ import io
 import json
 from clicking.visualization.bbox import BoundingBox
 from clicking.vision_model.utils import image_to_http_file
-from clicking.visualization.core import show_localization_predictions
+# from clicking.visualization.core import show_localization_predictions
 
 for result in exp_tracker.results:
 
@@ -261,6 +317,7 @@ for result in exp_tracker.results:
     image_file:File = image_to_http_file(image)
 
     predictions = {}
+    descriptions = {}
     categories = {}
 
     for object in result.description['objects']:
@@ -273,9 +330,10 @@ for result in exp_tracker.results:
 
         predictions[object['name']] = get_prediction.sync(client=client, body=request)
         categories[object['name']] = object['category']
+        descriptions[object['name']] = object['description']
 
     exp_tracker.add_localization_result(result.id, predictions)
-    show_localization_predictions(image, predictions, categories)
+    show_localization_predictions_(image, predictions, categories, descriptions)
 
 #%% verify bounding boxes
 # convert bboxes to BoundingBox type
@@ -285,33 +343,30 @@ from clicking.visualization.core import overlay_bounding_box
 from clicking.visualization.bbox import BoundingBox, BBoxMode
 from clicking.output_corrector.core import OutputCorrector
 
-exp_tracker.get_localization_result(image_ids)
+localization_results =  exp_tracker.get_localization_result(image_ids)
+descriptions = exp_tracker.get_description(image_ids)
+images = exp_tracker.get_image(image_ids)
 
-# for result in exp_tracker.results:
-#     if len(result.localization_result) == 0:
-#         print(f"No localization result for image {result.id}")
-#         continue
+for image, description, localization_results in zip(images, descriptions, localization_results):
+    # show_localization_predictions(image, localization_result, categories)
+    print(image)
 
-    
+    for object_name, prediction in localization_results.items():
+        print(f"object_name: {object_name}")
+        bboxes_list = []
 
-    # bboxes_list = []
-    # image_list = []
-    # for object_name, prediction in result.localization_result.items():
-    #     print(F"Object name: {object_name}")
-    #     bboxes = prediction.prediction.bboxes
-    #     bboxes = [BoundingBox((bbox[0], bbox[1], bbox[2], bbox[3]), BBoxMode.XYXY) for bbox in bboxes]
+        for bbox in prediction.prediction.bboxes:
+            bboxes_list.append(BoundingBox((bbox[0], bbox[1], bbox[2], bbox[3]), BBoxMode.XYXY))
 
-    #     bboxes_list.append(bboxes)
-    #     image_list.append(result.image)
-
-    #     if len(bboxes) == 0:
-    #         continue
+        if len(bboxes_list) == 0:
+            continue
         
-    #     overlayed_image = overlay_bounding_box(result.image, bboxes[0], thickness=10, padding=20)
+        overlayed_image = overlay_bounding_box(image, bboxes_list[0], thickness=10, padding=20)
 
-    #     plt.grid(False)
-    #     plt.axis('off')
-    #     plt.imshow(overlayed_image)
+    plt.figure()
+    plt.grid(False)
+    plt.axis('off')
+    plt.imshow(overlayed_image)
 
 # output_corrector = OutputCorrector()
 # response = output_corrector.verify_bbox(overlayed_image, text_input)
