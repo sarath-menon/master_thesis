@@ -5,7 +5,7 @@ import dotenv
 import base64
 import io
 from enum import Enum, auto
-from components.clicking.prompt_manager.core import PromptManager
+from clicking.prompt_manager.core import PromptManager
 import asyncio
 import nest_asyncio
 from typing import List, Dict, Any, Optional
@@ -17,7 +17,8 @@ os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 class PromptMode(Enum):
     EXPANDED_DESCRIPTION = "prompt_expansion"
-    IMAGE_TO_CLASS_LABEL = "image_to_class_label"
+    IMAGE_TO_OBJECT_DESCRIPTIONS = "IMAGE_TO_OBJECT_DESCRIPTIONS"
+    IMAGE_TO_OBJECTS_LIST = "IMAGE_TO_OBJECTS_LIST"
 
 class PromptRefiner:    
     def __init__(self, prompt_path: str, model: str = "gpt-4o", temperature: float = 0.0):
@@ -44,7 +45,7 @@ class PromptRefiner:
         prompt = self.prompt_manager.get_prompt(type='user', prompt_key=mode.value, template_values=template_values)
         response = await self._get_image_response(base64_image, prompt, json_mode=mode != PromptMode.EXPANDED_DESCRIPTION)
 
-        if mode == PromptMode.IMAGE_TO_CLASS_LABEL:
+        if mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
             response = json.loads(response)
             # sort objects by category
             response['objects'] = sorted(response['objects'], key=lambda x: x['category'])
@@ -62,7 +63,7 @@ class PromptRefiner:
             return {}
         elif mode == PromptMode.EXPANDED_DESCRIPTION:
             return {"input_description": input_text, "word_limit": str(kwargs.get('word_limit', 10))}
-        elif mode == PromptMode.IMAGE_TO_CLASS_LABEL:
+        elif mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
             return {"description_length": kwargs.get('description_length', 20)}
         raise ValueError(f"Invalid mode: {mode}")
 
@@ -146,7 +147,7 @@ if __name__ == "__main__":
     images = [image_1, image_2]
 
     # Define the mode and word limit for the prompts
-    mode = PromptMode.IMAGE_TO_CLASS_LABEL
+    mode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS
 
       # Call process_prompts asynchronously
     async def process_batch_prompts():
