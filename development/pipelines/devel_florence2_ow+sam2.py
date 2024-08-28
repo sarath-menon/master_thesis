@@ -2,7 +2,6 @@
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy.ndimage import center_of_mass
-from clicking.visualization.core import show_localization_prediction, show_segmentation_prediction
 from clicking.pipeline.core import Clicker
 import matplotlib.pyplot as plt
 from torchvision import transforms, datasets
@@ -11,19 +10,98 @@ import matplotlib.patches as patches
 import torch
 from clicking.vision_model.types import SegmentationResp
 from clicking.dataset_creator.core import CocoDataset
+# import wandb
+
 from dotenv import load_dotenv
 load_dotenv()
 # run this code only in notebook mode
 if 'get_ipython' in globals():
     get_ipython().run_line_magic('matplotlib', 'inline')
 
-#%% Load dataset
+#%%
+from pydantic import BaseModel
+from clicking.vision_model.types import *
+from typing import List, Dict
+import json
+from datetime import datetime
+from typing import Optional
 
+class ExperimentTracker(BaseModel):
+    images: Optional[List[Image.Image]] = []
+    class_labels: Optional[List[str]] = []
+    prediction_results: Optional[List[PredictionResp]] = []
+    localization_results: Optional[List[LocalizationResp]] = []
+    segmentation_results: Optional[List[SegmentationResp]] = []
+    experiment_id: str = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    model_config = {
+        "arbitrary_types_allowed": True
+    }
+
+    def log_images(self, images: List[Image.Image]):
+        for i, image in enumerate(images):
+            self.images.append(image)
+        
+        print(f"Logged {len(images)} images.")
+
+    def log_localization(self, image_id: str, predictions: Dict[str, PredictionResp], categories: Dict[str, str]):
+        self.localization_results[image_id] = {
+            "predictions": {name: pred.dict() for name, pred in predictions.items()},
+            "categories": categories
+        }
+
+    def log_segmentation(self, image_id: str, segmentation_resp: PredictionResp):
+        self.segmentation_results[image_id] = segmentation_resp.dict()
+
+    def save_results(self, filepath: str):
+        results = {
+            "experiment_id": self.experiment_id,
+            "class_labels": self.class_labels,
+            "localization_results": self.localization_results,
+            "segmentation_results": self.segmentation_results
+        }
+        with open(filepath, "w") as f:
+            json.dump(results, f, indent=2)
+
+    def load_results(self, filepath: str):
+        with open(filepath, "r") as f:
+            data = json.load(f)
+        self.experiment_id = data["experiment_id"]
+        self.class_labels = data["class_labels"]
+        self.localization_results = data["localization_results"]
+        self.segmentation_results = data["segmentation_results"]
+
+    def show_images(self):
+        for (i, image) in enumerate(self.images):
+            plt.imshow(image)
+            plt.axis(False)
+            plt.title(f"image_{i}")
+            plt.show()
+
+# Usage example:
+exp_tracker = ExperimentTracker()
+print(exp_tracker.experiment_id)
+
+# # After segmentation
+# tracker.log_segmentation(f"image_{0}", segmentation_resp)
+
+# # Save results
+# tracker.save_results(f"experiment_results_{tracker.experiment_id}.json")
+
+# # Load results later
+# loaded_tracker = ExperimentTracker(images=[], class_labels=[], prediction_results=[])
+# loaded_tracker.load_results("experiment_results_20230501_120000.json")
+#%%
+
+# # Initialize W&B project
+# wandb.init(project="clicking")
+
+# Load dataset
 coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', './datasets/label_studio_gen/coco_dataset/result.json')
 images, class_labels = coco_dataset.sample_dataset(batch_size=3)
-
-#%% sample batch for testing
-images, class_labels = coco_dataset.sample_dataset(batch_size=3, show_images=True)
+exp_tracker.log_images(images)
+exp_tracker.show_images()
+#%%
 
 #%% get clickable objects from image
 from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
@@ -34,7 +112,6 @@ prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
 # Call process_prompts asynchronously
 results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS) 
 
-#%% show results
 for image, class_label, image_result in zip(images, class_labels, results):
     plt.imshow(image)
     plt.axis(False)
@@ -82,9 +159,11 @@ from clicking.visualization.bbox import BoundingBox
 from clicking.vision_model.utils import image_to_http_file
 from clicking.visualization.core import show_localization_predictions
 
+all_predictions = []
 
 for image, class_label, image_result in zip(images, class_labels, results):
     image_file:File = image_to_http_file(image)
+
     predictions = {}
     categories = {}
 
@@ -99,6 +178,8 @@ for image, class_label, image_result in zip(images, class_labels, results):
         predictions[object['name']] = get_prediction.sync(client=client, body=request)
         categories[object['name']] = object['category']
 
+        all_predictions.append(predictions)
+
     show_localization_predictions(image, predictions, categories)
 
 #%% verify bounding boxes
@@ -109,17 +190,20 @@ from clicking.visualization.core import overlay_bounding_box
 from clicking.visualization.bbox import BoundingBox, BBoxMode
 from clicking.output_corrector.core import OutputCorrector
 
-bboxes = [BoundingBox((bbox[0], bbox[1], bbox[2], bbox[3]), BBoxMode.XYXY) for bbox in prediction.bboxes]
+for image, predictions in zip(images, all_predictions):
+    for prediction in all_predictions:
+        bboxes = prediction.bboxes
+        bboxes = [BoundingBox((bbox[0], bbox[1], bbox[2], bbox[3]), BBoxMode.XYXY) for bbox in prediction.bboxes]
 
-overlayed_image = overlay_bounding_box(image.copy(), bboxes[0], thickness=10, padding=20)
+    overlayed_image = overlay_bounding_box(image.copy(), bboxes[0], thickness=10, padding=20)
 
-plt.grid(False)
-plt.axis('off')
-plt.imshow(overlayed_image)
+    plt.grid(False)
+    plt.axis('off')
+    plt.imshow(overlayed_image)
 
-output_corrector = OutputCorrector()
-response = output_corrector.verify_bbox(overlayed_image, text_input)
-print(response)
+# output_corrector = OutputCorrector()
+# response = output_corrector.verify_bbox(overlayed_image, text_input)
+# print(response)
 
 #%% set segmentation model
 
