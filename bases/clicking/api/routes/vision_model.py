@@ -3,9 +3,9 @@ from clicking.vision_model.core import *
 from PIL import Image
 import io
 import json
-import time
 from fastapi import Depends
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
+from ..cache_macro import cache_prediction
 import hashlib
 
 vision_model_router = APIRouter()
@@ -40,6 +40,7 @@ async def set_model(req: SetModelReq = None):
 
 
 @vision_model_router.post("/prediction", operation_id="get_prediction", response_model=PredictionResp)
+@cache_prediction
 async def prediction(
     image: UploadFile = File(...),
     task: TaskType = Form(None),
@@ -53,30 +54,7 @@ async def prediction(
     if task is None:
         raise HTTPException(status_code=400, detail="Task is required")
 
-    if reset_cache:
-        prediction_cache.clear()
-        return {"message": "Cache has been reset"}
-
-    if not enable_cache:
-        return await process_prediction(image, task, input_boxes, input_point, input_label, input_text)
-
-    # Generate a cache key based on input parameters
-    cache_key = generate_cache_key(image, task, input_boxes, input_point, input_label, input_text)
-
-    # Check if the prediction is in the cache and not expired
-    cached_result = prediction_cache.get(cache_key)
-    if cached_result:
-        prediction, timestamp = cached_result
-        if time.time() - timestamp < CACHE_EXPIRATION_TIME:
-            return prediction
-
-    # If not in cache or expired, proceed with the prediction
-    response = await process_prediction(image, task, input_boxes, input_point, input_label, input_text)
-
-    # Cache the new prediction
-    prediction_cache[cache_key] = (response, time.time())
-
-    return response
+    return await process_prediction(image, task, input_boxes, input_point, input_label, input_text)
 
 async def process_prediction(image, task, input_boxes, input_point, input_label, input_text):
     image_data = await image.read()
