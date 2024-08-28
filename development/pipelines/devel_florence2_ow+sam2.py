@@ -146,9 +146,24 @@ class ExperimentTracker(BaseModel):
         else:
             print(value)
 
+    def generate_getter_functions(self):
+        def create_getter_function(field_name):
+            def getter_function(self, image_ids: List[int]):
+                return [getattr(self._get_result_by_id(image_id), field_name) for image_id in image_ids if self._get_result_by_id(image_id)]
+            return getter_function
+
+        fields = [field for field in ImagePredictionResult.__fields__ if field != 'id']
+        for field in fields:
+            setattr(ExperimentTracker, f"get_{field}", create_getter_function(field))
+
+    def _get_result_by_id(self, image_id: int):
+        return next((r for r in self.results if r.id == image_id), None)
+
+
 # Usage example:
 exp_tracker = ExperimentTracker()
 exp_tracker.generate_print_functions()
+exp_tracker.generate_getter_functions()
 print(exp_tracker.experiment_id)
 
 # # After segmentation
@@ -178,29 +193,29 @@ for id, image in zip(image_ids, images):
 
 exp_tracker.print_image(image_ids)
 
-# #%% get clickable objects from image
+# %% get clickable objects from image
 # from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
 
 # # Create an instance of PromptRefiner
 # prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
 
 # # Call process_prompts asynchronously
-# results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS) 
+# prompt_refiner_results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS) 
 
-# for image, class_label, image_result in zip(images, class_labels, results):
-#     plt.imshow(image)
-#     plt.axis(False)
-#     plt.title(class_label)
-#     plt.show()
+for image, class_label, image_result in zip(images, class_labels, prompt_refiner_results):
+    plt.imshow(image)
+    plt.axis(False)
+    plt.title(class_label)
+    plt.show()
 
-#     for object in image_result['objects']:
-#         print(f"name: {object['name']}")
-#         print(f"category: {object['category']}")
-#         print(f"description: {object['description']}")
-#         # print(f"Reasoning: {object['reasoning']}")
-#         print("-" * 50)
+    for object in image_result['objects']:
+        print(f"name: {object['name']}")
+        print(f"category: {object['category']}")
+        print(f"description: {object['description']}")
+        # print(f"Reasoning: {object['reasoning']}")
+        print("-" * 50)
 
-exp_tracker.add_image_descriptions(results)
+exp_tracker.add_image_descriptions(prompt_refiner_results)
 exp_tracker.print_description(image_ids)
 
 #%%
@@ -226,6 +241,9 @@ request = SetModelReq(name="florence2", variant="florence-2-base", task=TaskType
 
 set_model.sync(client=client, body=request)
 
+#%%
+exp_tracker.get_description(image_ids)
+# exp_tracker.get_localization_result(image_ids)
 #%% get localization prediction
 
 from clicking_client.api.default import get_prediction
@@ -267,29 +285,33 @@ from clicking.visualization.core import overlay_bounding_box
 from clicking.visualization.bbox import BoundingBox, BBoxMode
 from clicking.output_corrector.core import OutputCorrector
 
-for result in exp_tracker.results:
-    if len(result.localization_result) == 0:
-        print(f"No localization result for image {result.id}")
-        continue
+exp_tracker.get_localization_result(image_ids)
 
-    bboxes_list = []
-    image_list = []
-    for object_name, prediction in result.localization_result.items():
-        print(F"Object name: {object_name}")
-        bboxes = prediction.prediction.bboxes
-        bboxes = [BoundingBox((bbox[0], bbox[1], bbox[2], bbox[3]), BBoxMode.XYXY) for bbox in bboxes]
+# for result in exp_tracker.results:
+#     if len(result.localization_result) == 0:
+#         print(f"No localization result for image {result.id}")
+#         continue
 
-        bboxes_list.append(bboxes)
-        image_list.append(result.image)
+    
 
-        if len(bboxes) == 0:
-            continue
+    # bboxes_list = []
+    # image_list = []
+    # for object_name, prediction in result.localization_result.items():
+    #     print(F"Object name: {object_name}")
+    #     bboxes = prediction.prediction.bboxes
+    #     bboxes = [BoundingBox((bbox[0], bbox[1], bbox[2], bbox[3]), BBoxMode.XYXY) for bbox in bboxes]
+
+    #     bboxes_list.append(bboxes)
+    #     image_list.append(result.image)
+
+    #     if len(bboxes) == 0:
+    #         continue
         
-        overlayed_image = overlay_bounding_box(result.image, bboxes[0], thickness=10, padding=20)
+    #     overlayed_image = overlay_bounding_box(result.image, bboxes[0], thickness=10, padding=20)
 
-        plt.grid(False)
-        plt.axis('off')
-        plt.imshow(overlayed_image)
+    #     plt.grid(False)
+    #     plt.axis('off')
+    #     plt.imshow(overlayed_image)
 
 # output_corrector = OutputCorrector()
 # response = output_corrector.verify_bbox(overlayed_image, text_input)
