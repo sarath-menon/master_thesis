@@ -39,15 +39,10 @@ class PromptRefiner(ImageProcessorBase):
     async def _process_single_prompt(self, screenshot: str, mode: PromptMode, input_text: Optional[str] = None, **kwargs):
         base64_image = self._pil_to_base64(screenshot)
         template_values = self._get_template_values(mode, input_text, **kwargs)
-
         prompt = self.prompt_manager.get_prompt(type='user', prompt_key=mode.value, template_values=template_values)
-
         response = await super()._get_image_response(base64_image, prompt, self.messages, json_mode=True)
 
-        try:
-            response = json.loads(response)
-        except json.JSONDecodeError as e:
-            return {"Failed to parse JSON response": {e}, "raw_response": response}
+        response = json.loads(response)
 
         if mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
             # sort objects by category
@@ -58,7 +53,7 @@ class PromptRefiner(ImageProcessorBase):
     def _get_template_values(self, mode: PromptMode, input_text: str, **kwargs) -> Dict[str, Any]:
         if input_text is None:
             return {}
-        elif mode == PromptMode.OBJECTS_LIST_TO_DESCRIPTIONS:
+        elif mode == PromptMode.EXPANDED_DESCRIPTION:
             return {"input_description": input_text, "word_limit": str(kwargs.get('word_limit', 10))}
         elif mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
             return {"description_length": kwargs.get('description_length', 20)}
