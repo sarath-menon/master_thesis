@@ -43,24 +43,33 @@ class ExperimentTracker(BaseModel):
     results: Optional[List[ImagePredictionResult]] = []
     experiment_id: str = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    def add_images(self, images: List[Image.Image]):
-        for i, image in enumerate(images):
-            self.results.append(ImagePredictionResult(id=i, image=image))
-        
-        print(f"Logged {len(images)} images.")
+    def add_image(self, id: int, image: Image.Image):
+        for result in self.results:
+            if result.id == id:
+                print(f"Image with id {id} already exists.")
+                return
+        self.results.append(ImagePredictionResult(id=id, image=image))
 
+    def get_image_ids(self):
+        return (result.id for result in self.results)
+    
     def add_image_descriptions(self, descriptions: list):
         for result, description in zip(self.results, descriptions):
             result.description = description
 
-    def add_localization_results(self, image_id: str, predictions: Dict[str, PredictionResp], categories: Dict[str, str]):
-        self.localization_results[image_id] = {
-            "predictions": {name: pred.dict() for name, pred in predictions.items()},
-            "categories": categories
-        }
+    def add_localization_result(self, image_id: str, prediction: PredictionResp):
+        for result in self.results:
+            if result.id != image_id:
+                continue
+            result.localization_result = prediction
+            return
 
-    def add_segmentation_results(self, image_id: str, segmentation_resp: PredictionResp):
-        self.segmentation_results[image_id] = segmentation_resp.dict()
+    def add_segmentation_result(self, image_id: str, segmentation_resp: PredictionResp):
+        for result in self.results:
+            if result.id != image_id:
+                continue
+            result.segmentation_result = segmentation_resp
+            return
 
     def save_results(self, filepath: str):
         results = {
@@ -122,6 +131,18 @@ class ExperimentTracker(BaseModel):
             plt.imshow(value)
             plt.axis('off')
             plt.show()
+        elif isinstance(value, list):
+            for item in value:
+                self._display_value(item)
+        elif isinstance(value, dict):
+            for key, val in value.items():
+                if isinstance(val, list):
+                    print(f"{key}:")
+                    for item in val:
+                        self._display_value(item)
+                        print("-" * 50)
+                else:
+                    print(f"{key}: {val}")
         else:
             print(value)
 
@@ -146,37 +167,41 @@ print(exp_tracker.experiment_id)
 
 # Load dataset
 coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', './datasets/label_studio_gen/coco_dataset/result.json')
-images, class_labels = coco_dataset.sample_dataset(batch_size=3)
-exp_tracker.add_images(images)
-# exp_tracker.show_images()
-exp_tracker.print_image([0, 1, 2])
 
-#%%
+#%% sample dataset
+
+image_ids = [22, 31, 34]
+images, class_labels = coco_dataset.sample_dataset(indices=image_ids)
+
+for id, image in zip(image_ids, images):
+    exp_tracker.add_image(id, image)
+
+exp_tracker.print_image(image_ids)
+
+# #%% get clickable objects from image
+# from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
+
+# # Create an instance of PromptRefiner
+# prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
+
+# # Call process_prompts asynchronously
+# results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS) 
+
+# for image, class_label, image_result in zip(images, class_labels, results):
+#     plt.imshow(image)
+#     plt.axis(False)
+#     plt.title(class_label)
+#     plt.show()
+
+#     for object in image_result['objects']:
+#         print(f"name: {object['name']}")
+#         print(f"category: {object['category']}")
+#         print(f"description: {object['description']}")
+#         # print(f"Reasoning: {object['reasoning']}")
+#         print("-" * 50)
+
 exp_tracker.add_image_descriptions(results)
-exp_tracker.print_description([0, 1, 2])
-
-#%% get clickable objects from image
-from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
-
-# Create an instance of PromptRefiner
-prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
-
-# Call process_prompts asynchronously
-results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS) 
-
-for image, class_label, image_result in zip(images, class_labels, results):
-    plt.imshow(image)
-    plt.axis(False)
-    plt.title(class_label)
-    plt.show()
-
-    for object in image_result['objects']:
-        print(f"name: {object['name']}")
-        print(f"category: {object['category']}")
-        print(f"description: {object['description']}")
-        # print(f"Reasoning: {object['reasoning']}")
-        print("-" * 50)
-
+exp_tracker.print_description(image_ids)
 
 #%%
 from clicking_client import Client
@@ -220,7 +245,7 @@ for image, class_label, image_result in zip(images, class_labels, results):
     predictions = {}
     categories = {}
 
-    for object in image_result['objects']:
+    for object, id in zip(image_result['objects'], image_ids):
         # Create the request object
         request = BodyGetPrediction(
             image=image_file,
@@ -231,9 +256,17 @@ for image, class_label, image_result in zip(images, class_labels, results):
         predictions[object['name']] = get_prediction.sync(client=client, body=request)
         categories[object['name']] = object['category']
 
-        all_predictions.append(predictions)
+        exp_tracker.add_localization_result(id, predictions)
 
     show_localization_predictions(image, predictions, categories)
+
+#%%
+
+
+exp_tracker.print_localization_result(image_ids) 
+#%%
+for prediction in all_predictions:
+    print(prediction)
 
 #%% verify bounding boxes
 # convert bboxes to BoundingBox type
