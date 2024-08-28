@@ -5,8 +5,16 @@ import io
 import json
 import time
 from fastapi import Depends
+from typing import Dict, Tuple
+import hashlib
 
 vision_model_router = APIRouter()
+vision_model = VisionModel()
+
+# Cache to store recent predictions
+prediction_cache: Dict[str, Tuple[PredictionResp, float]] = {}
+CACHE_EXPIRATION_TIME = 3000  # in seconds
+
 vision_model = VisionModel()
 
 
@@ -31,33 +39,52 @@ async def set_model(req: SetModelReq = None):
     return {"message": "Model set successfully", "status_code": 200}
 
 
-@vision_model_router.post("/prediction",operation_id="get_prediction", response_model=PredictionResp)
-async def prediction(image: UploadFile = File(...),
+@vision_model_router.post("/prediction", operation_id="get_prediction", response_model=PredictionResp)
+async def prediction(
+    image: UploadFile = File(...),
     task: TaskType = Form(None),
     input_boxes: str = Form(None),
     input_point: str = Form(None),
     input_label: str = Form(None),
     input_text: str = Form(None),
-    ):
-
+):
     if task is None:
         raise HTTPException(status_code=400, detail="Task is required")
 
-    #Convert to a PIL image
+    # Generate a cache key based on input parameters
+    cache_key = generate_cache_key(image, task, input_boxes, input_point, input_label, input_text)
+
+    # Check if the prediction is in the cache and not expired
+    cached_result = prediction_cache.get(cache_key)
+    if cached_result:
+        prediction, timestamp = cached_result
+        if time.time() - timestamp < CACHE_EXPIRATION_TIME:
+            return prediction
+
+    # If not in cache or expired, proceed with the prediction
     image_data = await image.read()
     image = Image.open(io.BytesIO(image_data))
 
-    # convert input_boxes to a list of lists
     if input_boxes is not None:
         input_boxes = json.loads(input_boxes)
 
     req = PredictionReq(image=image, task=task, input_point=input_point, input_label=input_label, input_box=input_boxes, input_text=input_text)
-    print(req)
-
     
     response = await vision_model.get_prediction(req)
+
+    # Cache the new prediction
+    prediction_cache[cache_key] = (response, time.time())
+
     return response
 
+def generate_cache_key(*args) -> str:
+    key = hashlib.md5()
+    for arg in args:
+        if isinstance(arg, UploadFile):
+            key.update(arg.filename.encode())
+        elif arg is not None:
+            key.update(str(arg).encode())
+    return key.hexdigest()
 
 @vision_model_router.post("/auto_annotation", operation_id="get_auto_annotation")
 async def auto_annotation(req: AutoAnnotationReq = Depends()) -> AutoAnnotationResp:
