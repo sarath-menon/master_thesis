@@ -166,6 +166,11 @@ exp_tracker.generate_print_functions()
 exp_tracker.generate_getter_functions()
 print(exp_tracker.experiment_id)
 
+# Create an instance of PromptRefiner
+from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
+
+prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
+
 # # After segmentation
 # tracker.log_segmentation(f"image_{0}", segmentation_resp)
 
@@ -194,13 +199,9 @@ for id, image in zip(image_ids, images):
 exp_tracker.print_image(image_ids)
 
 # %% get clickable objects from image
-# from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
 
-# # Create an instance of PromptRefiner
-# prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
-
-# # Call process_prompts asynchronously
-# prompt_refiner_results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS) 
+# Call process_prompts asynchronously
+prompt_refiner_results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS) 
 
 for image, class_label, image_result in zip(images, class_labels, prompt_refiner_results):
     plt.imshow(image)
@@ -240,7 +241,6 @@ request = SetModelReq(name="florence2", variant="florence-2-base", task=TaskType
 
 set_model.sync(client=client, body=request)
 
-
 #%% get localization prediction
 
 from clicking_client.api.default import get_prediction
@@ -250,7 +250,7 @@ import io
 import json
 from clicking.visualization.bbox import BoundingBox
 from clicking.vision_model.utils import image_to_http_file
-# from clicking.visualization.core import show_localization_predictions
+from clicking.visualization.core import show_localization_predictions
 
 for result in exp_tracker.results:
 
@@ -273,7 +273,7 @@ for result in exp_tracker.results:
         categories[object['name']] = object['category']
         descriptions[object['name']] = object['description']
 
-    exp_tracker.add_localization_result(result.id, predictions)
+    # exp_tracker.add_localization_result(result.id, predictions)
     show_localization_predictions(image, predictions, categories, descriptions)
 
 #%% verify bounding boxes
