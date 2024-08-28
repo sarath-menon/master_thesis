@@ -9,47 +9,44 @@ from torchvision import transforms, datasets
 from matplotlib.path import Path
 import matplotlib.patches as patches
 import torch
+from clicking.vision_model.types import SegmentationResp
+from clicking.dataset_creator.core import CocoDataset
 from dotenv import load_dotenv
-
 load_dotenv()
 # run this code only in notebook mode
 if 'get_ipython' in globals():
     get_ipython().run_line_magic('matplotlib', 'inline')
 
-#%%
-# Define the path to the COCO dataset
-data_dir = './datasets/label_studio_gen/coco_dataset/images'
-annFile = './datasets/label_studio_gen/coco_dataset/result.json'
+#%% Load dataset
 
-# Define the transformations to be applied to the images
-transform = transforms.Compose([
-    transforms.ToTensor(),
-])
+coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', './datasets/label_studio_gen/coco_dataset/result.json')
+images, class_labels = coco_dataset.sample_dataset(batch_size=3)
 
-# Create the COCO dataset
-coco_dataset = datasets.CocoDetection(root=data_dir, annFile=annFile, transform=transform)
-class_labels = [cat['name'] for cat in coco_dataset.coco.cats.values()]
-print(f"Dataset size: {len(coco_dataset)}")
+#%% sample batch for testing
+images, class_labels = coco_dataset.sample_dataset(batch_size=3, show_images=True)
 
-# create text input from labels
-def create_text_input(annotations):
-    labels = [class_labels[annotation['category_id']] for annotation in annotations]
-    text_input = ""
-    text_input = ". ".join(labels) + "." if labels else ""
-    return text_input
+#%% get clickable objects from image
+from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
 
-def image_to_base64(img):
-    buffered = io.BytesIO()
-    img.save(buffered, format="PNG")
-    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    return img_str
-#%% set image and text input
-index = 5
-image_tensor, annotations = coco_dataset[index]
-to_pil = transforms.ToPILImage()
-image = to_pil(image_tensor)
-text_input = create_text_input(annotations)
-print(text_input)
+# Create an instance of PromptRefiner
+prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
+
+# Call process_prompts asynchronously
+results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS) 
+
+#%% show results
+for image, class_label, image_result in zip(images, class_labels, results):
+    plt.imshow(image)
+    plt.axis(False)
+    plt.title(class_label)
+    plt.show()
+
+    for object in image_result['objects']:
+        print(f"name: {object['name']}")
+        print(f"category: {object['category']}")
+        print(f"description: {object['description']}")
+        # print(f"Reasoning: {object['reasoning']}")
+        print("-" * 50)
 
 #%%
 from clicking_client import Client
@@ -57,7 +54,7 @@ from clicking_client.models import PredictionResp
 import io
 import base64
 
-client = Client(base_url="http://localhost:8083")
+client = Client(base_url="http://localhost:8082")
 
 #%% Get available models
 from clicking_client.api.default import get_models
@@ -65,13 +62,12 @@ from clicking_client.models  import SetModelReq
 from clicking_client.api.default import set_model
 from clicking.vision_model.types import TaskType
 
-
 api_response = get_models.sync(client=client)
 print(api_response)
 
 #%% set localization model
 
-request = SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_GROUNDED)
+request = SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB)
 
 set_model.sync(client=client, body=request)
 
@@ -83,23 +79,27 @@ from clicking_client.types import File
 import io
 import json
 from clicking.visualization.bbox import BoundingBox
+from clicking.vision_model.utils import image_to_http_file
+from clicking.visualization.core import show_localization_predictions
 
-# Convert PIL Image to bytes and create a File object
-image_byte_arr = io.BytesIO()
-image.save(image_byte_arr, format='JPEG')
-image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
 
-# Create the request object
-request = BodyGetPrediction(
-    image=image_file,
-    task= TaskType.LOCALIZATION_WITH_TEXT_GROUNDED,
-    input_text=text_input
-)
-localization_resp = get_prediction.sync(client=client, body=request)
-print(f"inference time: {localization_resp.inference_time}")
+for image, class_label, image_result in zip(images, class_labels, results):
+    image_file:File = image_to_http_file(image)
+    predictions = {}
+    categories = {}
 
-prediction = localization_resp.prediction
-show_localization_prediction(image.copy(), prediction.bboxes, prediction.labels)
+    for object in image_result['objects']:
+        # Create the request object
+        request = BodyGetPrediction(
+            image=image_file,
+            task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
+            input_text=object['description']
+        )
+
+        predictions[object['name']] = get_prediction.sync(client=client, body=request)
+        categories[object['name']] = object['category']
+
+    show_localization_predictions(image, predictions, categories)
 
 #%% verify bounding boxes
 # convert bboxes to BoundingBox type

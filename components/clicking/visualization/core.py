@@ -10,7 +10,7 @@ from pycocotools import mask as mask_utils
 import cv2
 import matplotlib.pyplot as plt
 from typing import List
-from clicking.vision_model.types import SegmentationResp
+from clicking.vision_model.types import SegmentationResp, LocalizationResp
 from clicking.vision_model.utils import get_mask_centroid
 
 from dataclasses import dataclass
@@ -32,28 +32,7 @@ class BoundingBox:
             raise ValueError("Invalid parameters for bounding box.")
 
 
-def show_localization_prediction(image, bboxes, labels):
-    fig, ax = plt.subplots()
 
-    # Display the image
-    ax.imshow(image)
-
-    # Plot each bounding box
-    for bbox, label in zip(bboxes, labels):
-        # Unpack the bounding box coordinates
-        x1, y1, x2, y2 = bbox
-        # Create a Rectangle patch
-        rect = patches.Rectangle((x1, y1), x2-x1, y2-y1, linewidth=1, edgecolor='r', facecolor='none')
-        # Add the rectangle to the Axes
-        ax.add_patch(rect)
-        # Annotate the label
-        plt.text(x1, y1, label, color='white', fontsize=8, bbox=dict(facecolor='red', alpha=0.5))
-
-    # Remove the axis ticks and labels
-    ax.axis('off')
-    
-    # Show the plot
-    plt.show()
 
 
 def show_mask( mask, ax, random_color=False, borders=True, centroid_point=None):
@@ -200,4 +179,75 @@ def show_clickpoint_predictions(image, responses: List[SegmentationResp], textbo
 
     ax.axis('off')
     plt.tight_layout()
+    plt.show()
+
+def show_localization_predictions(image, responses: List[LocalizationResp]):
+    fig, ax = plt.subplots()
+
+    # Display the image
+    ax.imshow(image)
+
+    # Plot each bounding box
+    for response in responses:
+        bboxes = response.prediction.bboxes
+        labels = response.prediction.labels
+        for bbox, label in zip(bboxes, labels):
+            # Unpack the bounding box coordinates
+            x1, y1, x2, y2 = bbox
+            # Create a Rectangle patch
+            rect = patches.Rectangle((x1, y1), x2-x1, y2-y1, linewidth=1, edgecolor='r', facecolor='none')
+            # Add the rectangle to the Axes
+            ax.add_patch(rect)
+            # Annotate the label
+            plt.text(x1, y1, label, color='white', fontsize=8, bbox=dict(facecolor='red', alpha=0.5))
+
+    # Remove the axis ticks and labels
+    ax.axis('off')
+    
+    # Show the plot
+    plt.show()
+
+
+from clicking.vision_model.types import LocalizationResp
+from typing import List, Dict
+
+def object_category_color_map(category):
+    # Create a dictionary to store color indices
+    color_dict = {
+        'Game Asset': (1, 0, 0),    # Red
+        'Non-playable Character': (0, 1, 0),    # Green
+        'Information Display': (0, 0, 1),    # Blue
+    }
+
+    return color_dict[category]
+
+def show_localization_predictions(image, responses: List[LocalizationResp], categories: Dict[str, str], text_color='white'):
+    fig, ax = plt.subplots()
+
+    # Display the image
+    ax.imshow(image)
+
+    # Plot each bounding box
+    for (object_name, response) in responses.items():
+        bboxes = response.prediction.bboxes
+        labels = response.prediction.labels
+        category = categories[object_name]
+
+        for bbox, label in zip(bboxes, labels):
+            # Unpack the bounding box coordinates
+            x1, y1, x2, y2 = bbox
+            
+            # Create a Rectangle patch
+            bg_color = object_category_color_map(category)
+            rect = patches.Rectangle((x1, y1), x2-x1, y2-y1, linewidth=1, edgecolor=bg_color, facecolor='none')
+            # Add the rectangle to the Axes
+            ax.add_patch(rect)
+
+            # Annotate the label
+            plt.text(x1, y1, label, color=text_color, fontsize=8, bbox=dict(facecolor=bg_color, alpha=0.5))
+
+    # Remove the axis ticks and labels
+    ax.axis('off')
+    
+    # Show the plot
     plt.show()
