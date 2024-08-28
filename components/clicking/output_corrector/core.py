@@ -64,6 +64,9 @@ if __name__ == "__main__":
     plt.axis('off')
     plt.imshow(image)
 
+    # Batch verify bounding boxes
+    output_corrector = OutputCorrector(prompt_path="./prompts/output_corrector.md")
+
     
     #%% Verify bounding boxes
     bboxes = [
@@ -75,9 +78,6 @@ if __name__ == "__main__":
     # Load images and apply bounding boxes
     images = [image, image]
     images_overlayed = [overlay_bounding_box(img.copy(), bbox) for img, bbox in zip(images, bboxes)]
-
-    # Batch verify bounding boxes
-    output_corrector = OutputCorrector(prompt_path="./prompts/output_corrector.md")
 
     # Call process_prompts asynchronously
     async def process_batch_prompts():
