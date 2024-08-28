@@ -26,9 +26,12 @@ Output the information as a JSON list under the key "objects", with each entry i
 ## IMAGE_TO_OBJECT_DESCRIPTIONS
 Examine the videogame screenshot to identify crucial game objects for each of the following categories:
 
-1. Game Assets: Identify as many game assets as possible. Strictly exclude the following: player characters, UI elements (such as buttons, menus, status bars, and information displays), and common background elements (such as grass, sky, walls, floors, rocks, and bushes).
-2. Non-playable Characters: Identify as many non-playable characters as possible.
-3. Information Displays: Identify all objects that provide game state information (e.g., health bar, ammo count, minimap, score, notification pop-ups).
+1. **Game Assets**: Identify as many game assets as possible. Strictly exclude the following:
+   - player characters
+   - UI elements (such as buttons, menus, status bars, and information displays)
+   - common background elements (such as grass, sky, walls, floors, rocks, and bushes)
+2. **Non-playable Characters**: Identify as many non-playable characters as possible.
+3. **Information Displays**: Identify all objects that provide game state information (e.g., health bar, ammo count, minimap, score, notification pop-ups).
 
 <!-- 2. Navigation Controls: Elements that help players navigate the game or menus (e.g., directional pad, joystick, back button, menu button). Identify 3 objects or less.
 
