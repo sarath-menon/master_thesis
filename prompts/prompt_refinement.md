@@ -3,8 +3,10 @@ You are a helpful assistant and an expert videogame player.
 
 # User prompt
 
-## prompt_expansion
-Given a videogame screenshot and a brief description of an object, enhance the description by detailing the object's location, shape, color, and appearance. The description is "{input_description}". Give the description in {word_limit} words or less.
+## OBJECTS_LIST_TO_DESCRIPTIONS
+Given a videogame screenshot and a list of objects, provide a detailed description for each object. The description should include the object's location, shape, color, and appearance. Output the result as a JSON object with the key "objects". Each entry in the JSON object should contain:
+- "description": "A detailed description of the object's location, shape, color, and appearance."
+- "reasoning": "A concise 10-word explanation of the object's significance."
 
 ## IMAGE_TO_OBJECTS_LIST
 Review the videogame screenshot to identify interactive game objects (e.g., doors, chests). Follow these rules strictly:
