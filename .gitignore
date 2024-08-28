@@ -4,7 +4,9 @@
 /logs
 .env
 /.venv
+/.label_studio_env
 /datasets
 /generated
 /checkpoints
 /dist
+/wandb
