@@ -13,7 +13,7 @@ vision_model = VisionModel()
 
 # Cache to store recent predictions
 prediction_cache: Dict[str, Tuple[PredictionResp, float]] = {}
-CACHE_EXPIRATION_TIME = 3000  # in seconds
+CACHE_EXPIRATION_TIME = 300  # 5 minutes in seconds
 
 vision_model = VisionModel()
 
@@ -47,9 +47,18 @@ async def prediction(
     input_point: str = Form(None),
     input_label: str = Form(None),
     input_text: str = Form(None),
+    enable_cache: Optional[bool] = Form(True),
+    reset_cache: Optional[bool] = Form(False),
 ):
     if task is None:
         raise HTTPException(status_code=400, detail="Task is required")
+
+    if reset_cache:
+        prediction_cache.clear()
+        return {"message": "Cache has been reset"}
+
+    if not enable_cache:
+        return await process_prediction(image, task, input_boxes, input_point, input_label, input_text)
 
     # Generate a cache key based on input parameters
     cache_key = generate_cache_key(image, task, input_boxes, input_point, input_label, input_text)
@@ -62,6 +71,14 @@ async def prediction(
             return prediction
 
     # If not in cache or expired, proceed with the prediction
+    response = await process_prediction(image, task, input_boxes, input_point, input_label, input_text)
+
+    # Cache the new prediction
+    prediction_cache[cache_key] = (response, time.time())
+
+    return response
+
+async def process_prediction(image, task, input_boxes, input_point, input_label, input_text):
     image_data = await image.read()
     image = Image.open(io.BytesIO(image_data))
 
@@ -70,12 +87,7 @@ async def prediction(
 
     req = PredictionReq(image=image, task=task, input_point=input_point, input_label=input_label, input_box=input_boxes, input_text=input_text)
     
-    response = await vision_model.get_prediction(req)
-
-    # Cache the new prediction
-    prediction_cache[cache_key] = (response, time.time())
-
-    return response
+    return await vision_model.get_prediction(req)
 
 def generate_cache_key(*args) -> str:
     key = hashlib.md5()
