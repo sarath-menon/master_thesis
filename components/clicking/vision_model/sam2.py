@@ -78,7 +78,7 @@ class SAM2:
         if variant not in self.variant_to_id:
             raise HTTPException(status_code=400, detail=f"Invalid variant: {variant}. Please choose from: {list(self.variant_to_id.keys())}")
 
-        return SAM2ImagePredictor.from_pretrained(self.variant_to_id[variant])
+        return SAM2ImagePredictor.from_pretrained(self.variant_to_id[variant], device=self.device)
         
 
     def predict(self, req: PredictionReq) -> PredictionResp:
@@ -120,10 +120,10 @@ class SAM2:
             multimask_output=False,
         )
 
-        scores = scores.tolist()
         masks = [coco_encode_rle(mask) for mask in masks]
 
         response = SegmentationResp(masks=masks, scores=scores)
+        print(response)
         return response
 
     async def auto_annotate(self, req: AutoAnnotationReq) ->AutoAnnotationResp:
