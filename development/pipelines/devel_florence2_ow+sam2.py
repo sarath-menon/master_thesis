@@ -103,7 +103,7 @@ class Pipeline:
         print(f"\n--- Step: {step_name} ---")
         self._recursive_log(step_name, result)
 
-    def _recursive_log(self, step_name: str, result: Any, prefix: str = ""):
+    def _recursive_log(self, step_name: str, result: Any, prefix: str = "", is_list_item: bool = False):
         keys_to_avoid = ["objects"]  # Add more keys to this list if needed
 
         if isinstance(result, Image.Image):
@@ -114,21 +114,20 @@ class Pipeline:
             elif all(isinstance(item, Image.Image) for item in result):
                 self._display_image_list(step_name, prefix, result)
             else:
-                for item in result:
-                    self._recursive_log(step_name, item, prefix)
-                    print(f"{prefix}---")
+                for i, item in enumerate(result):
+                    if i > 0:
+                        print(f"{prefix}---")
+                    self._recursive_log(step_name, item, prefix, True)
         elif isinstance(result, dict):
             for key, value in result.items():
                 if key in keys_to_avoid:
-                    self._recursive_log(step_name, value, prefix)
+                    self._recursive_log(step_name, value, prefix, is_list_item)
                 else:
                     print(f"{prefix}{key}: ", end="")
-                    self._recursive_log(step_name, value, "")
-            print(f"{prefix}---")
+                    self._recursive_log(step_name, value, "", is_list_item)
         elif isinstance(result, tuple):
             for item in result:
-                self._recursive_log(step_name, item, prefix)
-            print(f"{prefix}---")
+                self._recursive_log(step_name, item, prefix, is_list_item)
         else:
             print(f"{prefix}{result}")
 
