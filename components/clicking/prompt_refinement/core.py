@@ -1,5 +1,5 @@
 #%%
-from components.clicking.common.image_utils import ImageProcessorBase
+from clicking.common.image_utils import ImageProcessorBase
 from litellm import completion, acompletion
 import os
 import dotenv
