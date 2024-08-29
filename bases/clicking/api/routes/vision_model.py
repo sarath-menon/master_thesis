@@ -61,8 +61,6 @@ async def process_prediction(image, task, input_boxes, input_point, input_label,
     image_data = await image.read()
     image = Image.open(io.BytesIO(image_data))
 
-    print(input_boxes)
-
     if input_boxes is not None:
         input_boxes = json.loads(input_boxes)
 
