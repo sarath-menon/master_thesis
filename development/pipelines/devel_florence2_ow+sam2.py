@@ -7,8 +7,8 @@ from clicking.pipeline.core import Pipeline
 from clicking.dataset_creator.core import CocoDataset
 from clicking.dataset_creator.types import DatasetSample
 from clicking.prompt_refinement.core import PromptRefiner, PromptMode, ProcessedResult, ProcessedSample
-from clicking.vision_model.types import TaskType, LocalizationResults
-from clicking.vision_model.visualization import show_localization_predictions, show_segmentation_prediction
+from clicking.vision_model.types import TaskType, LocalizationResults, SegmentationResults
+from clicking.vision_model.types import TaskType, LocalizationResults, SegmentationResults
 from clicking.vision_model.bbox import BoundingBox, BBoxMode
 from clicking.vision_model.mask import SegmentationMask, SegmentationMode
 from clicking.output_corrector.core import OutputCorrector
@@ -28,6 +28,7 @@ import pickle
 import os
 from datetime import datetime
 from tabulate import tabulate
+import asyncio
 
 #%%
 
@@ -358,19 +359,6 @@ from clicking_client.types import File
 from io import BytesIO
 import json
 
-# class SegmentationPrediction(NamedTuple):
-#     masks: List[Dict[str, Any]]  
-
-# class SegmentationResults(NamedTuple):
-#     processed_samples: List[ProcessedSample]
-#     localization_results: Dict[str, Dict[str, LocalizationResults]]
-#     segmentation_results: Dict[str, Dict[str, SegmentationPrediction]]
-
-
-class SegmentationResults(NamedTuple):
-    processed_samples: List[ProcessedSample]
-    predictions: Dict[str, List[SegmentationMask]] 
-
 def image_to_http_file(image):
     # Convert PIL Image to bytes and create a File object
     image_byte_arr = BytesIO()
@@ -450,6 +438,7 @@ class SegmentationProcessor:
             processed_samples=data.processed_samples,
             predictions=segmentation_results
         )
+
 #%%
 import nest_asyncio
 nest_asyncio.apply()
@@ -457,16 +446,13 @@ nest_asyncio.apply()
 pipeline = Pipeline()
 localization_processor = LocalizationProcessor(client)
 segmentation_processor = SegmentationProcessor(client)
+output_corrector = OutputCorrector(prompt_path="./prompts/output_corrector.md")
 
 pipeline.add_step("Sample Dataset", coco_dataset.sample_dataset, verbose=True)
 pipeline.add_step("Process Prompts", prompt_refiner.process_prompts, verbose=True)
 pipeline.add_step("Get Localization Results", localization_processor.get_localization_results, verbose=True)
+pipeline.add_step("Verify Localization Results", output_corrector.verify_bboxes, verbose=True)
 pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results, verbose=True)
-
-# pipeline.add_parallel_steps(
-#     ("Get Localization Results 1", localization_processor.get_localization_results, True),
-#     ("Get Localization Results 2", localization_processor.get_localization_results, True),
-# )
 
 # Print the pipeline structure
 pipeline.print_pipeline()
@@ -484,7 +470,7 @@ result = asyncio.run(pipeline.run(image_ids))
 # pipeline.replace_step("Get Localization Results", new_localization_function)
 
 # Later, run from a specific step
-result = asyncio.run(pipeline.run_from_step("Get Segmentation Results"))
+result = asyncio.run(pipeline.run_from_step("Get Localization Results"))
 
 #%%
 from clicking.vision_model.utils import get_mask_centroid
