@@ -335,6 +335,24 @@ class Pipeline:
 
     def add_parallel_steps(self, *steps: Tuple[str, Callable, bool]):
         self.steps.append(list(steps))
+
+    def replace_step(self, step_name: str, new_func: Callable, new_step_name: str = None, verbose: bool = True):
+        for i, step in enumerate(self.steps):
+            if isinstance(step, tuple) and step[0] == step_name:
+                new_step_name = new_step_name or step_name
+                self.steps[i] = (new_step_name, new_func, verbose)
+                print(f"Step '{step_name}' replaced with '{new_step_name}'")
+                return
+            elif isinstance(step, list):
+                for j, parallel_step in enumerate(step):
+                    if parallel_step[0] == step_name:
+                        new_step_name = new_step_name or step_name
+                        step[j] = (new_step_name, new_func, verbose)
+                        print(f"Parallel step '{step_name}' replaced with '{new_step_name}'")
+                        return
+        
+        raise ValueError(f"Step '{step_name}' not found in the pipeline")
+
 #%%
 from clicking_client.types import File
 from io import BytesIO
@@ -405,7 +423,7 @@ class SegmentationProcessor:
                 request = BodyGetPrediction(
                     image=image_file,
                     task=TaskType.SEGMENTATION_WITH_BBOX,
-                    input_boxes=json.dumps([bbox.get(mode=BBoxMode.XYWH)])  # Ensure it's a JSON string
+                    input_boxes=json.dumps(bbox.get(mode=BBoxMode.XYWH))  # Ensure it's a JSON string
                 )
                 try:
                     response = get_prediction.sync(client=self.client, body=request)
@@ -414,7 +432,7 @@ class SegmentationProcessor:
                         continue
                     
                     for mask_data in response.prediction.masks:
-                        print(mask_data)
+                        print(f"mask_data: {mask_data}")
                         seg_mask = SegmentationMask(
                             mask= mask_data,
                             mode=SegmentationMode.COCO_RLE,
@@ -462,6 +480,73 @@ result = asyncio.run(pipeline.run(image_ids))
 
 #%%
 
+# You can also keep the same step name if you want
+# pipeline.replace_step("Get Localization Results", new_localization_function)
+
 # Later, run from a specific step
 result = asyncio.run(pipeline.run_from_step("Get Segmentation Results"))
+#%%
+result
+#%%
+from clicking.vision_model.utils import get_mask_centroid
+from clicking.vision_model.visualization import get_color
+from clicking.vision_model.utils import get_mask_centroid
+import cv2
+import numpy as np
+from pycocotools import mask as mask_utils
+
+def show_clickpoint_predictions(segmentation_results: SegmentationResults, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow'):
+    for processed_sample in segmentation_results.processed_samples:
+        image = processed_sample.image
+        image_id = processed_sample.image_id
+        predictions = segmentation_results.predictions[image_id]
+
+        # Create a new figure and axis
+        fig, ax = plt.subplots(figsize=(10, 10))
+
+        # Display the original image
+        ax.imshow(image)
+
+        borders = False
+        mask_alpha = 0.7
+        total_classes = len(set(mask.object_name for mask in predictions))
+
+        for i, mask in enumerate(predictions):
+            m = mask_utils.decode(mask.get(SegmentationMode.COCO_RLE))
+            color_mask = get_color(i, total_classes)
+
+            # Create color overlay with correct shape and alpha channel
+            color_overlay = np.zeros((*np.array(image).shape[:2], 4))
+            color_overlay[m == 1] = [*color_mask, mask_alpha] 
+            color_overlay[m == 0] = [0, 0, 0, 0]  
+            ax.imshow(color_overlay)
+
+            if borders:
+                contours, _ = cv2.findContours(m.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                for contour in contours:
+                    ax.plot(contour[:, 0, 0], contour[:, 0, 1], color='white', linewidth=2)
+            
+            # Get mask centroid and plot it as click point
+            centroid = get_mask_centroid(m)
+            ax.scatter(*centroid, marker='*', color=marker_color, s=marker_size, label=mask.object_name)  
+
+            # Plot class label as text in a box on top of the mask
+            offset_y = 60
+            ax.text(centroid[0], centroid[1] - offset_y, mask.object_name, 
+                    color=text_color, fontsize=text_size, 
+                    bbox=dict(facecolor=textbox_color, edgecolor='none', alpha=1.0),
+                    ha='center', va='center')
+
+        ax.axis('off')
+        plt.title(f"Image ID: {image_id}")
+        plt.tight_layout()
+        plt.show()
+
+        # Print legend (object_name: description)
+        print(f"Legend for Image ID: {image_id}")
+        for mask in predictions:
+            print(f"{mask.object_name}: {mask.description}")
+        print("\n")
+
+show_clickpoint_predictions(result)
 #%%
