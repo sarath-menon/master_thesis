@@ -12,7 +12,6 @@ from clicking.visualization.core import show_localization_predictions, show_segm
 from clicking.visualization.bbox import BoundingBox, BBoxMode
 from clicking.visualization.mask import SegmentationMask, SegmentationMode
 from clicking.output_corrector.core import OutputCorrector
-from clicking.common.image_utils import image_to_http_file
 from clicking_client import Client
 from clicking_client.models import SetModelReq, BodyGetPrediction
 from clicking_client.api.default import set_model, get_prediction
@@ -25,6 +24,16 @@ coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', '.
 
 #%%
 
+from clicking_client.types import File
+from io import BytesIO
+
+def image_to_http_file(image):
+    # Convert PIL Image to bytes and create a File object
+    image_byte_arr = BytesIO()
+    image.save(image_byte_arr, format='JPEG')
+    image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
+    return image_file
+
 class LocalizationProcessor:
     def __init__(self, client: Client):
         self.client = client
@@ -36,6 +45,7 @@ class LocalizationProcessor:
         for sample in processed_result.samples:
             image_file = image_to_http_file(sample.image)
             predictions = {}
+
             for obj in sample.description["objects"]:
                 request = BodyGetPrediction(
                     image=image_file,
@@ -43,7 +53,10 @@ class LocalizationProcessor:
                     input_text=obj["description"]
                 )
                 predictions[obj["name"]] = get_prediction.sync(client=self.client, body=request)
-            localization_results[sample.image] = predictions
+            
+            # Use the image filename as the key for unique identification
+            image_filename = sample.image.filename if hasattr(sample.image, 'filename') else f"image_{id(sample.image)}"
+            localization_results[image_filename] = predictions
         
         return {
             "processed_samples": processed_result.samples,
@@ -58,17 +71,18 @@ class SegmentationProcessor:
         set_model.sync(client=self.client, body=SetModelReq(name="sam2", variant="sam2_hiera_tiny", task=TaskType.SEGMENTATION_WITH_BBOX))
         
         segmentation_results = {}
-        for image in data["images"]:
-            image_file = image_to_http_file(image)
+        for sample in data["processed_samples"]:
+            image_file = image_to_http_file(sample.image)
+            image_filename = sample.image.filename if hasattr(sample.image, 'filename') else f"image_{id(sample.image)}"
             seg_predictions = {}
-            for obj_name, loc_result in data["localization_results"][image].items():
+            for obj_name, loc_result in data["localization_results"][image_filename].items():
                 request = BodyGetPrediction(
                     image=image_file,
                     task=TaskType.SEGMENTATION_WITH_BBOX,
                     input_boxes=loc_result.prediction.bboxes
                 )
                 seg_predictions[obj_name] = get_prediction.sync(client=self.client, body=request)
-            segmentation_results[image] = seg_predictions
+            segmentation_results[image_filename] = seg_predictions
         
         data["segmentation_results"] = segmentation_results
         return data
