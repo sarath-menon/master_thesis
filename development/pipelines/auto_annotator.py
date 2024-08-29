@@ -2,7 +2,7 @@
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy.ndimage import center_of_mass
-from clicking.visualization.core import show_localization_prediction, show_segmentation_prediction
+from clicking.vision_model.core import show_localization_prediction, show_segmentation_prediction
 from clicking.pipeline.core import Clicker
 import matplotlib.pyplot as plt
 from torchvision import transforms, datasets
@@ -83,7 +83,7 @@ from clicking_client.models import BodyGetAutoAnnotation
 from clicking_client.types import File
 import io
 import json
-from clicking.visualization.mask import SegmentationMask, SegmentationMode
+from clicking.vision_model.mask import SegmentationMask, SegmentationMode
 
 import requests
 from io import BytesIO

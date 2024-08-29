@@ -9,7 +9,7 @@ import time
 from typing import Dict, List, Type, Any
 from dataclasses import dataclass, field
 from fastapi import HTTPException
-from clicking.visualization.bbox import BoundingBox, BBoxMode
+from clicking.vision_model.bbox import BoundingBox, BBoxMode
 import numpy as np
 from enum import Enum, auto
 from clicking.vision_model.types import *

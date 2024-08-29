@@ -7,7 +7,7 @@ import base64
 import io
 from PIL import Image
 import numpy as np
-from clicking.visualization.mask import SegmentationMask, SegmentationMode
+from clicking.vision_model.mask import SegmentationMask, SegmentationMode
 from components.clicking.prompt_manager.core import PromptManager
 import asyncio
 from components.clicking.common.image_utils import ImageProcessorBase
@@ -53,8 +53,8 @@ class OutputCorrector(ImageProcessorBase):
 if __name__ == "__main__":
     from PIL import Image
     import matplotlib.pyplot as plt
-    from clicking.visualization.core import overlay_bounding_box
-    from clicking.visualization.bbox import BoundingBox, BBoxMode
+    from clicking.vision_model.core import overlay_bounding_box
+    from clicking.vision_model.bbox import BoundingBox, BBoxMode
     import asyncio
     import nest_asyncio
     nest_asyncio.apply()

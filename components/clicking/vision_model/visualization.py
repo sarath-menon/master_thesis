@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from PIL import Image, ImageDraw
 import numpy as np
-from clicking.visualization.bbox import BoundingBox, BBoxMode
-from clicking.visualization.mask import SegmentationMask, SegmentationMode
+from clicking.vision_model.bbox import BoundingBox, BBoxMode
+from clicking.vision_model.mask import SegmentationMask, SegmentationMode
 import numpy as np
 from pycocotools import mask as mask_utils
 import cv2
@@ -14,26 +14,6 @@ from clicking.vision_model.types import SegmentationResp, LocalizationResp
 from clicking.vision_model.utils import get_mask_centroid
 
 from dataclasses import dataclass
-
-@dataclass
-class BoundingBox:
-    def __init__(self, x, y, w=None, h=None, x2=None, y2=None):
-        if w is not None and h is not None:
-            self.x1 = x
-            self.y1 = y
-            self.x2 = x + w
-            self.y2 = y + h
-        elif x2 is not None and y2 is not None:
-            self.x1 = x
-            self.y1 = y
-            self.x2 = x2
-            self.y2 = y2
-        else:
-            raise ValueError("Invalid parameters for bounding box.")
-
-
-
-
 
 def show_mask( mask, ax, random_color=False, borders=True, centroid_point=None):
         if random_color:

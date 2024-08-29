@@ -8,9 +8,9 @@ from clicking.dataset_creator.core import CocoDataset
 from clicking.dataset_creator.types import DatasetSample
 from clicking.prompt_refinement.core import PromptRefiner, PromptMode, ProcessedResult, ProcessedSample
 from clicking.vision_model.types import TaskType, LocalizationResp, SegmentationResp
-from clicking.visualization.core import show_localization_predictions, show_segmentation_prediction
-from clicking.visualization.bbox import BoundingBox, BBoxMode
-from clicking.visualization.mask import SegmentationMask, SegmentationMode
+from clicking.vision_model.visualization import show_localization_predictions, show_segmentation_prediction
+from clicking.vision_model.bbox import BoundingBox, BBoxMode
+from clicking.vision_model.mask import SegmentationMask, SegmentationMode
 from clicking.output_corrector.core import OutputCorrector
 from clicking_client import Client
 from clicking_client.models import SetModelReq, BodyGetPrediction
@@ -18,10 +18,10 @@ from clicking_client.api.default import set_model, get_prediction
 
 
 class LocalizationPrediction(NamedTuple):
-    bboxes: List[List[float]]
+    bboxes: List[BoundingBox]
 
 class SegmentationPrediction(NamedTuple):
-    masks: List[Dict[str, Any]]  # Assuming masks are in COCO RLE format
+    masks: List[Dict[str, Any]]  
 
 class LocalizationResults(NamedTuple):
     processed_samples: List[ProcessedSample]
@@ -70,7 +70,8 @@ class LocalizationProcessor:
                     input_text=obj["description"]
                 )
                 response = get_prediction.sync(client=self.client, body=request)
-                predictions[obj["name"]] = LocalizationPrediction(bboxes=response.prediction.bboxes)
+                bboxes = [BoundingBox(bbox, mode=BBoxMode.XYWH) for bbox in response.prediction.bboxes]
+                predictions[obj["name"]] = LocalizationPrediction(bboxes=bboxes)
             
             image_filename = sample.image.filename if hasattr(sample.image, 'filename') else f"image_{id(sample.image)}"
             localization_results[image_filename] = predictions
@@ -96,7 +97,7 @@ class SegmentationProcessor:
                 request = BodyGetPrediction(
                     image=image_file,
                     task=TaskType.SEGMENTATION_WITH_BBOX,
-                    input_boxes=loc_result.bboxes
+                    input_boxes=[bbox.to_xywh() for bbox in loc_result.bboxes]
                 )
                 response = get_prediction.sync(client=self.client, body=request)
                 seg_predictions[obj_name] = SegmentationPrediction(masks=response.prediction.masks)

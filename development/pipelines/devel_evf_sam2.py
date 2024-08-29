@@ -2,7 +2,7 @@
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy.ndimage import center_of_mass
-from clicking.visualization.core import show_localization_prediction, show_segmentation_prediction
+from clicking.vision_model.core import show_localization_prediction, show_segmentation_prediction
 from clicking.pipeline.core import Clicker
 import matplotlib.pyplot as plt
 from torchvision import transforms, datasets
@@ -74,8 +74,8 @@ from clicking_client.api.default import get_prediction
 from clicking_client.models import BodyGetPrediction
 import io
 from clicking.vision_model.types import TaskType
-from clicking.visualization.mask import SegmentationMask, SegmentationMode
-from clicking.visualization.core import show_clickpoint_predictions
+from clicking.vision_model.mask import SegmentationMask, SegmentationMode
+from clicking.vision_model.core import show_clickpoint_predictions
 from clicking.vision_model.utils import image_to_http_file
 from clicking_client.types import File
 
