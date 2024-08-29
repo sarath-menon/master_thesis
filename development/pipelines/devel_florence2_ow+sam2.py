@@ -172,33 +172,49 @@ class Pipeline:
         print(f"\n--- Step: {step_name} ---")
         self._recursive_log(step_name, result)
 
-    def _recursive_log(self, step_name: str, result: Any, prefix: str = "", is_list_item: bool = False):
-        keys_to_avoid = ["objects"]  # Add more keys to this list if needed
+    def _recursive_log(self, step_name: str, result: Any, prefix: str = ""):
+        keys_to_avoid = ["objects"]
 
         if isinstance(result, Image.Image):
             self._display_image(step_name, prefix, result)
-        elif isinstance(result, list):
-            if not result:
-                print(f"{prefix}Empty list")
-            elif all(isinstance(item, Image.Image) for item in result):
-                self._display_image_list(step_name, prefix, result)
-            else:
-                for i, item in enumerate(result):
-                    if i > 0:
-                        print(f"{prefix}---")
-                    self._recursive_log(step_name, item, prefix, True)
-        elif isinstance(result, dict):
-            for key, value in result.items():
-                if key in keys_to_avoid:
-                    self._recursive_log(step_name, value, prefix, is_list_item)
-                else:
-                    print(f"{prefix}{key}: ", end="")
-                    self._recursive_log(step_name, value, "", is_list_item)
-        elif isinstance(result, tuple):
+            return
+
+        if isinstance(result, list):
+            self._log_list(step_name, result, prefix)
+            return
+
+        if isinstance(result, dict):
+            self._log_dict(step_name, result, prefix, keys_to_avoid)
+            return
+
+        if isinstance(result, tuple):
             for item in result:
-                self._recursive_log(step_name, item, prefix, is_list_item)
-        else:
-            print(f"{prefix}{result}")
+                self._recursive_log(step_name, item, prefix)
+            return
+
+        print(f"{prefix}{result}")
+
+    def _log_list(self, step_name: str, result: List[Any], prefix: str):
+        if not result:
+            print(f"{prefix}Empty list")
+            return
+
+        if all(isinstance(item, Image.Image) for item in result):
+            self._display_image_list(step_name, prefix, result)
+            return
+
+        for i, item in enumerate(result):
+            if i > 0:
+                print(f"{prefix}---")
+            self._recursive_log(step_name, item, prefix)
+
+    def _log_dict(self, step_name: str, result: Dict[str, Any], prefix: str, keys_to_avoid: List[str]):
+        for key, value in result.items():
+            if key in keys_to_avoid:
+                self._recursive_log(step_name, value, prefix)
+            else:
+                print(f"{prefix}{key}: ", end="")
+                self._recursive_log(step_name, value, "")
 
     def _display_image(self, step_name: str, prefix: str, image: Image.Image):
         plt.figure(figsize=(5, 5))
