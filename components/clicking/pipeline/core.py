@@ -1,14 +1,16 @@
-from typing import Callable, List, Any, Dict
+from typing import Callable, List, Any, Dict, Tuple
 import inspect
+import matplotlib.pyplot as plt
+from PIL import Image
 
 class Pipeline:
     def __init__(self):
-        self.steps = []
+        self.steps: List[Tuple[Callable, bool]] = []
 
-    def add_step(self, func: Callable):
-        if self.steps and not self._are_types_compatible(self.steps[-1], func):
-            raise TypeError(f"Output type of {self.steps[-1].__name__} is not compatible with input type of {func.__name__}")
-        self.steps.append(func)
+    def add_step(self, func: Callable, verbose: bool = True):
+        if self.steps and not self._are_types_compatible(self.steps[-1][0], func):
+            raise TypeError(f"Output type of {self.steps[-1][0].__name__} is not compatible with input type of {func.__name__}")
+        self.steps.append((func, verbose))
 
     def _are_types_compatible(self, prev_func: Callable, next_func: Callable) -> bool:
         prev_return_type = inspect.signature(prev_func).return_annotation
@@ -24,17 +26,46 @@ class Pipeline:
 
     def run(self, initial_input: Any) -> Any:
         result = initial_input
-        for step in self.steps:
+        for step, verbose in self.steps:
             result = step(result)
+            if verbose:
+                self._log_step_result(step.__name__, result)
         return result
+
+    def _log_step_result(self, step_name: str, result: Any):
+        print(f"\n--- Step: {step_name} ---")
+        if isinstance(result, dict):
+            for key, value in result.items():
+                if isinstance(value, Image.Image):
+                    print(f"{key}: <PIL.Image.Image object>")
+                    plt.figure(figsize=(5, 5))
+                    plt.imshow(value)
+                    plt.axis('off')
+                    plt.title(f"{step_name} - {key}")
+                    plt.show()
+                elif isinstance(value, list) and all(isinstance(item, Image.Image) for item in value):
+                    print(f"{key}: <List of PIL.Image.Image objects>")
+                    fig, axes = plt.subplots(1, len(value), figsize=(5*len(value), 5))
+                    if len(value) == 1:
+                        axes = [axes]
+                    for i, (ax, img) in enumerate(zip(axes, value)):
+                        ax.imshow(img)
+                        ax.axis('off')
+                        ax.set_title(f"{step_name} - {key}[{i}]")
+                    plt.tight_layout()
+                    plt.show()
+                else:
+                    print(f"{key}: {value}")
+        else:
+            print(result)
 
     def static_analysis(self):
         if not self.steps:
             raise ValueError("Pipeline has no steps.")
         
         for i in range(len(self.steps) - 1):
-            current_step = self.steps[i]
-            next_step = self.steps[i + 1]
+            current_step, _ = self.steps[i]
+            next_step, _ = self.steps[i + 1]
             
             current_return_type = inspect.signature(current_step).return_annotation
             next_param_types = list(inspect.signature(next_step).parameters.values())

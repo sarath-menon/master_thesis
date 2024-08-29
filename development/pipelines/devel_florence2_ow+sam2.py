@@ -83,18 +83,19 @@ nest_asyncio.apply()
 
 def main():
     pipeline = Pipeline()
-    pipeline.add_step(coco_dataset.sample_dataset)
-    pipeline.add_step(prompt_refiner.process_prompts)
-    # pipeline.add_step(get_localization_results)
-    # pipeline.add_step(get_segmentation_results)
-    # pipeline.add_step(visualize_results)
+    pipeline.add_step(coco_dataset.sample_dataset, verbose=True)
+    pipeline.add_step(prompt_refiner.process_prompts, verbose=True)
+    # pipeline.add_step(get_localization_results, verbose=True)
+    # pipeline.add_step(get_segmentation_results, verbose=True)
+    # pipeline.add_step(visualize_results, verbose=True)
 
     # Perform static analysis before running the pipeline
     pipeline.static_analysis()
 
     image_ids = [22, 31, 34]
     result = pipeline.run(image_ids)
-    print(result)  # Add this line to see the output
+    print("\nFinal result:")
+    print(result)
 
 if __name__ == "__main__":
     main()
