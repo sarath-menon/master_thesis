@@ -120,10 +120,10 @@ class SAM2:
             multimask_output=False,
         )
 
+        scores = scores.tolist()
         masks = [coco_encode_rle(mask) for mask in masks]
 
         response = SegmentationResp(masks=masks, scores=scores)
-        print(response)
         return response
 
     async def auto_annotate(self, req: AutoAnnotationReq) ->AutoAnnotationResp:
