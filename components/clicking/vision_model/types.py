@@ -4,6 +4,9 @@ from enum import Enum, auto
 from PIL import Image
 import numpy as np
 from fastapi import Form, File, UploadFile, Depends
+from typing import NamedTuple, List, Dict
+from clicking.prompt_refinement.core import ProcessedSample
+from clicking.vision_model.bbox import BoundingBox
 
 class TaskType(str, Enum):
     LOCALIZATION_WITH_TEXT = "LOCALIZATION_WITH_TEXT"
@@ -89,8 +92,10 @@ class AutoAnnotationReq(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-
-
 class AutoAnnotationResp(BaseModel):
     prediction: SegmentationResp
     inference_time: Optional[float] = 0.0
+
+class LocalizationResults(NamedTuple):
+    processed_samples: List[ProcessedSample]
+    predictions: Dict[str, List[BoundingBox]] 

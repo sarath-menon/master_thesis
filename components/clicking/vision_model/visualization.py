@@ -12,8 +12,9 @@ import matplotlib.pyplot as plt
 from typing import List
 from clicking.vision_model.types import SegmentationResp, LocalizationResp
 from clicking.vision_model.utils import get_mask_centroid
+from clicking.vision_model.types import LocalizationResults
+from typing import List, Dict
 
-from dataclasses import dataclass
 
 def show_mask( mask, ax, random_color=False, borders=True, centroid_point=None):
         if random_color:
@@ -187,52 +188,41 @@ def show_localization_predictions(image, responses: List[LocalizationResp]):
     # Show the plot
     plt.show()
 
+def show_localization_predictions(localization_results: LocalizationResults):
+    for processed_sample in localization_results.processed_samples:
+        image = processed_sample.image
+        image_id = processed_sample.image_id
+        predictions = localization_results.predictions[image_id]
+        
+        fig, ax = plt.subplots()
+        ax.imshow(image)
 
-from clicking.vision_model.types import LocalizationResp
-from typing import List, Dict
+        # Create a dictionary to map object names to unique IDs
+        object_names = set(bbox.object_name for bbox in predictions)
+        object_ids = {name: i for i, name in enumerate(object_names)}
 
-def show_localization_predictions(image, responses: List[LocalizationResp], categories: Dict[str, str], descriptions: Dict[str, str], text_color='white'):
-    fig, ax = plt.subplots()
-
-    ax.imshow(image)
-
-    # Enumerate the descriptions dict 
-    description_ids = {description: i for i, description in enumerate(set(descriptions))}
-
-    # Plot each bounding box
-    for (object_name, response) in responses.items():
-        bboxes = response.prediction.bboxes
-        category = categories[object_name]
-
-        for (i, bbox) in enumerate(bboxes):
-            # Unpack the bounding box coordinates
-            x1, y1, x2, y2 = bbox
-            bg_color = object_category_color_map(category)
+        # Plot each bounding box
+        for bbox in predictions:
+            x, y, w, h = bbox.get(mode=BBoxMode.XYWH)
+            bg_color = object_category_color_map(bbox.object_name)
             
             # Create a Rectangle patch
-            rect = patches.Rectangle((x1, y1), x2-x1, y2-y1, linewidth=1, edgecolor=bg_color, facecolor='none')
-            
-            # Add the rectangle to the Axes
+            rect = patches.Rectangle((x, y), w, h, linewidth=1, edgecolor=bg_color, facecolor='none')
             ax.add_patch(rect)
 
             # Annotate the label
-            description_id = description_ids[object_name]
-            plt.text(x1, y1, str(description_id), color=text_color, fontsize=8, bbox=dict(facecolor=bg_color, alpha=0.9))
+            object_id = object_ids[bbox.object_name]
+            plt.text(x, y, str(object_id), color='white', fontsize=8, bbox=dict(facecolor=bg_color, alpha=0.9))
 
-    # legend (object_name: description)
-    # object_names = list(responses.keys())
-    # for object_name in object_names:
-    #     print(f"{object_name}: {descriptions[object_name]}")
+        # Print legend (id: object_name)
+        for object_name, object_id in object_ids.items():
+            print(f"{object_id}: {object_name}")
 
-    # legend (id: object_name)
-    for id, object_name in description_ids.items():
-        print(f"{id}: {object_name}")
+        # Remove the axis ticks and labels
+        ax.axis('off')
+        plt.show()
 
-    # Remove the axis ticks and labels
-    ax.axis('off')
-    plt.show()
-
-def object_category_color_map(category):
+def object_category_color_map(object_name):
     # Create a dictionary to store color indices
     color_dict = {
         'Game Asset': (1, 0, 0),    # Red
@@ -240,4 +230,13 @@ def object_category_color_map(category):
         'Information Display': (0, 0, 1),    # Blue
     }
 
-    return color_dict[category]
+    # Default color if category is not found
+    default_color = (0.5, 0.5, 0.5)  # Gray
+
+    # Determine the category based on the object name
+    if 'character' in object_name.lower():
+        return color_dict['Non-playable Character']
+    elif 'display' in object_name.lower() or 'ui' in object_name.lower():
+        return color_dict['Information Display']
+    else:
+        return color_dict.get('Game Asset', default_color)

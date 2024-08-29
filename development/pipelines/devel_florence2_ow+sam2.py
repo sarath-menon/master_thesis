@@ -7,7 +7,7 @@ from clicking.pipeline.core import Pipeline
 from clicking.dataset_creator.core import CocoDataset
 from clicking.dataset_creator.types import DatasetSample
 from clicking.prompt_refinement.core import PromptRefiner, PromptMode, ProcessedResult, ProcessedSample
-from clicking.vision_model.types import TaskType, LocalizationResp, SegmentationResp
+from clicking.vision_model.types import TaskType, LocalizationResults
 from clicking.vision_model.visualization import show_localization_predictions, show_segmentation_prediction
 from clicking.vision_model.bbox import BoundingBox, BBoxMode
 from clicking.vision_model.mask import SegmentationMask, SegmentationMode
@@ -27,9 +27,6 @@ coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', '.
 from clicking_client.types import File
 from io import BytesIO
 
-class LocalizationResults(NamedTuple):
-    processed_samples: List[ProcessedSample]
-    predictions: Dict[str, List[BoundingBox]]  # Changed to Dict
 
 class SegmentationPrediction(NamedTuple):
     masks: List[Dict[str, Any]]  
@@ -288,62 +285,4 @@ result = pipeline.run(image_ids)
 print("\nFinal result:")
 print(result)
 #%%
-
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-
-def show_localization_predictions(localization_results: LocalizationResults):
-    for processed_sample in localization_results.processed_samples:
-        image = processed_sample.image
-        image_id = processed_sample.image_id
-        predictions = localization_results.predictions[image_id]
-        
-        fig, ax = plt.subplots()
-        ax.imshow(image)
-
-        # Create a dictionary to map object names to unique IDs
-        object_names = set(bbox.object_name for bbox in predictions)
-        object_ids = {name: i for i, name in enumerate(object_names)}
-
-        # Plot each bounding box
-        for bbox in predictions:
-            x, y, w, h = bbox.get(mode=BBoxMode.XYWH)
-            bg_color = object_category_color_map(bbox.object_name)
-            
-            # Create a Rectangle patch
-            rect = patches.Rectangle((x, y), w, h, linewidth=1, edgecolor=bg_color, facecolor='none')
-            ax.add_patch(rect)
-
-            # Annotate the label
-            object_id = object_ids[bbox.object_name]
-            plt.text(x, y, str(object_id), color='white', fontsize=8, bbox=dict(facecolor=bg_color, alpha=0.9))
-
-        # Print legend (id: object_name)
-        for object_name, object_id in object_ids.items():
-            print(f"{object_id}: {object_name}")
-
-        # Remove the axis ticks and labels
-        ax.axis('off')
-        plt.show()
-
-def object_category_color_map(object_name):
-    # Create a dictionary to store color indices
-    color_dict = {
-        'Game Asset': (1, 0, 0),    # Red
-        'Non-playable Character': (0, 1, 0),    # Green
-        'Information Display': (0, 0, 1),    # Blue
-    }
-
-    # Default color if category is not found
-    default_color = (0.5, 0.5, 0.5)  # Gray
-
-    # Determine the category based on the object name
-    if 'character' in object_name.lower():
-        return color_dict['Non-playable Character']
-    elif 'display' in object_name.lower() or 'ui' in object_name.lower():
-        return color_dict['Information Display']
-    else:
-        return color_dict.get('Game Asset', default_color)
-
-show_localization_predictions(result)
 
