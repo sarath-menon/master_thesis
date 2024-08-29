@@ -13,6 +13,7 @@ from typing import List, Dict, Optional, TypedDict, Union, NamedTuple
 import json
 from clicking.dataset_creator.types import DatasetSample
 from PIL import Image
+import uuid
 
 # set API keys
 dotenv.load_dotenv()
@@ -33,6 +34,7 @@ class PromptResponse(TypedDict):
 
 class ProcessedSample(NamedTuple):
     image: Image.Image
+    image_id: str
     class_label: str
     description: PromptResponse
 
@@ -56,7 +58,12 @@ class PromptRefiner(ImageProcessorBase):
         results = await asyncio.gather(*tasks)
         
         processed_samples = [
-            ProcessedSample(image=image, class_label=class_label, description=description)
+            ProcessedSample(
+                image=image,
+                image_id=str(uuid.uuid4()),  # Generate a unique ID for each image
+                class_label=class_label,
+                description=description
+            )
             for image, class_label, description in zip(dataset_sample.images, dataset_sample.class_labels, results)
         ]
         
