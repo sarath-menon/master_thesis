@@ -29,6 +29,7 @@ import os
 from datetime import datetime
 from tabulate import tabulate
 import asyncio
+from clicking.vision_model.visualization import show_localization_predictions
 
 #%%
 
@@ -54,7 +55,8 @@ class Pipeline:
     def __init__(self):
         self.steps: List[Union[Tuple[str, Callable, bool], List[Tuple[str, Callable, bool]]]] = []
         self.visualization_functions: Dict[Type, Callable] = {
-            LocalizationResults: show_localization_predictions
+            LocalizationResults: show_localization_predictions,
+            SegmentationResults: show_segmentation_predictions
         }
         self.cache_dir = ".pipeline_cache"
         os.makedirs(self.cache_dir, exist_ok=True)
@@ -480,7 +482,7 @@ import cv2
 import numpy as np
 from pycocotools import mask as mask_utils
 
-def show_clickpoint_predictions(segmentation_results: SegmentationResults, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow', mask_alpha=0.7, borders=False, label_offset_y=60):
+def show_segmentation_predictions(segmentation_results: SegmentationResults, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow', mask_alpha=0.7, borders=False, label_offset_y=60):
     for processed_sample in segmentation_results.processed_samples:
         image = processed_sample.image
         image_id = processed_sample.image_id
@@ -530,5 +532,5 @@ def show_clickpoint_predictions(segmentation_results: SegmentationResults, textb
             print(f"{mask.object_name}: {mask.description}")
         print("\n")
 
-show_clickpoint_predictions(result)
+show_segmentation_predictions(result)
 #%%
