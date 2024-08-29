@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query, File, UploadFile, Form, Path, HTTPException
-from clicking.vision_model.core import *
+from clicking.vision_model.core import VisionModel
+from clicking.vision_model.types import *
 from PIL import Image
 import io
 import json
