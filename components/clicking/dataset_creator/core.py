@@ -3,7 +3,7 @@ from torchvision import transforms, datasets
 from PIL import Image
 import matplotlib.pyplot as plt
 from typing import List
-from .types import DatasetSample, DataSample
+from .types import DatasetSample
 
 class CocoDataset:
     def __init__(self, data_dir, annFile):
@@ -22,21 +22,23 @@ class CocoDataset:
         return text_input
 
     def sample_dataset(self, image_ids: List[int]) -> DatasetSample:
-        samples = []
+        images = []
+        class_labels = []
         to_pil = transforms.ToPILImage()
         
         for index in image_ids:
             image_tensor, annotations = self.coco_dataset[int(index)]
             image = to_pil(image_tensor)
             class_label = self.create_text_input(annotations)
-            samples.append(DataSample(image=image, class_label=class_label))
+            images.append(image)
+            class_labels.append(class_label)
 
-        return DatasetSample(samples=samples)
+        return DatasetSample(images=images, class_labels=class_labels)
 
     def show_images(self, dataset_sample: DatasetSample, show_images_per_batch: int = 4):
-        for sample in dataset_sample.samples[:show_images_per_batch]:
-            plt.imshow(sample.image)
+        for image, class_label in zip(dataset_sample.images[:show_images_per_batch], dataset_sample.class_labels[:show_images_per_batch]):
+            plt.imshow(image)
             plt.axis(False)
-            plt.title(sample.class_label)
+            plt.title(class_label)
             plt.show()
 
