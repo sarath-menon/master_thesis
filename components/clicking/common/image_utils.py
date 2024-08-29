@@ -6,7 +6,6 @@ import asyncio
 from typing import Dict, Tuple
 import json
 from .caching import cache_result
-from clickiing.vision_model.types import File
 
 class ImageProcessorBase:
     def __init__(self, model: str = "gpt-4o", temperature: float = 0.0):
@@ -46,4 +45,3 @@ class ImageProcessorBase:
 
     def clear_cache(self):
         self._get_image_response.clear_cache()
-
