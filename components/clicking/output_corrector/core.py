@@ -53,7 +53,7 @@ class OutputCorrector(ImageProcessorBase):
 if __name__ == "__main__":
     from PIL import Image
     import matplotlib.pyplot as plt
-    from clicking.vision_model.core import overlay_bounding_box
+    from clicking.vision_model.visualization import overlay_bounding_box
     from clicking.vision_model.bbox import BoundingBox, BBoxMode
     import asyncio
     import nest_asyncio
