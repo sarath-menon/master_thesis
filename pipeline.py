@@ -28,31 +28,6 @@ class Pipeline:
             result = step(result)
         return result
 
-    def static_analysis(self):
-        if not self.steps:
-            raise ValueError("Pipeline has no steps.")
-        
-        for i in range(len(self.steps) - 1):
-            current_step = self.steps[i]
-            next_step = self.steps[i + 1]
-            
-            current_return_type = inspect.signature(current_step).return_annotation
-            next_param_types = list(inspect.signature(next_step).parameters.values())
-            
-            if not next_param_types:
-                continue
-            
-            next_param_type = next_param_types[0].annotation
-            
-            if current_return_type == Any or next_param_type == Any:
-                continue
-            
-            if not issubclass(current_return_type, next_param_type):
-                raise TypeError(f"Output type of {current_step.__name__} ({current_return_type}) "
-                                f"is not compatible with input type of {next_step.__name__} ({next_param_type})")
-        
-        print("Static analysis complete. All types are compatible.")
-
 def pipeline_step(func: Callable) -> Callable:
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)

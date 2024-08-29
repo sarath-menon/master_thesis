@@ -1,3 +1,3 @@
-from clicking.pipeline.core import Clicker
+from clicking.pipeline import core
 
-__all__ = ["Clicker"]
+__all__ = ["core"]

@@ -11,6 +11,7 @@ import asyncio
 import nest_asyncio
 from typing import List, Dict, Any, Optional
 import json
+from clicking.dataset_creator.types import DatasetSample, DatasetSample
 
 # set API keys
 dotenv.load_dotenv()
@@ -27,18 +28,20 @@ class PromptRefiner(ImageProcessorBase):
         self.prompt_manager = PromptManager(prompt_path)
         self.messages = [{"role": "system", "content": self.prompt_manager.get_prompt(type='system')}]
     
-    async def process_prompts(self, screenshots: List[str], mode: PromptMode, input_texts: Optional[List[str]] = None, **kwargs):
-        if input_texts is None:
-            input_texts = [None] * len(screenshots)
-
-        tasks = [self._process_single_prompt(screenshot, mode, input_text, **kwargs) 
-                 for screenshot, input_text in zip(screenshots, input_texts)]
+    async def process_prompts_async(self, dataset_sample: DatasetSample, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> Dict[str, Any]:
+        tasks = [self._process_single_prompt(image, mode, class_label, **kwargs) 
+                 for image, class_label in zip(dataset_sample.images, dataset_sample.class_labels)]
         results = await asyncio.gather(*tasks)
-        return results
+        
+        return {
+            "images": dataset_sample.images,
+            "class_labels": dataset_sample.class_labels,
+            "descriptions": results
+        }
 
-    async def _process_single_prompt(self, screenshot: str, mode: PromptMode, input_text: Optional[str] = None, **kwargs):
-        base64_image = self._pil_to_base64(screenshot)
-        template_values = self._get_template_values(mode, input_text, **kwargs)
+    async def _process_single_prompt(self, image: str, mode: PromptMode, class_label: Optional[str] = None, **kwargs):
+        base64_image = self._pil_to_base64(image)
+        template_values = self._get_template_values(mode, class_label, **kwargs)
         prompt = self.prompt_manager.get_prompt(type='user', prompt_key=mode.value, template_values=template_values)
         response = await super()._get_image_response(base64_image, prompt, self.messages, json_mode=True)
 
@@ -50,11 +53,11 @@ class PromptRefiner(ImageProcessorBase):
 
         return response
 
-    def _get_template_values(self, mode: PromptMode, input_text: str, **kwargs) -> Dict[str, Any]:
-        if input_text is None:
+    def _get_template_values(self, mode: PromptMode, class_label: str, **kwargs) -> Dict[str, Any]:
+        if class_label is None:
             return {}
-        elif mode == PromptMode.EXPANDED_DESCRIPTION:
-            return {"input_description": input_text, "word_limit": str(kwargs.get('word_limit', 10))}
+        elif mode == PromptMode.OBJECTS_LIST_TO_DESCRIPTIONS:
+            return {"input_description": class_label, "word_limit": str(kwargs.get('word_limit', 10))}
         elif mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
             return {"description_length": kwargs.get('description_length', 20)}
         raise ValueError(f"Invalid mode: {mode}")
@@ -62,6 +65,10 @@ class PromptRefiner(ImageProcessorBase):
     def show_messages(self):
         for message in self.messages:
             print(message)
+
+    def process_prompts(self, dataset_sample: DatasetSample, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> Dict[str, Any]:
+        return asyncio.run(self.process_prompts_async(dataset_sample, mode, **kwargs))
+
 # %% get expanded description from class label
 
 if __name__ == "__main__":
@@ -88,7 +95,7 @@ if __name__ == "__main__":
 
     # Call process_prompts asynchronously
     async def process_batch_prompts():
-        results = await prompt_refiner.process_prompts(screenshots, mode, input_texts=input_texts, word_limit=word_limit)
+        results = await prompt_refiner.process_prompts_async(screenshots, mode, input_texts=input_texts, word_limit=word_limit)
         print(results)
 
     # Run the asynchronous function
@@ -116,7 +123,7 @@ if __name__ == "__main__":
 
       # Call process_prompts asynchronously
     async def process_batch_prompts():
-        results = await prompt_refiner.process_prompts(images, mode)
+        results = await prompt_refiner.process_prompts_async(images, mode)
         for result in results:
             print(result)
 
