@@ -109,10 +109,14 @@ from typing import Callable, List, Any, Dict, Tuple, TypedDict, get_origin, get_
 import inspect
 import matplotlib.pyplot as plt
 from PIL import Image
+from typing import Type
 
 class Pipeline:
     def __init__(self):
         self.steps: List[Tuple[Callable, bool]] = []
+        self.visualization_functions: Dict[Type, Callable] = {
+            LocalizationResults: show_localization_predictions
+        }
 
     def add_step(self, func: Callable, verbose: bool = True):
         if self.steps and not self._are_types_compatible(self.steps[-1][0], func):
@@ -165,6 +169,11 @@ class Pipeline:
     def _log_step_result(self, step_name: str, result: Any):
         print(f"\n--- Step: {step_name} ---")
         self._recursive_log(step_name, result)
+        
+        # Check if there's a visualization function for this result type
+        result_type = type(result)
+        if result_type in self.visualization_functions:
+            self.visualization_functions[result_type](result)
 
     def _recursive_log(self, step_name: str, result: Any, prefix: str = ""):
         keys_to_avoid = ["objects"]
