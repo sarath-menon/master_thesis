@@ -3,10 +3,10 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 from typing import List, Dict, Tuple, Any
-from clicking.pipeline.core import Pipeline, pipeline_step
+from clicking.pipeline.core import Pipeline
 from clicking.dataset_creator.core import CocoDataset
 from clicking.dataset_creator.types import DatasetSample
-from clicking.prompt_refinement.core import PromptRefiner, PromptMode
+from clicking.prompt_refinement.core import PromptRefiner, PromptMode, ProcessedResult
 from clicking.vision_model.types import TaskType, LocalizationResp, SegmentationResp
 from clicking.visualization.core import show_localization_predictions, show_segmentation_prediction
 from clicking.visualization.bbox import BoundingBox, BBoxMode
@@ -25,57 +25,66 @@ coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', '.
 
 #%%
 
-@pipeline_step
-def get_localization_results(data: Dict[str, Any]) -> Dict[str, Any]:
-    set_model.sync(client=client, body=SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB))
-    
-    localization_results = {}
-    for image, description in zip(data["images"], data["descriptions"]):
-        image_file = image_to_http_file(image)
-        predictions = {}
-        for obj in description["objects"]:
-            request = BodyGetPrediction(
-                image=image_file,
-                task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
-                input_text=obj["description"]
-            )
-            predictions[obj["name"]] = get_prediction.sync(client=client, body=request)
-        localization_results[image] = predictions
-    
-    data["localization_results"] = localization_results
-    return data
+class LocalizationProcessor:
+    def __init__(self, client: Client):
+        self.client = client
 
-@pipeline_step
-def get_segmentation_results(data: Dict[str, Any]) -> Dict[str, Any]:
-    set_model.sync(client=client, body=SetModelReq(name="sam2", variant="sam2_hiera_tiny", task=TaskType.SEGMENTATION_WITH_BBOX))
-    
-    segmentation_results = {}
-    for sample in data["samples"]:
-        image_file = image_to_http_file(sample.image)
-        seg_predictions = {}
-        for obj_name, loc_result in data["localization_results"][sample.image].items():
-            request = BodyGetPrediction(
-                image=image_file,
-                task=TaskType.SEGMENTATION_WITH_BBOX,
-                input_boxes=loc_result.prediction.bboxes
-            )
-            seg_predictions[obj_name] = get_prediction.sync(client=client, body=request)
-        segmentation_results[sample.image] = seg_predictions
-    
-    data["segmentation_results"] = segmentation_results
-    return data
+    def get_localization_results(self, processed_result: ProcessedResult) -> Dict[str, Any]:
+        set_model.sync(client=self.client, body=SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB))
+        
+        localization_results = {}
+        for sample in processed_result.samples:
+            image_file = image_to_http_file(sample.image)
+            predictions = {}
+            for obj in sample.description["objects"]:
+                request = BodyGetPrediction(
+                    image=image_file,
+                    task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
+                    input_text=obj["description"]
+                )
+                predictions[obj["name"]] = get_prediction.sync(client=self.client, body=request)
+            localization_results[sample.image] = predictions
+        
+        return {
+            "processed_samples": processed_result.samples,
+            "localization_results": localization_results
+        }
 
-@pipeline_step
-def visualize_results(data: Dict[str, Any]) -> None:
-    for sample in data["samples"]:
-        loc_results = data["localization_results"][sample.image]
-        show_localization_predictions(sample.image, loc_results)
-    
-    for sample in data["samples"]:
-        seg_results = data["segmentation_results"][sample.image]
-        for obj_name, seg_result in seg_results.items():
-            masks = [SegmentationMask(mask, mode=SegmentationMode.COCO_RLE) for mask in seg_result.prediction.masks]
-            show_segmentation_prediction(sample.image, masks)
+class SegmentationProcessor:
+    def __init__(self, client: Client):
+        self.client = client
+
+    def get_segmentation_results(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        set_model.sync(client=self.client, body=SetModelReq(name="sam2", variant="sam2_hiera_tiny", task=TaskType.SEGMENTATION_WITH_BBOX))
+        
+        segmentation_results = {}
+        for image in data["images"]:
+            image_file = image_to_http_file(image)
+            seg_predictions = {}
+            for obj_name, loc_result in data["localization_results"][image].items():
+                request = BodyGetPrediction(
+                    image=image_file,
+                    task=TaskType.SEGMENTATION_WITH_BBOX,
+                    input_boxes=loc_result.prediction.bboxes
+                )
+                seg_predictions[obj_name] = get_prediction.sync(client=self.client, body=request)
+            segmentation_results[image] = seg_predictions
+        
+        data["segmentation_results"] = segmentation_results
+        return data
+
+class Visualizer:
+    @staticmethod
+    def visualize_results(data: Dict[str, Any]) -> None:
+        for image in data["images"]:
+            loc_results = data["localization_results"][image]
+            show_localization_predictions(image, loc_results)
+        
+        for image in data["images"]:
+            seg_results = data["segmentation_results"][image]
+            for obj_name, seg_result in seg_results.items():
+                masks = [SegmentationMask(mask, mode=SegmentationMode.COCO_RLE) for mask in seg_result.prediction.masks]
+                show_segmentation_prediction(image, masks)
 
 #%%
 import nest_asyncio
@@ -85,9 +94,15 @@ def main():
     pipeline = Pipeline()
     pipeline.add_step(coco_dataset.sample_dataset, verbose=True)
     pipeline.add_step(prompt_refiner.process_prompts, verbose=True)
-    # pipeline.add_step(get_localization_results, verbose=True)
-    # pipeline.add_step(get_segmentation_results, verbose=True)
-    # pipeline.add_step(visualize_results, verbose=True)
+    
+    localization_processor = LocalizationProcessor(client)
+    pipeline.add_step(localization_processor.get_localization_results, verbose=True)
+    
+    # segmentation_processor = SegmentationProcessor(client)
+    # pipeline.add_step(segmentation_processor.get_segmentation_results, verbose=True)
+    
+    # visualizer = Visualizer()
+    # pipeline.add_step(visualizer.visualize_results, verbose=True)
 
     # Perform static analysis before running the pipeline
     pipeline.static_analysis()

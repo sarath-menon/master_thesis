@@ -9,9 +9,10 @@ from enum import Enum, auto
 from clicking.prompt_manager.core import PromptManager
 import asyncio
 import nest_asyncio
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional, TypedDict, Union, NamedTuple
 import json
-from clicking.dataset_creator.types import DatasetSample, DatasetSample
+from clicking.dataset_creator.types import DatasetSample
+from PIL import Image
 
 # set API keys
 dotenv.load_dotenv()
@@ -22,38 +23,60 @@ class PromptMode(Enum):
     IMAGE_TO_OBJECT_DESCRIPTIONS = "IMAGE_TO_OBJECT_DESCRIPTIONS"
     IMAGE_TO_OBJECTS_LIST = "IMAGE_TO_OBJECTS_LIST"
 
+class ObjectDescription(TypedDict):
+    name: str
+    category: str
+    description: str
+
+class PromptResponse(TypedDict):
+    objects: List[ObjectDescription]
+
+class ProcessedSample(NamedTuple):
+    image: Image.Image
+    class_label: str
+    description: PromptResponse
+
+class ProcessedResult(NamedTuple):
+    samples: List[ProcessedSample]
+
+class TemplateValues(TypedDict, total=False):
+    input_description: str
+    word_limit: str
+    description_length: int
+
 class PromptRefiner(ImageProcessorBase):
     def __init__(self, prompt_path: str, model: str = "gpt-4o", temperature: float = 0.0):
         super().__init__(model, temperature)
         self.prompt_manager = PromptManager(prompt_path)
         self.messages = [{"role": "system", "content": self.prompt_manager.get_prompt(type='system')}]
     
-    async def process_prompts_async(self, dataset_sample: DatasetSample, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> Dict[str, Any]:
+    async def process_prompts_async(self, dataset_sample: DatasetSample, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ProcessedResult:
         tasks = [self._process_single_prompt(image, mode, class_label, **kwargs) 
                  for image, class_label in zip(dataset_sample.images, dataset_sample.class_labels)]
         results = await asyncio.gather(*tasks)
         
-        return {
-            "images": dataset_sample.images,
-            "class_labels": dataset_sample.class_labels,
-            "descriptions": results
-        }
+        processed_samples = [
+            ProcessedSample(image=image, class_label=class_label, description=description)
+            for image, class_label, description in zip(dataset_sample.images, dataset_sample.class_labels, results)
+        ]
+        
+        return ProcessedResult(samples=processed_samples)
 
-    async def _process_single_prompt(self, image: str, mode: PromptMode, class_label: Optional[str] = None, **kwargs):
+    async def _process_single_prompt(self, image: Image.Image, mode: PromptMode, class_label: Optional[str] = None, **kwargs) -> PromptResponse:
         base64_image = self._pil_to_base64(image)
         template_values = self._get_template_values(mode, class_label, **kwargs)
         prompt = self.prompt_manager.get_prompt(type='user', prompt_key=mode.value, template_values=template_values)
         response = await super()._get_image_response(base64_image, prompt, self.messages, json_mode=True)
 
-        response = json.loads(response)
+        response_dict = json.loads(response)
 
         if mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
             # sort objects by category
-            response['objects'] = sorted(response['objects'], key=lambda x: x['category'])
+            response_dict['objects'] = sorted(response_dict['objects'], key=lambda x: x['category'])
 
-        return response
+        return response_dict
 
-    def _get_template_values(self, mode: PromptMode, class_label: str, **kwargs) -> Dict[str, Any]:
+    def _get_template_values(self, mode: PromptMode, class_label: Optional[str], **kwargs) -> TemplateValues:
         if class_label is None:
             return {}
         elif mode == PromptMode.OBJECTS_LIST_TO_DESCRIPTIONS:
@@ -62,11 +85,11 @@ class PromptRefiner(ImageProcessorBase):
             return {"description_length": kwargs.get('description_length', 20)}
         raise ValueError(f"Invalid mode: {mode}")
 
-    def show_messages(self):
+    def show_messages(self) -> None:
         for message in self.messages:
             print(message)
 
-    def process_prompts(self, dataset_sample: DatasetSample, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> Dict[str, Any]:
+    def process_prompts(self, dataset_sample: DatasetSample, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ProcessedResult:
         return asyncio.run(self.process_prompts_async(dataset_sample, mode, **kwargs))
 
 # %% get expanded description from class label

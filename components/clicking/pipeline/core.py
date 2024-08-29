@@ -1,4 +1,4 @@
-from typing import Callable, List, Any, Dict, Tuple
+from typing import Callable, List, Any, Dict, Tuple, TypedDict, get_origin, get_args
 import inspect
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -9,7 +9,11 @@ class Pipeline:
 
     def add_step(self, func: Callable, verbose: bool = True):
         if self.steps and not self._are_types_compatible(self.steps[-1][0], func):
-            raise TypeError(f"Output type of {self.steps[-1][0].__name__} is not compatible with input type of {func.__name__}")
+            last_step_func = self.steps[-1][0]
+            last_step_output_type = inspect.signature(last_step_func).return_annotation.__name__
+            next_step_input_type = inspect.signature(func).parameters[next(iter(inspect.signature(func).parameters))].annotation.__name__
+
+            raise TypeError(f"Output type of {last_step_func.__name__} ({last_step_output_type}) is not compatible with input type of {func.__name__} ({next_step_input_type})")
         self.steps.append((func, verbose))
 
     def _are_types_compatible(self, prev_func: Callable, next_func: Callable) -> bool:
@@ -22,7 +26,26 @@ class Pipeline:
         if prev_return_type == Any or next_param_types[0] == Any:
             return True
         
-        return issubclass(prev_return_type, next_param_types[0])
+        # Handle TypedDict and other complex types
+        if get_origin(prev_return_type) is not None:
+            return self._check_complex_type_compatibility(prev_return_type, next_param_types[0])
+        
+        # For simple types, use isinstance check instead of issubclass
+        return isinstance(prev_return_type, type(next_param_types[0]))
+
+    def _check_complex_type_compatibility(self, type1, type2):
+        origin1, origin2 = get_origin(type1), get_origin(type2)
+        args1, args2 = get_args(type1), get_args(type2)
+        
+        if origin1 is TypedDict and origin2 is TypedDict:
+            # For TypedDict, check if all keys in type2 exist in type1
+            return all(key in type1.__annotations__ for key in type2.__annotations__)
+        
+        if origin1 is origin2:
+            # For other complex types (List, Dict, etc.), check their arguments
+            return all(self._are_types_compatible(arg1, arg2) for arg1, arg2 in zip(args1, args2))
+        
+        return False
 
     def run(self, initial_input: Any) -> Any:
         result = initial_input
@@ -84,9 +107,3 @@ class Pipeline:
         
         print("Static analysis complete. All types are compatible.")
 
-def pipeline_step(func: Callable) -> Callable:
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-    wrapper.__name__ = func.__name__
-    wrapper.__annotations__ = func.__annotations__
-    return wrapper
