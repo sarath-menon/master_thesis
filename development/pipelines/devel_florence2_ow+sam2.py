@@ -42,72 +42,147 @@ coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', '.
 
 #%%
 
-from clicking_client.types import File
-from io import BytesIO
+from typing import Callable, List, Any, Dict, Tuple, TypedDict, get_origin, get_args
+import inspect
+import matplotlib.pyplot as plt
+from PIL import Image
 
-def image_to_http_file(image):
-    # Convert PIL Image to bytes and create a File object
-    image_byte_arr = BytesIO()
-    image.save(image_byte_arr, format='JPEG')
-    image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
-    return image_file
+class Pipeline:
+    def __init__(self):
+        self.steps: List[Tuple[Callable, bool]] = []
 
-class LocalizationProcessor:
-    def __init__(self, client: Client):
-        self.client = client
+    def add_step(self, func: Callable, verbose: bool = True):
+        if self.steps and not self._are_types_compatible(self.steps[-1][0], func):
+            last_step_func = self.steps[-1][0]
+            last_step_output_type = inspect.signature(last_step_func).return_annotation.__name__
+            next_step_input_type = inspect.signature(func).parameters[next(iter(inspect.signature(func).parameters))].annotation.__name__
 
-    def get_localization_results(self, processed_result: ProcessedResult) -> LocalizationResults:
-        set_model.sync(client=self.client, body=SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB))
+            raise TypeError(f"Output type of {last_step_func.__name__} ({last_step_output_type}) is not compatible with input type of {func.__name__} ({next_step_input_type})")
+        self.steps.append((func, verbose))
+
+    def _are_types_compatible(self, prev_func: Callable, next_func: Callable) -> bool:
+        prev_return_type = inspect.signature(prev_func).return_annotation
+        next_param_types = [param.annotation for param in inspect.signature(next_func).parameters.values()]
         
-        localization_results = {}
-        for sample in processed_result.samples:
-            image_file = image_to_http_file(sample.image)
-            predictions = {}
+        if not next_param_types:
+            return True
+        
+        if prev_return_type == Any or next_param_types[0] == Any:
+            return True
+        
+        # Handle TypedDict and other complex types
+        if get_origin(prev_return_type) is not None:
+            return self._check_complex_type_compatibility(prev_return_type, next_param_types[0])
+        
+        # For simple types, use isinstance check instead of issubclass
+        return isinstance(prev_return_type, type(next_param_types[0]))
 
-            for obj in sample.description["objects"]:
-                request = BodyGetPrediction(
-                    image=image_file,
-                    task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
-                    input_text=obj["description"]
-                )
-                response = get_prediction.sync(client=self.client, body=request)
-                predictions[obj["name"]] = LocalizationPrediction(bboxes=response.prediction.bboxes)
+    def _check_complex_type_compatibility(self, type1, type2):
+        origin1, origin2 = get_origin(type1), get_origin(type2)
+        args1, args2 = get_args(type1), get_args(type2)
+        
+        if origin1 is TypedDict and origin2 is TypedDict:
+            # For TypedDict, check if all keys in type2 exist in type1
+            return all(key in type1.__annotations__ for key in type2.__annotations__)
+        
+        if origin1 is origin2:
+            # For other complex types (List, Dict, etc.), check their arguments
+            return all(self._are_types_compatible(arg1, arg2) for arg1, arg2 in zip(args1, args2))
+        
+        return False
+
+    def run(self, initial_input: Any) -> Any:
+        result = initial_input
+        for step, verbose in self.steps:
+            result = step(result)
+            if verbose:
+                self._log_step_result(step.__name__, result)
+        return result
+
+    def _log_step_result(self, step_name: str, result: Any):
+        print(f"\n--- Step: {step_name} ---")
+        self._recursive_log(step_name, result)
+
+    def _recursive_log(self, step_name: str, result: Any, prefix: str = ""):
+        keys_to_avoid = ["objects"]  # Add more keys to this list if needed
+
+        if isinstance(result, Image.Image):
+            self._display_image(step_name, prefix, result)
+        elif isinstance(result, list):
+            if not result:
+                print(f"{prefix}[]")
+            elif all(isinstance(item, Image.Image) for item in result):
+                self._display_image_list(step_name, prefix, result)
+            else:
+                print(f"{prefix}[")
+                for item in result:
+                    self._recursive_log(step_name, item, f"{prefix}  ")
+                print(f"{prefix}]")
+        elif isinstance(result, dict):
+            print(f"{prefix}{{")
+            for key, value in result.items():
+                if key in keys_to_avoid:
+                    self._recursive_log(step_name, value, f"{prefix}  ")
+                else:
+                    new_prefix = f"{prefix}  {key}: "
+                    print(f"{new_prefix}", end="")
+                    self._recursive_log(step_name, value, "")
+            print(f"{prefix}}}")
+        elif isinstance(result, tuple):
+            print(f"{prefix}(")
+            for item in result:
+                self._recursive_log(step_name, item, f"{prefix}  ")
+            print(f"{prefix})")
+        else:
+            print(f"{prefix}{result}")
+
+    def _display_image(self, step_name: str, prefix: str, image: Image.Image):
+        plt.figure(figsize=(5, 5))
+        plt.imshow(image)
+        plt.axis('off')
+        plt.title(f"{step_name} - Image")
+        plt.show()
+
+    def _display_image_list(self, step_name: str, prefix: str, images: List[Image.Image]):
+        if not images:
+            print(f"{prefix}[]")
+            return
+        
+        fig, axes = plt.subplots(1, len(images), figsize=(5*len(images), 5))
+        if len(images) == 1:
+            axes = [axes]
+        for i, (ax, img) in enumerate(zip(axes, images)):
+            ax.imshow(img)
+            ax.axis('off')
+            ax.set_title(f"{step_name} - Image {i+1}")
+        plt.tight_layout()
+        plt.show()
+
+    def static_analysis(self):
+        if not self.steps:
+            raise ValueError("Pipeline has no steps.")
+        
+        for i in range(len(self.steps) - 1):
+            current_step, _ = self.steps[i]
+            next_step, _ = self.steps[i + 1]
             
-            image_filename = sample.image.filename if hasattr(sample.image, 'filename') else f"image_{id(sample.image)}"
-            localization_results[image_filename] = predictions
+            current_return_type = inspect.signature(current_step).return_annotation
+            next_param_types = list(inspect.signature(next_step).parameters.values())
+            
+            if not next_param_types:
+                continue
+            
+            next_param_type = next_param_types[0].annotation
+            
+            if current_return_type == Any or next_param_type == Any:
+                continue
+            
+            if not issubclass(current_return_type, next_param_type):
+                raise TypeError(f"Output type of {current_step.__name__} ({current_return_type}) "
+                                f"is not compatible with input type of {next_step.__name__} ({next_param_type})")
         
-        return LocalizationResults(
-            processed_samples=processed_result.samples,
-            localization_results=localization_results
-        )
+        print("Static analysis complete. All types are compatible.")
 
-class SegmentationProcessor:
-    def __init__(self, client: Client):
-        self.client = client
-
-    def get_segmentation_results(self, data: LocalizationResults) -> SegmentationResults:
-        set_model.sync(client=self.client, body=SetModelReq(name="sam2", variant="sam2_hiera_tiny", task=TaskType.SEGMENTATION_WITH_BBOX))
-        
-        segmentation_results = {}
-        for sample in data.processed_samples:
-            image_file = image_to_http_file(sample.image)
-            image_filename = sample.image.filename if hasattr(sample.image, 'filename') else f"image_{id(sample.image)}"
-            seg_predictions = {}
-            for obj_name, loc_result in data.localization_results[image_filename].items():
-                request = BodyGetPrediction(
-                    image=image_file,
-                    task=TaskType.SEGMENTATION_WITH_BBOX,
-                    input_boxes=loc_result.bboxes
-                )
-                response = get_prediction.sync(client=self.client, body=request)
-                seg_predictions[obj_name] = SegmentationPrediction(masks=response.prediction.masks)
-            segmentation_results[image_filename] = seg_predictions
-        
-        return SegmentationResults(
-            processed_samples=data.processed_samples,
-            localization_results=data.localization_results,
-            segmentation_results=segmentation_results
-        )
 
 
 #%%
