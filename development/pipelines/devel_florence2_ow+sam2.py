@@ -485,8 +485,7 @@ result = asyncio.run(pipeline.run(image_ids))
 
 # Later, run from a specific step
 result = asyncio.run(pipeline.run_from_step("Get Segmentation Results"))
-#%%
-result
+
 #%%
 from clicking.vision_model.utils import get_mask_centroid
 from clicking.vision_model.visualization import get_color
@@ -495,7 +494,7 @@ import cv2
 import numpy as np
 from pycocotools import mask as mask_utils
 
-def show_clickpoint_predictions(segmentation_results: SegmentationResults, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow'):
+def show_clickpoint_predictions(segmentation_results: SegmentationResults, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow', mask_alpha=0.7, borders=False, label_offset_y=60):
     for processed_sample in segmentation_results.processed_samples:
         image = processed_sample.image
         image_id = processed_sample.image_id
@@ -507,8 +506,6 @@ def show_clickpoint_predictions(segmentation_results: SegmentationResults, textb
         # Display the original image
         ax.imshow(image)
 
-        borders = False
-        mask_alpha = 0.7
         total_classes = len(set(mask.object_name for mask in predictions))
 
         for i, mask in enumerate(predictions):
@@ -531,8 +528,7 @@ def show_clickpoint_predictions(segmentation_results: SegmentationResults, textb
             ax.scatter(*centroid, marker='*', color=marker_color, s=marker_size, label=mask.object_name)  
 
             # Plot class label as text in a box on top of the mask
-            offset_y = 60
-            ax.text(centroid[0], centroid[1] - offset_y, mask.object_name, 
+            ax.text(centroid[0], centroid[1] - label_offset_y, mask.object_name, 
                     color=text_color, fontsize=text_size, 
                     bbox=dict(facecolor=textbox_color, edgecolor='none', alpha=1.0),
                     ha='center', va='center')
