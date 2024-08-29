@@ -15,6 +15,7 @@ from clicking.output_corrector.core import OutputCorrector
 from clicking_client import Client
 from clicking_client.models import SetModelReq, BodyGetPrediction
 from clicking_client.api.default import set_model, get_prediction
+from tabulate import tabulate
 
 #%%
 
@@ -107,22 +108,23 @@ import inspect
 import matplotlib.pyplot as plt
 from PIL import Image
 from typing import Type
+from tabulate import tabulate
 
 class Pipeline:
     def __init__(self):
-        self.steps: List[Tuple[Callable, bool]] = []
+        self.steps: List[Tuple[str, Callable, bool]] = []
         self.visualization_functions: Dict[Type, Callable] = {
             LocalizationResults: show_localization_predictions
         }
 
-    def add_step(self, func: Callable, verbose: bool = True):
-        if self.steps and not self._are_types_compatible(self.steps[-1][0], func):
-            last_step_func = self.steps[-1][0]
+    def add_step(self, step_name: str, func: Callable, verbose: bool = True):
+        if self.steps and not self._are_types_compatible(self.steps[-1][1], func):
+            last_step_func = self.steps[-1][1]
             last_step_output_type = inspect.signature(last_step_func).return_annotation.__name__
             next_step_input_type = inspect.signature(func).parameters[next(iter(inspect.signature(func).parameters))].annotation.__name__
 
             raise TypeError(f"Output type of {last_step_func.__name__} ({last_step_output_type}) is not compatible with input type of {func.__name__} ({next_step_input_type})")
-        self.steps.append((func, verbose))
+        self.steps.append((step_name, func, verbose))
 
     def _are_types_compatible(self, prev_func: Callable, next_func: Callable) -> bool:
         prev_return_type = inspect.signature(prev_func).return_annotation
@@ -157,10 +159,10 @@ class Pipeline:
 
     def run(self, initial_input: Any) -> Any:
         result = initial_input
-        for step, verbose in self.steps:
+        for step_name, step, verbose in self.steps:
             result = step(result)
             if verbose:
-                self._log_step_result(step.__name__, result)
+                self._log_step_result(step_name, result)
         return result
 
     def _log_step_result(self, step_name: str, result: Any):
@@ -243,8 +245,8 @@ class Pipeline:
             raise ValueError("Pipeline has no steps.")
         
         for i in range(len(self.steps) - 1):
-            current_step, _ = self.steps[i]
-            next_step, _ = self.steps[i + 1]
+            _, current_step, _ = self.steps[i]
+            _, next_step, _ = self.steps[i + 1]
             
             current_return_type = inspect.signature(current_step).return_annotation
             next_param_types = list(inspect.signature(next_step).parameters.values())
@@ -262,27 +264,38 @@ class Pipeline:
                                 f"is not compatible with input type of {next_step.__name__} ({next_param_type})")
         
         print("Static analysis complete. All types are compatible.")
+
+    def print_pipeline(self):
+        headers = ["Step", "Function Name", "Input Type"]
+        table_data = []
+        
+        for i, (step_name, func, _) in enumerate(self.steps, 1):
+            input_type = list(inspect.signature(func).parameters.values())[0].annotation.__name__
+            table_data.append([f"{i}. {step_name}", func.__name__, input_type])
+        
+        print("Pipeline Steps:")
+        print(tabulate(table_data, headers=headers, tablefmt="grid"))
+
 #%%
 import nest_asyncio
 nest_asyncio.apply()
 
-
 pipeline = Pipeline()
-pipeline.add_step(coco_dataset.sample_dataset, verbose=True)
-pipeline.add_step(prompt_refiner.process_prompts, verbose=True)
-
 localization_processor = LocalizationProcessor(client)
-pipeline.add_step(localization_processor.get_localization_results, verbose=True)
 
-# segmentation_processor = SegmentationProcessor(client)
-# pipeline.add_step(segmentation_processor.get_segmentation_results, verbose=True)
+pipeline.add_step("Sample Dataset", coco_dataset.sample_dataset, verbose=True)
+pipeline.add_step("Process Prompts", prompt_refiner.process_prompts, verbose=True)
+pipeline.add_step("Get Localization Results", localization_processor.get_localization_results, verbose=True)
+
+# Print the pipeline structure
+pipeline.print_pipeline()
 
 # Perform static analysis before running the pipeline
 pipeline.static_analysis()
 
-image_ids = [22, 31, 34]
-result = pipeline.run(image_ids)
-print("\nFinal result:")
-print(result)
+# image_ids = [22, 31, 34]
+# result = pipeline.run(image_ids)
+# print("\nFinal result:")
+# print(result)
 #%%
 
