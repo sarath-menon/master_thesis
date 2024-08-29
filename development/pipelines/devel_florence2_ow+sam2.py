@@ -110,29 +110,25 @@ class Pipeline:
             self._display_image(step_name, prefix, result)
         elif isinstance(result, list):
             if not result:
-                print(f"{prefix}[]")
+                print(f"{prefix}Empty list")
             elif all(isinstance(item, Image.Image) for item in result):
                 self._display_image_list(step_name, prefix, result)
             else:
-                print(f"{prefix}[")
                 for item in result:
-                    self._recursive_log(step_name, item, f"{prefix}  ")
-                print(f"{prefix}]")
+                    self._recursive_log(step_name, item, prefix)
+                    print(f"{prefix}---")
         elif isinstance(result, dict):
-            print(f"{prefix}{{")
             for key, value in result.items():
                 if key in keys_to_avoid:
-                    self._recursive_log(step_name, value, f"{prefix}  ")
+                    self._recursive_log(step_name, value, prefix)
                 else:
-                    new_prefix = f"{prefix}  {key}: "
-                    print(f"{new_prefix}", end="")
+                    print(f"{prefix}{key}: ", end="")
                     self._recursive_log(step_name, value, "")
-            print(f"{prefix}}}")
+            print(f"{prefix}---")
         elif isinstance(result, tuple):
-            print(f"{prefix}(")
             for item in result:
-                self._recursive_log(step_name, item, f"{prefix}  ")
-            print(f"{prefix})")
+                self._recursive_log(step_name, item, prefix)
+            print(f"{prefix}---")
         else:
             print(f"{prefix}{result}")
 
