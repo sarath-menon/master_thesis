@@ -5,7 +5,7 @@ from functools import wraps
 
 # Cache to store recent predictions
 prediction_cache: Dict[str, Tuple[Any, float]] = {}
-CACHE_EXPIRATION_TIME = 300  # 5 minutes in seconds
+CACHE_EXPIRATION_TIME = 3000  # 50 minutes in seconds
 
 def cache_prediction(func: Callable):
     @wraps(func)

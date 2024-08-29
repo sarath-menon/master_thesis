@@ -18,7 +18,7 @@ class ImageProcessorBase:
             image.save(buffer, format="PNG")
             return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-    @cache_result(expiration_time=300)
+    @cache_result(expiration_time=3000)
     async def _get_image_response(self, base64_image: str, text_prompt: str, messages: list, json_mode: bool = False):
         msg = {
             "role": "user", 
