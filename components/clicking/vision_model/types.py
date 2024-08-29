@@ -7,7 +7,7 @@ from fastapi import Form, File, UploadFile, Depends
 from typing import NamedTuple, List, Dict
 from clicking.prompt_refinement.core import ProcessedSample
 from clicking.vision_model.bbox import BoundingBox
-
+from clicking.vision_model.mask import SegmentationMask
 class TaskType(str, Enum):
     LOCALIZATION_WITH_TEXT = "LOCALIZATION_WITH_TEXT"
     LOCALIZATION_WITH_TEXT_GROUNDED = "LOCALIZATION_WITH_TEXT_GROUNDED"
@@ -99,3 +99,7 @@ class AutoAnnotationResp(BaseModel):
 class LocalizationResults(NamedTuple):
     processed_samples: List[ProcessedSample]
     predictions: Dict[str, List[BoundingBox]] 
+
+class SegmentationResults(NamedTuple):
+    processed_samples: List[ProcessedSample]
+    predictions: Dict[str, List[SegmentationMask]] 
