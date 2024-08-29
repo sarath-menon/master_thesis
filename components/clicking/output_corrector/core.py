@@ -11,6 +11,8 @@ from clicking.vision_model.mask import SegmentationMask, SegmentationMode
 from components.clicking.prompt_manager.core import PromptManager
 import asyncio
 from components.clicking.common.image_utils import ImageProcessorBase
+from components.clicking.vision_model.visualization import overlay_bounding_box
+from components.clicking.vision_model.core import LocalizationResults, SegmentationResults
 
 # set API keys
 dotenv.load_dotenv()
@@ -37,16 +39,43 @@ class OutputCorrector(ImageProcessorBase):
         responses = await asyncio.gather(*tasks)
         return responses
 
-    async def verify_bboxes(self, screenshots: list[Image.Image], class_labels: list[str]):
-        base64_images = [self._pil_to_base64(screenshot) for screenshot in screenshots]
-        return await self._get_image_responses(base64_images, class_labels)
+    async def verify_bboxes_async(self, localization_results: LocalizationResults) -> LocalizationResults:
+        verification_results = {}
+        for sample in localization_results.processed_samples:
+            image_id = sample.image_id
+            screenshot = sample.image
+            bboxes = localization_results.predictions[image_id]
+            descriptions = [bbox.description for bbox in bboxes]
+            
+            images_overlayed = [overlay_bounding_box(screenshot.copy(), bbox) for bbox in bboxes]
+            base64_images = [self._pil_to_base64(img) for img in images_overlayed]
+            
+            responses = await self._get_image_responses(base64_images, descriptions)
+            verification_results[image_id] = responses
+        
+        return localization_results
 
-    async def verify_masks(self, screenshots: list[Image.Image], masks: list[SegmentationMask], class_labels: list[str]):
-        base64_images = []
-        for screenshot, mask, class_label in zip(screenshots, masks, class_labels):
-            extracted_area = mask.extract_area(screenshot, padding=10)
-            base64_images.append(self._pil_to_base64(extracted_area))
-        return await self._get_image_responses(base64_images, class_labels)
+    def verify_bboxes(self, localization_results: LocalizationResults) -> LocalizationResults:
+        return asyncio.run(self.verify_bboxes_async(localization_results))
+
+    async def verify_masks_async(self, localization_results: SegmentationResults) -> SegmentationResults:
+        verification_results = {}
+        for sample in localization_results.processed_samples:
+            image_id = sample.image_id
+            screenshot = sample.image
+            masks = localization_results.predictions[image_id]
+            class_labels = [mask.object_name for mask in masks]
+            
+            extracted_areas = [mask.extract_area(screenshot, padding=10) for mask in masks]
+            base64_images = [self._pil_to_base64(area) for area in extracted_areas]
+            
+            responses = await self._get_image_responses(base64_images, class_labels)
+            verification_results[image_id] = responses
+        
+        return verification_results
+
+    def verify_masks(self, localization_results: SegmentationResults) -> SegmentationResults:
+        return asyncio.run(self.verify_masks_async(localization_results))
 
 #%% Demo
 
@@ -81,7 +110,7 @@ if __name__ == "__main__":
 
     # Call process_prompts asynchronously
     async def process_batch_prompts():
-        results = await output_corrector.verify_bboxes(images, class_labels)
+        results = await output_corrector.verify_bboxes_async(images, class_labels)
         for result, class_label in zip(results, class_labels):
             print(f"Class label: {class_label}")
             print(f"Result: {result}")
@@ -102,7 +131,7 @@ if __name__ == "__main__":
 
     # Batch verify masks
     async def process_batch_masks():
-        results = await output_corrector.verify_masks(images, masks, mask_class_labels)
+        results = await output_corrector.verify_masks_async(images, masks, mask_class_labels)
         for result, class_label in zip(results, mask_class_labels):
             print(f"Mask class label: {class_label}")
             print(f"Mask verification result: {result}")
