@@ -31,9 +31,3 @@ def image_to_base64(img):
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 
-def image_to_http_file(image):
-    # Convert PIL Image to bytes and create a File object
-    image_byte_arr = io.BytesIO()
-    image.save(image_byte_arr, format='JPEG')
-    image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
-    return image_file

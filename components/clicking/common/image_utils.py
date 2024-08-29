@@ -6,6 +6,7 @@ import asyncio
 from typing import Dict, Tuple
 import json
 from .caching import cache_result
+from fastapi import File
 
 class ImageProcessorBase:
     def __init__(self, model: str = "gpt-4o", temperature: float = 0.0):
@@ -45,3 +46,11 @@ class ImageProcessorBase:
 
     def clear_cache(self):
         self._get_image_response.clear_cache()
+
+
+def image_to_http_file(image):
+    # Convert PIL Image to bytes and create a File object
+    image_byte_arr = io.BytesIO()
+    image.save(image_byte_arr, format='JPEG')
+    image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
+    return image_file

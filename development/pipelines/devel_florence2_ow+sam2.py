@@ -171,18 +171,8 @@ from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
 
 prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
 
-# # After segmentation
-# tracker.log_segmentation(f"image_{0}", segmentation_resp)
 
-# # Save results
-# tracker.save_results(f"experiment_results_{tracker.experiment_id}.json")
-
-# # Load results later
-# loaded_tracker = ExperimentTracker(images=[], class_labels=[], prediction_results=[])
-# loaded_tracker.load_results("experiment_results_20230501_120000.json")
-#%%
-
-# # Initialize W&B project
+#%% Initialize W&B project
 # wandb.init(project="clicking")
 
 # Load dataset
@@ -249,7 +239,7 @@ from clicking_client.types import File
 import io
 import json
 from clicking.visualization.bbox import BoundingBox
-from clicking.vision_model.utils import image_to_http_file
+from clicking.common.image_utils import image_to_http_file
 from clicking.visualization.core import show_localization_predictions
 
 for result in exp_tracker.results:
