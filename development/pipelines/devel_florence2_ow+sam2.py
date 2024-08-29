@@ -16,6 +16,9 @@ from clicking_client import Client
 from clicking_client.models import SetModelReq, BodyGetPrediction
 from clicking_client.api.default import set_model, get_prediction
 from tabulate import tabulate
+import pickle
+import os
+from datetime import datetime
 
 #%%
 
@@ -27,7 +30,6 @@ coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', '.
 #%%
 from clicking_client.types import File
 from io import BytesIO
-
 
 class SegmentationPrediction(NamedTuple):
     masks: List[Dict[str, Any]]  
@@ -108,7 +110,9 @@ import inspect
 import matplotlib.pyplot as plt
 from PIL import Image
 from typing import Type
+import pickle
 from tabulate import tabulate
+from datetime import datetime
 
 class Pipeline:
     def __init__(self):
@@ -116,15 +120,67 @@ class Pipeline:
         self.visualization_functions: Dict[Type, Callable] = {
             LocalizationResults: show_localization_predictions
         }
+        self.cache_dir = ".pipeline_cache"
+        os.makedirs(self.cache_dir, exist_ok=True)
+        self.cache_filename = self._generate_cache_filename()
+        self.cache_data = {}
 
-    def add_step(self, step_name: str, func: Callable, verbose: bool = True):
-        if self.steps and not self._are_types_compatible(self.steps[-1][1], func):
-            last_step_func = self.steps[-1][1]
-            last_step_output_type = inspect.signature(last_step_func).return_annotation.__name__
-            next_step_input_type = inspect.signature(func).parameters[next(iter(inspect.signature(func).parameters))].annotation.__name__
+    def _generate_cache_filename(self):
+        return os.path.join(self.cache_dir, f"pipeline_cache_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl")
 
-            raise TypeError(f"Output type of {last_step_func.__name__} ({last_step_output_type}) is not compatible with input type of {func.__name__} ({next_step_input_type})")
-        self.steps.append((step_name, func, verbose))
+    def _save_cache(self, step_name: str, data: Any):
+        self.cache_data[step_name] = data
+        with open(self.cache_filename, 'wb') as f:
+            pickle.dump(self.cache_data, f)
+
+    def _load_cache(self, step_name: str) -> Any:
+        if not os.path.exists(self.cache_filename):
+            return None
+        
+        try:
+            with open(self.cache_filename, 'rb') as f:
+                self.cache_data = pickle.load(f)
+            return self.cache_data.get(step_name)
+        except (EOFError, pickle.UnpicklingError):
+            print(f"Warning: Cache file is corrupted. Ignoring cache.")
+            os.remove(self.cache_filename)
+            self.cache_data = {}
+        return None
+
+    def run(self, initial_input: Any) -> Any:
+        result = initial_input
+        for step_name, step, verbose in self.steps:
+            cache = self._load_cache(step_name)
+            if cache is not None:
+                print(f"Using cached input for step: {step_name}")
+                result = cache
+            else:
+                result = step(result)
+                self._save_cache(step_name, result)
+            
+            if verbose:
+                self._log_step_result(step_name, result)
+        return result
+
+    def run_from_step(self, start_step_name: str):
+        start_index = next((i for i, (name, _, _) in enumerate(self.steps) if name == start_step_name), None)
+        if start_index is None:
+            raise ValueError(f"Step '{start_step_name}' not found in the pipeline")
+
+        prev_step_name = self.steps[start_index - 1][0] if start_index > 0 else None
+        initial_input = self._load_cache(prev_step_name) if prev_step_name else None
+
+        if initial_input is None:
+            raise ValueError(f"No cached input found for step: {start_step_name}")
+
+        result = initial_input
+        for step_name, step, verbose in self.steps[start_index:]:
+            result = step(result)
+            self._save_cache(step_name, result)
+            
+            if verbose:
+                self._log_step_result(step_name, result)
+        return result
 
     def _are_types_compatible(self, prev_func: Callable, next_func: Callable) -> bool:
         prev_return_type = inspect.signature(prev_func).return_annotation
@@ -156,14 +212,6 @@ class Pipeline:
             return all(self._are_types_compatible(arg1, arg2) for arg1, arg2 in zip(args1, args2))
         
         return False
-
-    def run(self, initial_input: Any) -> Any:
-        result = initial_input
-        for step_name, step, verbose in self.steps:
-            result = step(result)
-            if verbose:
-                self._log_step_result(step_name, result)
-        return result
 
     def _log_step_result(self, step_name: str, result: Any):
         print(f"\n--- Step: {step_name} ---")
@@ -276,6 +324,15 @@ class Pipeline:
         print("Pipeline Steps:")
         print(tabulate(table_data, headers=headers, tablefmt="grid"))
 
+    def add_step(self, step_name: str, func: Callable, verbose: bool = True):
+        if self.steps and not self._are_types_compatible(self.steps[-1][1], func):
+            last_step_func = self.steps[-1][1]
+            last_step_output_type = inspect.signature(last_step_func).return_annotation.__name__
+            next_step_input_type = inspect.signature(func).parameters[next(iter(inspect.signature(func).parameters))].annotation.__name__
+
+            raise TypeError(f"Output type of {last_step_func.__name__} ({last_step_output_type}) is not compatible with input type of {func.__name__} ({next_step_input_type})")
+        self.steps.append((step_name, func, verbose))
+
 #%%
 import nest_asyncio
 nest_asyncio.apply()
@@ -293,9 +350,11 @@ pipeline.print_pipeline()
 # Perform static analysis before running the pipeline
 pipeline.static_analysis()
 
-# image_ids = [22, 31, 34]
-# result = pipeline.run(image_ids)
-# print("\nFinal result:")
-# print(result)
+# Run the entire pipeline
+image_ids = [22, 31, 34]
+result = pipeline.run(image_ids)
+
 #%%
 
+# Later, run from a specific step
+result = pipeline.run_from_step("Process Prompts")

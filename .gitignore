@@ -10,3 +10,4 @@
 /checkpoints
 /dist
 /wandb
+/.pipeline_cache
