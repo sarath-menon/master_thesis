@@ -6,13 +6,17 @@ import numpy as np
 from pycocotools import mask as mask_utils
 from PIL import Image
 import matplotlib.pyplot as plt
+from typing import Optional
+
 #%%
 class SegmentationMode(Enum):
     BINARY_MASK = 1
     COCO_RLE = 2
 
 class SegmentationMask:
-    def __init__(self, mask: Union[np.ndarray, dict], mode: SegmentationMode = SegmentationMode.BINARY_MASK):
+    def __init__(self, mask: Union[np.ndarray, dict], mode: SegmentationMode = SegmentationMode.BINARY_MASK,
+                 object_name: Optional[str] = None, 
+                 description: Optional[str] = None):
         if mode == SegmentationMode.BINARY_MASK:
             self._binary_mask = mask.astype(bool)
             self._coco_rle = mask_utils.encode(np.asfortranarray(self._binary_mask.astype(np.uint8)))
@@ -21,6 +25,9 @@ class SegmentationMask:
             self._binary_mask = mask_utils.decode(self._coco_rle).astype(bool)
         else:
             raise ValueError("Invalid segmentation mask mode")
+
+        self.object_name = object_name
+        self.description = description
 
     def get(self, mode: SegmentationMode) -> Union[np.ndarray, dict]:
         if mode == SegmentationMode.BINARY_MASK:

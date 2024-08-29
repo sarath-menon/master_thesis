@@ -37,82 +37,6 @@ prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
 
 coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', './datasets/label_studio_gen/coco_dataset/result.json')
 #%%
-from clicking_client.types import File
-from io import BytesIO
-
-class SegmentationPrediction(NamedTuple):
-    masks: List[Dict[str, Any]]  
-
-class SegmentationResults(NamedTuple):
-    processed_samples: List[ProcessedSample]
-    localization_results: Dict[str, Dict[str, LocalizationResults]]
-    segmentation_results: Dict[str, Dict[str, SegmentationPrediction]]
-
-def image_to_http_file(image):
-    # Convert PIL Image to bytes and create a File object
-    image_byte_arr = BytesIO()
-    image.save(image_byte_arr, format='JPEG')
-    image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
-    return image_file
-
-class LocalizationProcessor:
-    def __init__(self, client: Client):
-        self.client = client
-
-    def get_localization_results(self, processed_result: ProcessedResult) -> LocalizationResults:
-        set_model.sync(client=self.client, body=SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB))
-        
-        all_predictions = {}
-        for sample in processed_result.samples:
-            image_file = image_to_http_file(sample.image)
-            image_id = sample.image_id  # Assuming image_id is added to ProcessedSample
-
-            all_predictions[image_id] = []
-            for obj in sample.description["objects"]:
-                request = BodyGetPrediction(
-                    image=image_file,
-                    task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
-                    input_text=obj["description"]
-                )
-                response = get_prediction.sync(client=self.client, body=request)
-                bboxes = [BoundingBox(bbox, mode=BBoxMode.XYWH, object_name=obj["name"], description=obj["description"]) 
-                          for bbox in response.prediction.bboxes]
-                all_predictions[image_id].extend(bboxes)
-        
-        return LocalizationResults(
-            processed_samples=processed_result.samples,
-            predictions=all_predictions
-        )
-
-class SegmentationProcessor:
-    def __init__(self, client: Client):
-        self.client = client
-
-    def get_segmentation_results(self, data: LocalizationResults) -> SegmentationResults:
-        set_model.sync(client=self.client, body=SetModelReq(name="sam2", variant="sam2_hiera_tiny", task=TaskType.SEGMENTATION_WITH_BBOX))
-        
-        segmentation_results = {}
-        for sample in data.processed_samples:
-            image_file = image_to_http_file(sample.image)
-            image_filename = sample.image.filename if hasattr(sample.image, 'filename') else f"image_{id(sample.image)}"
-            seg_predictions = {}
-            for obj_name, loc_result in data.localization_results[image_filename].items():
-                request = BodyGetPrediction(
-                    image=image_file,
-                    task=TaskType.SEGMENTATION_WITH_BBOX,
-                    input_boxes=[bbox.to_xywh() for bbox in loc_result.bboxes]
-                )
-                response = get_prediction.sync(client=self.client, body=request)
-                seg_predictions[obj_name] = SegmentationPrediction(masks=response.prediction.masks)
-            segmentation_results[image_filename] = seg_predictions
-        
-        return SegmentationResults(
-            processed_samples=data.processed_samples,
-            localization_results=data.localization_results,
-            segmentation_results=segmentation_results
-        )
-
-#%%
 
 from typing import Callable, List, Any, Dict, Tuple, TypedDict, get_origin, get_args
 import inspect
@@ -411,7 +335,103 @@ class Pipeline:
 
     def add_parallel_steps(self, *steps: Tuple[str, Callable, bool]):
         self.steps.append(list(steps))
+#%%
+from clicking_client.types import File
+from io import BytesIO
+import json
 
+# class SegmentationPrediction(NamedTuple):
+#     masks: List[Dict[str, Any]]  
+
+# class SegmentationResults(NamedTuple):
+#     processed_samples: List[ProcessedSample]
+#     localization_results: Dict[str, Dict[str, LocalizationResults]]
+#     segmentation_results: Dict[str, Dict[str, SegmentationPrediction]]
+
+
+class SegmentationResults(NamedTuple):
+    processed_samples: List[ProcessedSample]
+    predictions: Dict[str, List[SegmentationMask]] 
+
+def image_to_http_file(image):
+    # Convert PIL Image to bytes and create a File object
+    image_byte_arr = BytesIO()
+    image.save(image_byte_arr, format='JPEG')
+    image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
+    return image_file
+
+class LocalizationProcessor:
+    def __init__(self, client: Client):
+        self.client = client
+
+    def get_localization_results(self, processed_result: ProcessedResult) -> LocalizationResults:
+        set_model.sync(client=self.client, body=SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB))
+        
+        all_predictions = {}
+        for sample in processed_result.samples:
+            image_file = image_to_http_file(sample.image)
+            image_id = sample.image_id  # Assuming image_id is added to ProcessedSample
+
+            all_predictions[image_id] = []
+            for obj in sample.description["objects"]:
+                request = BodyGetPrediction(
+                    image=image_file,
+                    task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
+                    input_text=obj["description"]
+                )
+                response = get_prediction.sync(client=self.client, body=request)
+                bboxes = [BoundingBox(bbox, mode=BBoxMode.XYWH, object_name=obj["name"], description=obj["description"]) 
+                          for bbox in response.prediction.bboxes]
+                all_predictions[image_id].extend(bboxes)
+        
+        return LocalizationResults(
+            processed_samples=processed_result.samples,
+            predictions=all_predictions
+        )
+
+class SegmentationProcessor:
+    def __init__(self, client: Client):
+        self.client = client
+
+    def get_segmentation_results(self, data: LocalizationResults) -> SegmentationResults:
+        set_model.sync(client=self.client, body=SetModelReq(name="sam2", variant="sam2_hiera_tiny", task=TaskType.SEGMENTATION_WITH_BBOX))
+        
+        segmentation_results = {}
+        for sample in data.processed_samples:
+            image_file = image_to_http_file(sample.image)
+            image_id = sample.image_id
+            seg_predictions = []
+            for bbox in data.predictions[image_id]:
+                request = BodyGetPrediction(
+                    image=image_file,
+                    task=TaskType.SEGMENTATION_WITH_BBOX,
+                    input_boxes=json.dumps([bbox.get(mode=BBoxMode.XYWH)])  # Ensure it's a JSON string
+                )
+                try:
+                    response = get_prediction.sync(client=self.client, body=request)
+                    if response is None or response.prediction is None:
+                        print(f"Warning: No prediction received for image {image_id}, bbox {bbox}")
+                        continue
+                    
+                    for mask_data in response.prediction.masks:
+                        print(mask_data)
+                        seg_mask = SegmentationMask(
+                            mask= mask_data,
+                            mode=SegmentationMode.COCO_RLE,
+                            object_name=bbox.object_name,
+                            description=bbox.description
+                        )
+                        seg_predictions.append(seg_mask)
+                except Exception as e:
+                    print(f"Error processing segmentation for image {image_id}, bbox {bbox}: {str(e)}")
+                    continue
+            
+            segmentation_results[image_id] = seg_predictions
+        
+        return SegmentationResults(
+            processed_samples=data.processed_samples,
+            predictions=segmentation_results
+        )
 #%%
 import nest_asyncio
 nest_asyncio.apply()
@@ -422,10 +442,13 @@ segmentation_processor = SegmentationProcessor(client)
 
 pipeline.add_step("Sample Dataset", coco_dataset.sample_dataset, verbose=True)
 pipeline.add_step("Process Prompts", prompt_refiner.process_prompts, verbose=True)
-pipeline.add_parallel_steps(
-    ("Get Localization Results 1", localization_processor.get_localization_results, True),
-    ("Get Localization Results 2", localization_processor.get_localization_results, True),
-)
+pipeline.add_step("Get Localization Results", localization_processor.get_localization_results, verbose=True)
+pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results, verbose=True)
+
+# pipeline.add_parallel_steps(
+#     ("Get Localization Results 1", localization_processor.get_localization_results, True),
+#     ("Get Localization Results 2", localization_processor.get_localization_results, True),
+# )
 
 # Print the pipeline structure
 pipeline.print_pipeline()
@@ -440,4 +463,5 @@ result = asyncio.run(pipeline.run(image_ids))
 #%%
 
 # Later, run from a specific step
-result = asyncio.run(pipeline.run_from_step("Get Localization Results"))
+result = asyncio.run(pipeline.run_from_step("Get Segmentation Results"))
+#%%
