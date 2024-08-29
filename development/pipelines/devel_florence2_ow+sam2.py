@@ -17,20 +17,6 @@ from clicking_client.models import SetModelReq, BodyGetPrediction
 from clicking_client.api.default import set_model, get_prediction
 
 
-class LocalizationPrediction(NamedTuple):
-    bboxes: List[BoundingBox]
-
-class SegmentationPrediction(NamedTuple):
-    masks: List[Dict[str, Any]]  
-
-class LocalizationResults(NamedTuple):
-    processed_samples: List[ProcessedSample]
-    localization_results: Dict[str, Dict[str, LocalizationPrediction]]
-
-class SegmentationResults(NamedTuple):
-    processed_samples: List[ProcessedSample]
-    localization_results: Dict[str, Dict[str, LocalizationPrediction]]
-    segmentation_results: Dict[str, Dict[str, SegmentationPrediction]]
 
 #%%
 
@@ -43,6 +29,22 @@ coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', '.
 
 from clicking_client.types import File
 from io import BytesIO
+
+class LocalizationPrediction(NamedTuple):
+    bboxes: List[BoundingBox]
+    object_name: str
+
+class LocalizationResults(NamedTuple):
+    processed_samples: List[ProcessedSample]
+    predictions: List[LocalizationPrediction]
+
+class SegmentationPrediction(NamedTuple):
+    masks: List[Dict[str, Any]]  
+
+class SegmentationResults(NamedTuple):
+    processed_samples: List[ProcessedSample]
+    localization_results: Dict[str, Dict[str, LocalizationPrediction]]
+    segmentation_results: Dict[str, Dict[str, SegmentationPrediction]]
 
 def image_to_http_file(image):
     # Convert PIL Image to bytes and create a File object
@@ -58,10 +60,9 @@ class LocalizationProcessor:
     def get_localization_results(self, processed_result: ProcessedResult) -> LocalizationResults:
         set_model.sync(client=self.client, body=SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB))
         
-        localization_results = {}
+        all_predictions = []
         for sample in processed_result.samples:
             image_file = image_to_http_file(sample.image)
-            predictions = {}
 
             for obj in sample.description["objects"]:
                 request = BodyGetPrediction(
@@ -71,14 +72,11 @@ class LocalizationProcessor:
                 )
                 response = get_prediction.sync(client=self.client, body=request)
                 bboxes = [BoundingBox(bbox, mode=BBoxMode.XYWH) for bbox in response.prediction.bboxes]
-                predictions[obj["name"]] = LocalizationPrediction(bboxes=bboxes)
-            
-            image_filename = sample.image.filename if hasattr(sample.image, 'filename') else f"image_{id(sample.image)}"
-            localization_results[image_filename] = predictions
+                all_predictions.append(LocalizationPrediction(bboxes=bboxes, object_name=obj["name"]))
         
         return LocalizationResults(
             processed_samples=processed_result.samples,
-            localization_results=localization_results
+            predictions=all_predictions
         )
 
 class SegmentationProcessor:
