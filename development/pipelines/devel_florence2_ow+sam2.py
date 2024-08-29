@@ -30,20 +30,16 @@ coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', '.
 from clicking_client.types import File
 from io import BytesIO
 
-class LocalizationPrediction(NamedTuple):
-    bboxes: List[BoundingBox]
-    object_name: str
-
 class LocalizationResults(NamedTuple):
     processed_samples: List[ProcessedSample]
-    predictions: List[LocalizationPrediction]
+    predictions: List[BoundingBox]
 
 class SegmentationPrediction(NamedTuple):
     masks: List[Dict[str, Any]]  
 
 class SegmentationResults(NamedTuple):
     processed_samples: List[ProcessedSample]
-    localization_results: Dict[str, Dict[str, LocalizationPrediction]]
+    localization_results: Dict[str, Dict[str, LocalizationResults]]
     segmentation_results: Dict[str, Dict[str, SegmentationPrediction]]
 
 def image_to_http_file(image):
@@ -71,8 +67,9 @@ class LocalizationProcessor:
                     input_text=obj["description"]
                 )
                 response = get_prediction.sync(client=self.client, body=request)
-                bboxes = [BoundingBox(bbox, mode=BBoxMode.XYWH) for bbox in response.prediction.bboxes]
-                all_predictions.append(LocalizationPrediction(bboxes=bboxes, object_name=obj["name"]))
+                bboxes = [BoundingBox(bbox, mode=BBoxMode.XYWH, object_name=obj["name"], description=obj["description"]) 
+                          for bbox in response.prediction.bboxes]
+                all_predictions.extend(bboxes)
         
         return LocalizationResults(
             processed_samples=processed_result.samples,

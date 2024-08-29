@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Tuple, List, Union
+from typing import Tuple, List, Union, Optional
 
 class BBoxMode(Enum):
     XYWH = 1
@@ -9,7 +9,10 @@ class BBoxMode(Enum):
     POLYGON = 5
 
 class BoundingBox:
-    def __init__(self, bbox: Union[Tuple[float, float, float, float], List[Tuple[float, float]]], mode: BBoxMode = BBoxMode.XYXY):
+    def __init__(self, bbox: Union[Tuple[float, float, float, float], List[Tuple[float, float]]], 
+                 mode: BBoxMode = BBoxMode.XYXY, 
+                 object_name: Optional[str] = None, 
+                 description: Optional[str] = None):
         if mode == BBoxMode.XYWH:
             self._x1, self._y1, w, h = bbox
             self._x2, self._y2 = self._x1 + w, self._y1 + h
@@ -28,6 +31,8 @@ class BoundingBox:
             self._y2 = max(p[1] for p in bbox)
         else:
             raise ValueError("Invalid bounding box mode")
+        self.object_name = object_name
+        self.description = description
 
     def get(self, mode: BBoxMode) -> Union[Tuple[float, float, float, float], List[Tuple[float, float]]]:
         if mode == BBoxMode.XYWH:
@@ -46,3 +51,6 @@ class BoundingBox:
             ]
         else:
             raise ValueError("Invalid bounding box mode")
+
+    def __repr__(self):
+        return f"BoundingBox(xyxy={self.get(BBoxMode.XYXY)}, object_name={self.object_name}, description={self.description})"
