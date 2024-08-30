@@ -185,7 +185,7 @@ LABEL_STUDIO_EXPORTED_FILE = "./datasets/label_studio_gen/label_studio_tasks_exp
 LABEL_STUDIO_EXPORTED_DATASET = "./datasets/label_studio_gen/coco_dataset"
 
 # Set the number of samples to be shown
-num_samples = 10
+num_samples = 2
 
 tasks_file = os.path.join(LABEL_STUDIO_EXPORTED_FILE)
 with open(tasks_file, 'r') as file:
@@ -213,3 +213,46 @@ filtered_results = SegmentationResults(
 show_segmentation_predictions(filtered_results)
 
 # %%
+import json
+from typing import Dict, List
+import base64
+
+def save_annotations_to_json(segmentation_results: SegmentationResults, output_file: str):
+    data = []
+    
+    for sample in segmentation_results.processed_samples:
+        image_id = sample.image_id
+        image_path = sample.image.filename  # Assuming the PIL Image object has a filename attribute
+        
+        annotations = []
+        for mask in segmentation_results.predictions[image_id]:
+            rle = mask.get(mode=SegmentationMode.COCO_RLE)
+            # Convert RLE to base64 string
+            rle_base64 = base64.b64encode(rle['counts']).decode('utf-8')
+            annotation = {
+                "segmentation": {
+                    "counts": rle_base64,
+                    "size": rle['size']
+                },
+                "object_name": mask.object_name,
+                "description": mask.description
+            }
+            annotations.append(annotation)
+        
+        image_data = {
+            "image_id": image_id,
+            "image_path": image_path,
+            "annotations": annotations
+        }
+        data.append(image_data)
+    
+    with open(output_file, 'w') as f:
+        json.dump(data, f, indent=2)
+    
+    print(f"Annotations saved to {output_file}")
+
+# After creating filtered_results, add:
+output_file = "./datasets/label_studio_gen/annotations.json"
+save_annotations_to_json(filtered_results, output_file)
+
+
