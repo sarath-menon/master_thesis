@@ -5,7 +5,7 @@ from PIL import Image
 import numpy as np
 from fastapi import Form, File, UploadFile, Depends
 from typing import NamedTuple, List, Dict
-from clicking.prompt_refinement.core import ProcessedSample
+from clicking.prompt_refinement.core import ImageWithDescriptions
 from clicking.vision_model.bbox import BoundingBox
 from clicking.vision_model.mask import SegmentationMask
 
@@ -100,9 +100,9 @@ class AutoAnnotationResp(BaseModel):
     inference_time: Optional[float] = 0.0
 
 class LocalizationResults(NamedTuple):
-    processed_samples: List[ProcessedSample]
+    processed_samples: List[ImageWithDescriptions]
     predictions: Dict[str, List[BoundingBox]] 
 
 class SegmentationResults(NamedTuple):
-    processed_samples: List[ProcessedSample]
+    processed_samples: List[ImageWithDescriptions]
     predictions: Dict[str, List[SegmentationMask]]

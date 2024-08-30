@@ -2,7 +2,7 @@ from clicking.output_corrector import core
 from clicking.vision_model.types import LocalizationResults, SegmentationResults
 from clicking.vision_model.bbox import BoundingBox, BBoxMode
 from clicking.vision_model.mask import SegmentationMask, SegmentationMode
-from clicking.prompt_refinement.types import ProcessedSample, SinglePromptResponse, ObjectDescription
+from clicking.prompt_refinement.types import ImageWithDescriptions, SinglePromptResponse, ObjectDescription
 from PIL import Image
 import numpy as np
 
@@ -12,7 +12,7 @@ def test_verify_bboxes():
     
     # Create mock data
     processed_samples = [
-        ProcessedSample(
+        ImageWithDescriptions(
             image=Image.open("./assets/bus.jpg"),
             image_id="test_image_1",
             description=SinglePromptResponse(objects=[
@@ -48,7 +48,7 @@ def test_verify_bboxes():
 #     
 #     # Create mock data
 #     processed_samples = [
-#         ProcessedSample(
+#         ImageWithDescriptions(
 #             image=Image.new('RGB', (100, 100)),
 #             image_id="test_image_1",
 #             description=SinglePromptResponse(objects=[

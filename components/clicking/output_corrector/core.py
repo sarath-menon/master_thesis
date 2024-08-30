@@ -82,7 +82,7 @@ class OutputCorrector(ImageProcessorBase):
 # Demo code for verify_bboxes_async
 async def demo_verify_bboxes_async():
     # Create a sample LocalizationResults object
-    from components.clicking.vision_model.core import ProcessedSample, BoundingBox, BBoxMode
+    from components.clicking.vision_model.core import ImageWithDescriptions, BoundingBox, BBoxMode
     from PIL import Image
     import numpy as np
 
@@ -93,8 +93,13 @@ async def demo_verify_bboxes_async():
     bbox1 = BoundingBox([10, 10, 50, 50], mode=BBoxMode.XYWH, description="Button")
     bbox2 = BoundingBox([50, 50, 40, 20], mode=BBoxMode.XYWH, description="Text Input")
     
-    # Create a sample ProcessedSample
-    processed_sample = ProcessedSample(image_id="sample1", image=sample_image)
+    # Create a sample ImageWithDescriptions
+    processed_sample = ImageWithDescriptions(
+        image_id="sample1",
+        image=sample_image,
+        object_name="Sample Object",
+        description="A sample processed image"
+    )
     
     # Create a sample LocalizationResults object
     localization_results = LocalizationResults(
@@ -103,7 +108,7 @@ async def demo_verify_bboxes_async():
     )
     
     # Initialize OutputCorrector
-    corrector = OutputCorrector(prompt_path="path/to/your/prompt/file.json")
+    corrector = OutputCorrector(prompt_path="./prompts/output_corrector.md")
     
     # Call verify_bboxes_async
     verified_results = await corrector.verify_bboxes_async(localization_results)

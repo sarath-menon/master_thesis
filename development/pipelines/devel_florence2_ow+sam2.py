@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from typing import List, Dict, Tuple, Any, NamedTuple
 from clicking.pipeline.core import Pipeline
 from clicking.dataset_creator.core import CocoDataset, DatasetSample
-from clicking.prompt_refinement.core import PromptRefiner, PromptMode, ProcessedPrompts, ProcessedSample
+from clicking.prompt_refinement.core import PromptRefiner, PromptMode, ProcessedPrompts, ImageWithDescriptions
 from clicking.vision_model.types import TaskType, LocalizationResults, SegmentationResults
 from clicking.vision_model.bbox import BoundingBox, BBoxMode
 from clicking.vision_model.mask import SegmentationMask, SegmentationMode
@@ -126,7 +126,7 @@ class Pipeline:
                 self._save_cache()
             
             if verbose:
-                self._log_step_result(step_name, state, log_var)
+                self._log_step_result(step_name, getattr(state, log_var), log_var)
         
         return state
 
@@ -143,15 +143,11 @@ class Pipeline:
     def _log_step_result(self, step_name: str, result: Any, log_var: str):
         print(f"\n--- Step: {step_name} ---")
         print(f"Logging variable: {log_var}")
+        self._recursive_log(step_name, result)
         
-        if hasattr(result, log_var):
-            self._recursive_log(step_name, getattr(result, log_var))
-        else:
-            print(f"Warning: {log_var} not found in the state object.")
-        
-        result_type = type(getattr(result, log_var, None))
+        result_type = type(result)
         if result_type in self.visualization_functions:
-            self.visualization_functions[result_type](getattr(result, log_var))
+            self.visualization_functions[result_type](result)
 
     def _recursive_log(self, step_name: str, result: Any, prefix: str = ""):
         if isinstance(result, Image.Image):

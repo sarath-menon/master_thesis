@@ -33,7 +33,7 @@ class PromptRefiner(ImageProcessorBase):
         results = await asyncio.gather(*tasks)
         
         processed_samples = [
-            ProcessedSample(
+            ImageWithDescriptions(
                 image=image_sample.image,
                 image_id=image_sample.image_id,
                 object_name=image_sample.object_name,

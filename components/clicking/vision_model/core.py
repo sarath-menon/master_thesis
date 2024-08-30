@@ -98,9 +98,9 @@ class VisionModel:
         return response
 
 class LocalizationResults(NamedTuple):
-    processed_samples: List[ProcessedSample]
+    processed_samples: List[ImageWithDescriptions]
     predictions: Dict[str, List[BoundingBox]]
 
 class SegmentationResults(NamedTuple):
-    processed_samples: List[ProcessedSample]
+    processed_samples: List[ImageWithDescriptions]
     predictions: Dict[str, List[SegmentationMask]]

@@ -15,14 +15,14 @@ class ObjectDescription(TypedDict):
 class SinglePromptResponse(TypedDict):
     objects: List[ObjectDescription]
 
-class ProcessedSample(NamedTuple):
+class ImageWithDescriptions(NamedTuple):
     image: Image.Image
     image_id: str
     object_name: str
-    description: SinglePromptResponse
+    description: Optional[SinglePromptResponse] = None
 
 class ProcessedPrompts(NamedTuple):
-    samples: List[ProcessedSample]
+    samples: List[ImageWithDescriptions]
 
 class TemplateValues(TypedDict, total=False):
     input_description: str
