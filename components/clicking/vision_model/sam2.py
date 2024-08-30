@@ -11,6 +11,7 @@ from pycocotools import mask as mask_utils
 from typing import Dict, Any
 from clicking.vision_model.utils import coco_encode_rle
 import io
+import json
 
 class SAM2:
     variant_to_id = {
@@ -81,14 +82,21 @@ class SAM2:
         return SAM2ImagePredictor.from_pretrained(self.variant_to_id[variant], device=self.device)
         
 
-    def predict(self, req: PredictionReq) -> PredictionResp:
+    async def predict(self, req: PredictionReq) -> PredictionResp:
         if req.task not in self.task_to_method:
             raise ValueError(f"Invalid task type: {req.task}")
         elif req.image is None:
             raise ValueError("Image is required for any vision task")
         
         predict_method = self.task_to_method[req.task]
-        response = predict_method(req)
+        
+
+        #Convert to a PIL imagex
+        image_pil = await req.image.read()
+        image_pil = Image.open(io.BytesIO(image_pil))
+
+        response = await predict_method(image_pil, req)
+
         return PredictionResp(prediction=response)
 
     # Modify existing methods to return results instead of showing them
@@ -105,18 +113,18 @@ class SAM2:
         sorted_ind = np.argsort(scores)[::-1]
         return masks[sorted_ind], scores[sorted_ind]
 
-    def predict_with_bbox(self, req: PredictionReq) -> SegmentationResp:
-        if req.input_box is None:
+    async def predict_with_bbox(self, image: Image, req: PredictionReq) -> SegmentationResp:
+        if req.input_boxes is None:
             raise ValueError("Bbox is required for bbox task")
 
-        # Convert input_box to numpy array
-        input_box = np.array(req.input_box)
+        # convert input_boxes from json to numpy array
+        input_boxes = np.array(json.loads(req.input_boxes))
 
-        self.predictor.set_image(req.image)
+        self.predictor.set_image(image)
         masks, scores, _ = self.predictor.predict(
             point_coords=None,
             point_labels=None,
-            box=input_box[None, :],
+            box=input_boxes[None, :],
             multimask_output=False,
         )
 

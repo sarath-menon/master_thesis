@@ -410,21 +410,24 @@ class SegmentationProcessor:
         for sample in data.processed_samples:
             image_file = image_to_http_file(sample.image)
             image_id = sample.image_id
+
             seg_predictions = []
             for bbox in data.predictions[image_id]:
                 request = BodyGetPrediction(
-                    image=image_file,
-                    task=TaskType.SEGMENTATION_WITH_BBOX,
-                    input_boxes=json.dumps(bbox.get(mode=BBoxMode.XYWH))  # Ensure it's a JSON string
+                    image=image_file
                 )
                 try:
-                    response = get_prediction.sync(client=self.client, body=request)
+                    response = get_prediction.sync(client=self.client,
+                        body=request,
+                        task=TaskType.SEGMENTATION_WITH_BBOX,
+                        input_boxes=json.dumps(bbox.get(mode=BBoxMode.XYWH))  
+                        )
+
                     if response is None or response.prediction is None:
                         print(f"Warning: No prediction received for image {image_id}, bbox {bbox}")
                         continue
                     
                     for mask_data in response.prediction.masks:
-                        print(f"mask_data: {mask_data}")
                         seg_mask = SegmentationMask(
                             mask= mask_data,
                             mode=SegmentationMode.COCO_RLE,
@@ -456,7 +459,7 @@ pipeline.add_step("Sample Dataset", coco_dataset.sample_dataset, verbose=True)
 pipeline.add_step("Process Prompts", prompt_refiner.process_prompts, verbose=True)
 pipeline.add_step("Get Localization Results", localization_processor.get_localization_results, verbose=True)
 pipeline.add_step("Verify Localization Results", output_corrector.verify_bboxes, verbose=True)
-# pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results, verbose=True)
+pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results, verbose=True)
 
 # Print the pipeline structure
 pipeline.print_pipeline()
@@ -470,11 +473,12 @@ result = asyncio.run(pipeline.run(image_ids))
 
 #%%
 
-# You can also keep the same step name if you want
-# pipeline.replace_step("Get Localization Results", new_localization_function)
+# # You can also keep the same step name if you want
+# segmentation_processor = SegmentationProcessor(client)
+# pipeline.replace_step("Get Localization Results", segmentation_processor.get_segmentation_results)
 
 # Later, run from a specific step
-result = asyncio.run(pipeline.run_from_step("Get Localization Results"))
+result = asyncio.run(pipeline.run_from_step("Get Segmentation Results"))
 
 #%%
 from clicking.vision_model.utils import get_mask_centroid
