@@ -9,7 +9,7 @@ import torch
 from dataclasses import dataclass
 from clicking.vision_model.types import TaskType
 from clicking.vision_model.types import TaskType, PredictionReq, SegmentationResp, PredictionResp, LocalizationResp
-
+import io
 #%%
 class Florence2():
     variant_to_id = {
@@ -67,7 +67,7 @@ class Florence2():
                 processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
             return model, processor
 
-    def predict(self, req: PredictionReq) -> PredictionResp:
+    async def predict(self, req: PredictionReq) -> PredictionResp:
         if req.task not in self.task_prompts_map:
             raise ValueError(f"Invalid task type: {req.task}")
         elif req.image is None:
@@ -75,8 +75,11 @@ class Florence2():
         elif req.input_text is None:
             raise ValueError("Text input is required for florence2 vision tasks")
 
-        # task_prompts = self.task_prompts_map[req.task]
-        response = self.run_inference(req.image, req.task, req.input_text)
+        #Convert to a PIL imagex
+        image_pil = await req.image.read()
+        image_pil = Image.open(io.BytesIO(image_pil))
+
+        response = self.run_inference(image_pil, req.task, req.input_text)
         return PredictionResp(prediction=response)
 
     def run_inference(self, image, task, text_input=None) -> LocalizationResp:

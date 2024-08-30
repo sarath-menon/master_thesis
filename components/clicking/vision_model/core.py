@@ -80,7 +80,7 @@ class VisionModel:
             raise HTTPException(status_code=404, detail=f"{req.task.name.capitalize()} model not set")
 
         start_time = time.time()
-        response = model_handle.predict(req)
+        response = await model_handle.predict(req)
         response.inference_time = time.time() - start_time
 
         return response

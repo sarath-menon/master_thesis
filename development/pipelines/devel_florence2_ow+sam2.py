@@ -383,10 +383,13 @@ class LocalizationProcessor:
             for obj in sample.description["objects"]:
                 request = BodyGetPrediction(
                     image=image_file,
+                )
+                response = get_prediction.sync(client=self.client,
+                    body=request,
                     task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
                     input_text=obj["description"]
                 )
-                response = get_prediction.sync(client=self.client, body=request)
+
                 bboxes = [BoundingBox(bbox, mode=BBoxMode.XYWH, object_name=obj["name"], description=obj["description"]) 
                           for bbox in response.prediction.bboxes]
                 all_predictions[image_id].extend(bboxes)
@@ -453,7 +456,7 @@ pipeline.add_step("Sample Dataset", coco_dataset.sample_dataset, verbose=True)
 pipeline.add_step("Process Prompts", prompt_refiner.process_prompts, verbose=True)
 pipeline.add_step("Get Localization Results", localization_processor.get_localization_results, verbose=True)
 pipeline.add_step("Verify Localization Results", output_corrector.verify_bboxes, verbose=True)
-pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results, verbose=True)
+# pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results, verbose=True)
 
 # Print the pipeline structure
 pipeline.print_pipeline()

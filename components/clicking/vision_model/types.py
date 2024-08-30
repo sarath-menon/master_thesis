@@ -57,12 +57,14 @@ class SegmentationResp(BaseModel):
     scores: Optional[list] = None
 
 class PredictionReq(BaseModel):
-    image: Image.Image
+    image: UploadFile = Field(..., description="Uploaded image file")
     task: TaskType
-    input_point: Optional[list] = None
-    input_label: Optional[list] = None
-    input_box: Optional[list] = None
-    input_text: Optional[str] = None
+    input_boxes: Optional[str] = Field(None)
+    input_point: Optional[str] = Field(None)
+    input_label: Optional[str] = Field(None)
+    input_text: Optional[str] = Field(None)
+    enable_cache: Optional[bool] = Field(True)
+    reset_cache: Optional[bool] = Field(False)
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
