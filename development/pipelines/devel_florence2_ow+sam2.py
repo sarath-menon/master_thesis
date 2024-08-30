@@ -280,11 +280,15 @@ class LocalizationProcessor:
         self.client = client
 
     def get_localization_results(self, state: PipelineState) -> PipelineState:
-        set_model.sync(client=self.client, body=SetModelReq(
-            name=config['models']['localization']['name'],
-            variant=config['models']['localization']['variant'],
-            task=TaskType[config['models']['localization']['task']]  # Convert string to enum
-        ))
+        try:
+            set_model.sync(client=self.client, body=SetModelReq(
+                name=config['models']['localization']['name'],
+                variant=config['models']['localization']['variant'],
+                task=TaskType[config['models']['localization']['task']]
+            ))
+        except Exception as e:
+            print(f"Error setting localization model: {str(e)}")
+            return state
         
         all_predictions = {}
         for sample in state.processed_prompts.samples:
@@ -296,15 +300,18 @@ class LocalizationProcessor:
                 request = BodyGetPrediction(
                     image=image_file,
                 )
-                response = get_prediction.sync(client=self.client,
-                    body=request,
-                    task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
-                    input_text=obj["description"]
-                )
+                try:
+                    response = get_prediction.sync(client=self.client,
+                        body=request,
+                        task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
+                        input_text=obj["description"]
+                    )
 
-                bboxes = [BoundingBox(bbox, mode=BBoxMode.XYWH, object_name=obj["name"], description=obj["description"]) 
-                          for bbox in response.prediction.bboxes]
-                all_predictions[image_id].extend(bboxes)
+                    bboxes = [BoundingBox(bbox, mode=BBoxMode.XYWH, object_name=obj["name"], description=obj["description"]) 
+                              for bbox in response.prediction.bboxes]
+                    all_predictions[image_id].extend(bboxes)
+                except Exception as e:
+                    print(f"Error getting prediction for image {image_id}, object {obj['name']}: {str(e)}")
         
         state.localization_results = LocalizationResults(
             processed_samples=state.processed_prompts.samples,
@@ -317,11 +324,15 @@ class SegmentationProcessor:
         self.client = client
 
     def get_segmentation_results(self, state: PipelineState) -> PipelineState:
-        set_model.sync(client=self.client, body=SetModelReq(
-            name=config['models']['segmentation']['name'],
-            variant=config['models']['segmentation']['variant'],
-            task=TaskType[config['models']['segmentation']['task']]  # Convert string to enum
-        ))
+        try:
+            set_model.sync(client=self.client, body=SetModelReq(
+                name=config['models']['segmentation']['name'],
+                variant=config['models']['segmentation']['variant'],
+                task=TaskType[config['models']['segmentation']['task']]
+            ))
+        except Exception as e:
+            print(f"Error setting segmentation model: {str(e)}")
+            return state
         
         segmentation_results = {}
         for sample in state.localization_results.processed_samples:
@@ -338,7 +349,7 @@ class SegmentationProcessor:
                         body=request,
                         task=TaskType.SEGMENTATION_WITH_BBOX,
                         input_boxes=json.dumps(bbox.get(mode=BBoxMode.XYWH))  
-                        )
+                    )
 
                     if response is None or response.prediction is None:
                         print(f"Warning: No prediction received for image {image_id}, bbox {bbox}")
@@ -346,7 +357,7 @@ class SegmentationProcessor:
                     
                     for mask_data in response.prediction.masks:
                         seg_mask = SegmentationMask(
-                            mask= mask_data,
+                            mask=mask_data,
                             mode=SegmentationMode.COCO_RLE,
                             object_name=bbox.object_name,
                             description=bbox.description
