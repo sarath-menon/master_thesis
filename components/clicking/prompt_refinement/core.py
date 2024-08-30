@@ -15,7 +15,6 @@ from clicking.dataset_creator.types import DatasetSample
 from PIL import Image
 import uuid
 from clicking.prompt_refinement.types import *
-from clicking.common.pipeline_state import PipelineState
 
 # set API keys
 dotenv.load_dotenv()

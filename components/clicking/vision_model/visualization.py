@@ -13,7 +13,6 @@ from clicking.vision_model.types import SegmentationResp, LocalizationResp
 from clicking.vision_model.utils import get_mask_centroid
 from clicking.vision_model.types import LocalizationResults, SegmentationResults
 from typing import List, Dict
-from clicking.common.pipeline_state import PipelineState
 
 
 def show_mask( mask, ax, random_color=False, borders=True, centroid_point=None):
