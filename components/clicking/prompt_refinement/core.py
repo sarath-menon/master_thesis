@@ -28,9 +28,9 @@ class PromptRefiner(ImageProcessorBase):
         self.prompt_manager = PromptManager(prompt_path)
         self.messages = [{"role": "system", "content": self.prompt_manager.get_prompt(type='system')}]
     
-    async def process_prompts_async(self, state: PipelineState, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> PipelineState:
+    async def process_prompts_async(self, dataset_sample: DatasetSample, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ProcessedPrompts:
         tasks = [self._process_single_prompt(image_sample.image, mode, image_sample.object_name, **kwargs) 
-                 for image_sample in state.dataset_sample.images]
+                 for image_sample in dataset_sample.images]
         results = await asyncio.gather(*tasks)
         
         processed_samples = [
@@ -40,11 +40,10 @@ class PromptRefiner(ImageProcessorBase):
                 object_name=image_sample.object_name,
                 description=description
             )
-            for image_sample, description in zip(state.dataset_sample.images, results)
+            for image_sample, description in zip(dataset_sample.images, results)
         ]
         
-        state.processed_prompts = ProcessedPrompts(samples=processed_samples)
-        return state
+        return ProcessedPrompts(samples=processed_samples)
 
     async def _process_single_prompt(self, image: Image.Image, mode: PromptMode, object_name: Optional[str] = None, **kwargs) -> SinglePromptResponse:
         base64_image = self._pil_to_base64(image)
@@ -73,8 +72,8 @@ class PromptRefiner(ImageProcessorBase):
         for message in self.messages:
             print(message)
 
-    def process_prompts(self, state: PipelineState, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> PipelineState:
-        return asyncio.run(self.process_prompts_async(state, mode, **kwargs))
+    def process_prompts(self, dataset_sample: DatasetSample, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ProcessedPrompts:
+        return asyncio.run(self.process_prompts_async(dataset_sample, mode, **kwargs))
 
 # %% get expanded description from class label
 

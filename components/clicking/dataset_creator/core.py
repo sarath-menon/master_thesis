@@ -4,7 +4,6 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from typing import List
 from .types import DatasetSample, ImageSample
-from clicking.common.pipeline_state import PipelineState
 
 class CocoDataset:
     def __init__(self, data_dir, annFile):
@@ -22,18 +21,17 @@ class CocoDataset:
         text_input = ". ".join(labels) + "." if labels else ""
         return text_input
 
-    def sample_dataset(self, state: PipelineState) -> PipelineState:
+    def sample_dataset(self, image_ids: List[int]) -> DatasetSample:
         image_samples = []
         to_pil = transforms.ToPILImage()
         
-        for index in state.image_ids:
+        for index in image_ids:
             image_tensor, annotations = self.coco_dataset[int(index)]
             image = to_pil(image_tensor)
             object_name = self.create_text_input(annotations)
             image_samples.append(ImageSample(image=image, object_name=object_name, image_id=index))
 
-        state.dataset_sample = DatasetSample(images=image_samples)
-        return state
+        return DatasetSample(images=image_samples)
 
     def show_images(self, dataset_sample: DatasetSample, show_images_per_batch: int = 4):
         for image_sample in dataset_sample.images[:show_images_per_batch]:

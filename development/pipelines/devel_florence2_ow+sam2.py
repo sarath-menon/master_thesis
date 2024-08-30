@@ -30,7 +30,14 @@ import asyncio
 from clicking.vision_model.visualization import show_localization_predictions, show_segmentation_predictions
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
-from clicking.common.pipeline_state import PipelineState
+
+@dataclass
+class PipelineState:
+    image_ids: List[int] = field(default_factory=list)
+    dataset_sample: Optional[DatasetSample] = None
+    processed_prompts: Optional[ProcessedPrompts] = None
+    localization_results: Optional[LocalizationResults] = None
+    segmentation_results: Optional[SegmentationResults] = None
 
 #%%
 
@@ -44,7 +51,7 @@ coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', '.
 from typing import Callable, List, Any, Dict, Tuple, TypedDict, get_origin, get_args
 import inspect
 import matplotlib.pyplot as plt
-from PIL import Image
+from PIL import Image 
 from typing import Type
 import pickle
 from tabulate import tabulate
@@ -256,10 +263,12 @@ def image_to_http_file(image):
 # Modify the relevant steps to use PipelineState
 
 def sample_dataset(state: PipelineState) -> PipelineState:
-    return coco_dataset.sample_dataset(state)
+    state.dataset_sample = coco_dataset.sample_dataset(state.image_ids)
+    return state
 
 def process_prompts(state: PipelineState) -> PipelineState:
-    return prompt_refiner.process_prompts(state)
+    state.processed_prompts = prompt_refiner.process_prompts(state.dataset_sample)
+    return state
 
 class LocalizationProcessor:
     def __init__(self, client: Client):
@@ -365,7 +374,6 @@ pipeline.static_analysis()
 # Run the entire pipeline
 image_ids = [22, 31, 34]
 result = asyncio.run(pipeline.run(image_ids))
-
 #%%
 
 # Run from a specific step using cached data
@@ -385,3 +393,4 @@ segmentation_results = pipeline.get_step_result("Get Segmentation Results")
 show_localization_predictions(localization_results)
 show_segmentation_predictions(segmentation_results)
 #%%
+
