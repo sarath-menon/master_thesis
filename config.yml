@@ -1,0 +1,32 @@
+# Dataset settings
+dataset:
+  images_path: './datasets/label_studio_gen/coco_dataset/images'
+  annotations_path: './datasets/label_studio_gen/coco_dataset/result.json'
+
+# API settings
+api:
+  base_url: 'http://localhost:8082'
+
+# Model settings
+models:
+  localization:
+    name: 'florence2'
+    variant: 'florence-2-base'
+    task: 'LOCALIZATION_WITH_TEXT_OPEN_VOCAB'
+  segmentation:
+    name: 'sam2'
+    variant: 'sam2_hiera_tiny'
+    task: 'SEGMENTATION_WITH_BBOX'
+
+# Prompt settings
+prompts:
+  refinement_path: './prompts/prompt_refinement.md'
+  output_corrector_path: './prompts/output_corrector.md'
+
+# Pipeline settings
+pipeline:
+  cache_dir: '.pipeline_cache'
+
+# Visualization settings
+visualization:
+  figsize: [5, 5]

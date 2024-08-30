@@ -30,6 +30,11 @@ import asyncio
 from clicking.vision_model.visualization import show_localization_predictions, show_segmentation_predictions
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
+import yaml
+
+# Load the configuration file
+with open('config.yml', 'r') as config_file:
+    config = yaml.safe_load(config_file)
 
 @dataclass
 class PipelineState:
@@ -41,11 +46,11 @@ class PipelineState:
 
 #%%
 
-client = Client(base_url="http://localhost:8082")
+client = Client(base_url=config['api']['base_url'])
 
-prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
+prompt_refiner = PromptRefiner(prompt_path=config['prompts']['refinement_path'])
 
-coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', './datasets/label_studio_gen/coco_dataset/result.json')
+coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
 #%%
 
 from typing import Callable, List, Any, Dict, Tuple, TypedDict, get_origin, get_args
@@ -66,7 +71,7 @@ class Pipeline:
             LocalizationResults: show_localization_predictions,
             SegmentationResults: show_segmentation_predictions
         }
-        self.cache_dir = ".pipeline_cache"
+        self.cache_dir = config['pipeline']['cache_dir']
         os.makedirs(self.cache_dir, exist_ok=True)
         self.cache_filename = self._generate_cache_filename()
         self.cache_data: Dict[str, Any] = {}
@@ -180,7 +185,7 @@ class Pipeline:
                 self._recursive_log(step_name, value, prefix)
 
     def _display_image(self, step_name: str, prefix: str, image: Image.Image):
-        plt.figure(figsize=(5, 5))
+        plt.figure(figsize=tuple(config['visualization']['figsize']))
         plt.imshow(image)
         plt.axis('off')
         plt.title(f"{step_name} - Image")
@@ -191,7 +196,7 @@ class Pipeline:
             print(f"{prefix}[]")
             return
         
-        fig, axes = plt.subplots(1, len(images), figsize=(5*len(images), 5))
+        fig, axes = plt.subplots(1, len(images), figsize=(config['visualization']['figsize'][0]*len(images), config['visualization']['figsize'][1]))
         if len(images) == 1:
             axes = [axes]
         for i, (ax, img) in enumerate(zip(axes, images)):
@@ -275,7 +280,11 @@ class LocalizationProcessor:
         self.client = client
 
     def get_localization_results(self, state: PipelineState) -> PipelineState:
-        set_model.sync(client=self.client, body=SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB))
+        set_model.sync(client=self.client, body=SetModelReq(
+            name=config['models']['localization']['name'],
+            variant=config['models']['localization']['variant'],
+            task=TaskType[config['models']['localization']['task']]  # Convert string to enum
+        ))
         
         all_predictions = {}
         for sample in state.processed_prompts.samples:
@@ -308,7 +317,11 @@ class SegmentationProcessor:
         self.client = client
 
     def get_segmentation_results(self, state: PipelineState) -> PipelineState:
-        set_model.sync(client=self.client, body=SetModelReq(name="sam2", variant="sam2_hiera_tiny", task=TaskType.SEGMENTATION_WITH_BBOX))
+        set_model.sync(client=self.client, body=SetModelReq(
+            name=config['models']['segmentation']['name'],
+            variant=config['models']['segmentation']['variant'],
+            task=TaskType[config['models']['segmentation']['task']]  # Convert string to enum
+        ))
         
         segmentation_results = {}
         for sample in state.localization_results.processed_samples:
@@ -358,7 +371,7 @@ nest_asyncio.apply()
 pipeline = Pipeline()
 localization_processor = LocalizationProcessor(client)
 segmentation_processor = SegmentationProcessor(client)
-output_corrector = OutputCorrector(prompt_path="./prompts/output_corrector.md")
+output_corrector = OutputCorrector(prompt_path=config['prompts']['output_corrector_path'])
 
 pipeline.add_step("Sample Dataset", sample_dataset, "dataset_sample", True)
 pipeline.add_step("Process Prompts", process_prompts, "processed_prompts", True)
