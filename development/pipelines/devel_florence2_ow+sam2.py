@@ -126,7 +126,7 @@ class Pipeline:
                 self._save_cache()
             
             if verbose:
-                self._log_step_result(step_name, getattr(state, log_var), log_var)
+                self._log_step_result(step_name, state, log_var)
         
         return state
 
@@ -143,11 +143,15 @@ class Pipeline:
     def _log_step_result(self, step_name: str, result: Any, log_var: str):
         print(f"\n--- Step: {step_name} ---")
         print(f"Logging variable: {log_var}")
-        self._recursive_log(step_name, result)
         
-        result_type = type(result)
+        if hasattr(result, log_var):
+            self._recursive_log(step_name, getattr(result, log_var))
+        else:
+            print(f"Warning: {log_var} not found in the state object.")
+        
+        result_type = type(getattr(result, log_var, None))
         if result_type in self.visualization_functions:
-            self.visualization_functions[result_type](result)
+            self.visualization_functions[result_type](getattr(result, log_var))
 
     def _recursive_log(self, step_name: str, result: Any, prefix: str = ""):
         if isinstance(result, Image.Image):
