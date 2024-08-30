@@ -1,5 +1,4 @@
 #%%
-
 from litellm import completion, acompletion
 import os
 import dotenv
@@ -28,12 +27,12 @@ class OutputCorrector(ImageProcessorBase):
             {"role": "system", "content": self.prompt_manager.get_prompt(type='system')},
         ]
 
-    async def _get_image_responses(self, base64_images: list, class_labels: list):
+    async def _get_image_responses(self, base64_images: list, object_names: list):
         tasks = []
 
-        for base64_image, class_label in zip(base64_images, class_labels):
-            template_values = {"class_label": class_label}
-            prompt = self.prompt_manager.get_prompt(type='user', prompt_key='correct_class_label', template_values=template_values)
+        for base64_image, object_name in zip(base64_images, object_names):
+            template_values = {"object_name": object_name}
+            prompt = self.prompt_manager.get_prompt(type='user', prompt_key='correct_object_name', template_values=template_values)
             task = self._get_image_response(base64_image, prompt, self.messages, json_mode=True)
             tasks.append(task)
         
@@ -65,12 +64,12 @@ class OutputCorrector(ImageProcessorBase):
             image_id = sample.image_id
             screenshot = sample.image
             masks = localization_results.predictions[image_id]
-            class_labels = [mask.object_name for mask in masks]
+            object_names = [mask.object_name for mask in masks]
             
             extracted_areas = [mask.extract_area(screenshot, padding=10) for mask in masks]
             base64_images = [self._pil_to_base64(area) for area in extracted_areas]
             
-            responses = await self._get_image_responses(base64_images, class_labels)
+            responses = await self._get_image_responses(base64_images, object_names)
             verification_results[image_id] = responses
         
         return verification_results
@@ -78,3 +77,49 @@ class OutputCorrector(ImageProcessorBase):
     def verify_masks(self, localization_results: SegmentationResults) -> SegmentationResults:
         return asyncio.run(self.verify_masks_async(localization_results))
 
+#%%%
+
+# Demo code for verify_bboxes_async
+async def demo_verify_bboxes_async():
+    # Create a sample LocalizationResults object
+    from components.clicking.vision_model.core import ProcessedSample, BoundingBox, BBoxMode
+    from PIL import Image
+    import numpy as np
+
+    # Create a sample image
+    sample_image = Image.fromarray(np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8))
+    
+    # Create sample bounding boxes
+    bbox1 = BoundingBox([10, 10, 50, 50], mode=BBoxMode.XYWH, description="Button")
+    bbox2 = BoundingBox([50, 50, 40, 20], mode=BBoxMode.XYWH, description="Text Input")
+    
+    # Create a sample ProcessedSample
+    processed_sample = ProcessedSample(image_id="sample1", image=sample_image)
+    
+    # Create a sample LocalizationResults object
+    localization_results = LocalizationResults(
+        processed_samples=[processed_sample],
+        predictions={"sample1": [bbox1, bbox2]}
+    )
+    
+    # Initialize OutputCorrector
+    corrector = OutputCorrector(prompt_path="path/to/your/prompt/file.json")
+    
+    # Call verify_bboxes_async
+    verified_results = await corrector.verify_bboxes_async(localization_results)
+    
+    # Print the verification results
+    for image_id, responses in verified_results.predictions.items():
+        print(f"Verification results for image {image_id}:")
+        for response in responses:
+            print(response)
+
+# Run the demo
+if __name__ == "__main__":
+    from nest_asyncio import apply
+    apply()
+    
+    asyncio.run(demo_verify_bboxes_async())
+
+
+# %%

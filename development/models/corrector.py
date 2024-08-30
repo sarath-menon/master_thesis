@@ -31,8 +31,8 @@ transform = transforms.Compose([
 
 # Create the COCO dataset
 coco_dataset = torchvision.datasets.CocoDetection(root=data_dir, annFile=annFile, transform=transform)
-class_labels = [cat['name'] for cat in coco_dataset.coco.cats.values()]
-print(class_labels)
+object_names = [cat['name'] for cat in coco_dataset.coco.cats.values()]
+print(object_names)
 
 
 from matplotlib.path import Path
@@ -47,11 +47,11 @@ def plot_click_point(image, click_point, annotations):
 
     for annotation in annotations:
         # plot class label
-        class_label = class_labels[annotation['category_id']]
+        object_name = object_names[annotation['category_id']]
 
-        class_label_x = annotation['segmentation'][0][0]
-        class_label_y = annotation['segmentation'][0][1] 
-        plt.text(class_label_x, class_label_y, class_label, fontsize=14, color='yellow')
+        object_name_x = annotation['segmentation'][0][0]
+        object_name_y = annotation['segmentation'][0][1] 
+        plt.text(object_name_x, object_name_y, object_name, fontsize=14, color='yellow')
 
     colors = ['yellow', 'red']
     shapes = ['s', 'o']
@@ -104,9 +104,9 @@ def get_shifted_point(img, annotations, response):
     
     # for annotation in annotations:
     #     # plot class label
-    #     class_label_x = annotation['segmentation'][0][0]
-    #     class_label_y = annotation['segmentation'][0][1] 
-    #     click_points.append({'x': class_label_x - x_shift, 'y': class_label_y - y_shift})
+    #     object_name_x = annotation['segmentation'][0][0]
+    #     object_name_y = annotation['segmentation'][0][1] 
+    #     click_points.append({'x': object_name_x - x_shift, 'y': object_name_y - y_shift})
             
     # return click_points
 
@@ -136,7 +136,7 @@ def generate_user_prompt(object_label: str):
  
 index = 1
 img, annotations = coco_dataset[index]
-LABEL = class_labels[annotations[0]['category_id']]
+LABEL = object_names[annotations[0]['category_id']]
 print(LABEL)
 user_prompt = generate_user_prompt(LABEL)
 
@@ -188,24 +188,24 @@ def get_image_with_label(image, annotations, x_offset=0, y_offset=0):
 
     for annotation in annotations:
         # plot class label
-        # class_label = class_labels[annotation['category_id']]
-        class_label = 'y'
-        class_label_x = annotation['segmentation'][0][0] + x_offset
-        class_label_y = annotation['segmentation'][0][1] + y_offset
-        # draw.text((class_label_x, class_label_y), class_label, font=font, fill='red')
+        # object_name = object_names[annotation['category_id']]
+        object_name = 'y'
+        object_name_x = annotation['segmentation'][0][0] + x_offset
+        object_name_y = annotation['segmentation'][0][1] + y_offset
+        # draw.text((object_name_x, object_name_y), object_name, font=font, fill='red')
          # Define the points for a star shape
         star_size = 20  # Variable to set star size
         star_points = [
-            (class_label_x, class_label_y - star_size),  # Top point
-            (class_label_x + star_size * 0.3, class_label_y - star_size * 0.3),
-            (class_label_x + star_size, class_label_y - star_size * 0.3),
-            (class_label_x + star_size * 0.5, class_label_y + star_size * 0.2),
-            (class_label_x + star_size * 0.6, class_label_y + star_size),
-            (class_label_x, class_label_y + star_size * 0.5),
-            (class_label_x - star_size * 0.6, class_label_y + star_size),
-            (class_label_x - star_size * 0.5, class_label_y + star_size * 0.2),
-            (class_label_x - star_size, class_label_y - star_size * 0.3),
-            (class_label_x - star_size * 0.3, class_label_y - star_size * 0.3)
+            (object_name_x, object_name_y - star_size),  # Top point
+            (object_name_x + star_size * 0.3, object_name_y - star_size * 0.3),
+            (object_name_x + star_size, object_name_y - star_size * 0.3),
+            (object_name_x + star_size * 0.5, object_name_y + star_size * 0.2),
+            (object_name_x + star_size * 0.6, object_name_y + star_size),
+            (object_name_x, object_name_y + star_size * 0.5),
+            (object_name_x - star_size * 0.6, object_name_y + star_size),
+            (object_name_x - star_size * 0.5, object_name_y + star_size * 0.2),
+            (object_name_x - star_size, object_name_y - star_size * 0.3),
+            (object_name_x - star_size * 0.3, object_name_y - star_size * 0.3)
         ]
         draw.polygon(star_points, outline='yellow', fill='yellow')
         break

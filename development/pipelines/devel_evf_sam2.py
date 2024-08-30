@@ -21,10 +21,10 @@ if 'get_ipython' in globals():
 #%% Load dataset
 
 coco_dataset = CocoDataset('./datasets/label_studio_gen/coco_dataset/images', './datasets/label_studio_gen/coco_dataset/result.json')
-images, class_labels = coco_dataset.sample_dataset(batch_size=3)
+images, object_names = coco_dataset.sample_dataset(batch_size=3)
     
 #%% sample batch for testing
-images, class_labels = coco_dataset.sample_dataset(batch_size=3, show_images=True)
+images, object_names = coco_dataset.sample_dataset(batch_size=3, show_images=True)
 
 #%% get clickable objects from image
 from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
@@ -36,10 +36,10 @@ prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
 results = await prompt_refiner.process_prompts(images, PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS) 
 
 # show results
-for image, class_label, image_result in zip(images, class_labels, results):
+for image, object_name, image_result in zip(images, object_names, results):
     plt.imshow(image)
     plt.axis(False)
-    plt.title(class_label)
+    plt.title(object_name)
     plt.show()
 
     for object in image_result['objects']:
@@ -87,7 +87,7 @@ from clicking_client.types import File
 #     return image_file
 
 
-for image, class_label, image_result in zip(images, class_labels, results):
+for image, object_name, image_result in zip(images, object_names, results):
     image_file:File = image_to_http_file(image)
     predictions = {}
 

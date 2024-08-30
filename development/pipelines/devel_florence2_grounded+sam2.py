@@ -28,12 +28,12 @@ transform = transforms.Compose([
 
 # Create the COCO dataset
 coco_dataset = datasets.CocoDetection(root=data_dir, annFile=annFile, transform=transform)
-class_labels = [cat['name'] for cat in coco_dataset.coco.cats.values()]
+object_names = [cat['name'] for cat in coco_dataset.coco.cats.values()]
 print(f"Dataset size: {len(coco_dataset)}")
 
 # create text input from labels
 def create_text_input(annotations):
-    labels = [class_labels[annotation['category_id']] for annotation in annotations]
+    labels = [object_names[annotation['category_id']] for annotation in annotations]
     text_input = ""
     text_input = ". ".join(labels) + "." if labels else ""
     return text_input

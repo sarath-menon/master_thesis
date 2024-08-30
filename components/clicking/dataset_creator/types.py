@@ -4,4 +4,4 @@ from PIL import Image
 
 class DatasetSample(NamedTuple):
     images: List[Image.Image]
-    class_labels: List[str]
+    object_names: List[str]

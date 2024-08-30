@@ -462,8 +462,8 @@ transform = transforms.Compose([
 
 # Create the COCO dataset
 coco_dataset = torchvision.datasets.CocoDetection(root=data_dir, annFile=annFile, transform=transform)
-class_labels = [cat['name'] for cat in coco_dataset.coco.cats.values()]
-print(class_labels)
+object_names = [cat['name'] for cat in coco_dataset.coco.cats.values()]
+print(object_names)
 
 
 # In[375]:
@@ -488,11 +488,11 @@ def plot_coco_image_with_segmentation(image, annotations):
 
     for annotation in annotations:
         # plot class label
-        class_label = class_labels[annotation['category_id']]
+        object_name = object_names[annotation['category_id']]
 
-        class_label_x = annotation['segmentation'][0][0]
-        class_label_y = annotation['segmentation'][0][1] 
-        plt.text(class_label_x, class_label_y, class_label, fontsize=14, color='yellow')
+        object_name_x = annotation['segmentation'][0][0]
+        object_name_y = annotation['segmentation'][0][1] 
+        plt.text(object_name_x, object_name_y, object_name, fontsize=14, color='yellow')
 
         # plot segmentation map
         for segmentation in annotation['segmentation']:

@@ -18,7 +18,7 @@ def test_verify_bboxes():
             description=SinglePromptResponse(objects=[
                 ObjectDescription(name="bus", category="vehicle", description="A bus")
             ]),
-            class_label="bus"
+            object_name="bus"
         )
     ]
     
@@ -54,7 +54,7 @@ def test_verify_bboxes():
 #             description=SinglePromptResponse(objects=[
 #                 ObjectDescription(name="dog", category="animal", description="A dog running")
 #             ]),
-#             class_label="dog"
+#             object_name="dog"
 #         )
 #     ]
 #     

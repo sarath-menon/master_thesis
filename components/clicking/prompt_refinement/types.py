@@ -18,7 +18,7 @@ class SinglePromptResponse(TypedDict):
 class ProcessedSample(NamedTuple):
     image: Image.Image
     image_id: str
-    class_label: str
+    object_name: str
     description: SinglePromptResponse
 
 class ProcessedPrompts(NamedTuple):

@@ -34,7 +34,7 @@ transform = transforms.Compose([
 
 # Create the COCO dataset
 coco_dataset = datasets.CocoDetection(root=data_dir, annFile=annFile, transform=transform)
-class_labels = [cat['name'] for cat in coco_dataset.coco.cats.values()]
+object_names = [cat['name'] for cat in coco_dataset.coco.cats.values()]
 print(f"Dataset size: {len(coco_dataset)}")
 
 # to plot the image with segmentation map and click points
@@ -56,11 +56,11 @@ def show(image, annotations, click_point=None, show_segmentation=True):
     
     for annotation in annotations:
         # plot class label
-        class_label = class_labels[annotation['category_id']]
+        object_name = object_names[annotation['category_id']]
 
-        class_label_x = annotation['segmentation'][0][0]
-        class_label_y = annotation['segmentation'][0][1] 
-        plt.text(class_label_x, class_label_y, class_label, fontsize=14, color='yellow')
+        object_name_x = annotation['segmentation'][0][0]
+        object_name_y = annotation['segmentation'][0][1] 
+        plt.text(object_name_x, object_name_y, object_name, fontsize=14, color='yellow')
 
         # plot segmentation map
         if show_segmentation:
@@ -82,7 +82,7 @@ def show(image, annotations, click_point=None, show_segmentation=True):
 
 # create text input from labels
 def create_text_input(annotations):
-    labels = [class_labels[annotation['category_id']] for annotation in annotations]
+    labels = [object_names[annotation['category_id']] for annotation in annotations]
     text_input = ""
     text_input = ". ".join(labels) + "." if labels else ""
     return text_input
@@ -91,10 +91,10 @@ def create_text_input(annotations):
 def check_click_points(annotations, click_points, verbose=True):
 
     for annotation in annotations:
-        class_label = class_labels[annotation['category_id']]
+        object_name = object_names[annotation['category_id']]
         
         # Filter click points matching the current class label
-        matching_click_points = [cp for cp in click_points if cp['label'] == class_label]
+        matching_click_points = [cp for cp in click_points if cp['label'] == object_name]
         
         # Check if the click point is within the polygon of the annotation
         for click_point in matching_click_points:
@@ -109,7 +109,7 @@ def check_click_points(annotations, click_points, verbose=True):
                 click_point['valid'] = False
 
         if len(matching_click_points) == 0:
-            print(f"No click points found for label: {class_label}")
+            print(f"No click points found for label: {object_name}")
 
     # printing
     if verbose:

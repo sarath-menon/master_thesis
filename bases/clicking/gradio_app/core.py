@@ -34,7 +34,7 @@ DESCRIPTION = "# [Florence-2 Demo](https://huggingface.co/microsoft/Florence-2-l
 @dataclass
 class PipelineResult:
     input_instruction: str = ""
-    class_label: str = ""
+    object_name: str = ""
     bounding_boxes: list = field(default_factory=list)  # Changed to use default_factory
     segmentation_masks: list = field(default_factory=list)  # Changed to use default_factory
     click_point: tuple = ()
@@ -51,7 +51,7 @@ def read_logs():
         return f.read()
 
 def select_section(evt: gr.SelectData):
-        return pipeline_result.class_label[evt.index]
+        return pipeline_result.object_name[evt.index]
 
 def image_to_base64(img):
     buffered = io.BytesIO()
@@ -85,12 +85,12 @@ def generate_star_points(centroid, size=20):
         points.append((x, y))
     return points
 
-def pipeline(image_np, input_instruction, class_label, pipeline_checkboxes):
+def pipeline(image_np, input_instruction, object_name, pipeline_checkboxes):
         if image_np is None:
             raise ValueError("Set input image")
-        elif input_instruction=='' and class_label=='':
+        elif input_instruction=='' and object_name=='':
             raise ValueError("Set input text or class labels")
-        elif input_instruction!='' and class_label!='':
+        elif input_instruction!='' and object_name!='':
             raise ValueError("You can't set both input text and class labels")
 
         # convert numpy array to PIL image
@@ -104,10 +104,10 @@ def pipeline(image_np, input_instruction, class_label, pipeline_checkboxes):
         if "input instruction => class labels" in pipeline_checkboxes:
             pass
 
-        pipeline_result.class_label = class_label
+        pipeline_result.object_name = object_name
         # get localization prediction
         if "class labels => bounding boxes" in pipeline_checkboxes:
-            request = PredictionReq(image=image_to_base64(image), text_input=class_label, task_prompt='<CAPTION_TO_PHRASE_GROUNDING>')
+            request = PredictionReq(image=image_to_base64(image), text_input=object_name, task_prompt='<CAPTION_TO_PHRASE_GROUNDING>')
 
             localization_response = get_localization_prediction.sync(client=client, body=request)
 
@@ -137,11 +137,11 @@ def pipeline(image_np, input_instruction, class_label, pipeline_checkboxes):
 
             for i, bbox in enumerate(localization_response.bboxes):
                 x1,y1,w,h = map(int, bbox)
-                sections.append(((x1,y1,w,h), class_label + "_bbox"))
+                sections.append(((x1,y1,w,h), object_name + "_bbox"))
 
             for (i, mask) in enumerate(segmentation_response.masks):
                 mask = mask_utils.decode(mask)
-                sections.append((mask, class_label + "_mask"   ))
+                sections.append((mask, object_name + "_mask"   ))
 
         # get and overlay click point
         if "segmentation masks => click point" in pipeline_checkboxes:
@@ -224,7 +224,7 @@ with gr.Blocks(css=css) as demo:
                 section_btn = gr.Button("Identify Sections")
 
                 input_instruction = gr.Textbox(label="Input instruction", interactive=True)
-                class_label = gr.Textbox(label="Class labels", interactive=True)
+                object_name = gr.Textbox(label="Class labels", interactive=True)
             
                 label_creation_mode = gr.Dropdown(choices=list(label_creation_models .keys()), label="Text prompt to class label")
 
@@ -283,8 +283,8 @@ with gr.Blocks(css=css) as demo:
     
         # Log(log_file, dark=True, xterm_font_size=12)
     
-    section_btn.click(pipeline, [img_input, input_instruction, class_label, pipeline_checkboxes], img_output)
-    img_output.select(select_section, None, pipeline_result.class_label)
+    section_btn.click(pipeline, [img_input, input_instruction, object_name, pipeline_checkboxes], img_output)
+    img_output.select(select_section, None, pipeline_result.object_name)
 
 if __name__ == "__main__":
     demo.launch()

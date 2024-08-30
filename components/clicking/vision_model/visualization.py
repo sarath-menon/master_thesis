@@ -80,7 +80,7 @@ def show_segmentation_prediction(image, masks):
     plt.tight_layout()
     plt.show()
 
-def show_clickpoint(image, click_point, class_label, size=100, color='yellow'):
+def show_clickpoint(image, click_point, object_name, size=100, color='yellow'):
     # Convert PIL Image to numpy array
     image_array = np.array(image)
     fig, ax = plt.subplots()
@@ -88,7 +88,7 @@ def show_clickpoint(image, click_point, class_label, size=100, color='yellow'):
     ax.imshow(image_array)
     
     # Plot the click point
-    ax.scatter(*click_point, marker='*', color=color, s=size, label=class_label)    
+    ax.scatter(*click_point, marker='*', color=color, s=size, label=object_name)    
     ax.axis('off')
     plt.show()
 
@@ -130,7 +130,7 @@ def show_clickpoint_predictions(image, responses: List[SegmentationResp], textbo
     mask_alpha = 0.7
     total_classes = len(responses)
 
-    for i, (class_label, response) in enumerate(responses.items()):
+    for i, (object_name, response) in enumerate(responses.items()):
         masks = [SegmentationMask(mask, mode=SegmentationMode.COCO_RLE) for mask in response.prediction.masks]
         for mask in masks:
             m = mask_utils.decode(mask.get(SegmentationMode.COCO_RLE))
@@ -149,11 +149,11 @@ def show_clickpoint_predictions(image, responses: List[SegmentationResp], textbo
             
             # get mask centroid and plot it as click point
             centroid = get_mask_centroid(m)
-            ax.scatter(*centroid, marker='*', color=marker_color, s=marker_size, label=class_label)  
+            ax.scatter(*centroid, marker='*', color=marker_color, s=marker_size, label=object_name)  
 
             # Plot class label as text in a box on top of the mask
             offset_y = 60
-            ax.text(centroid[0], centroid[1] - offset_y, class_label, 
+            ax.text(centroid[0], centroid[1] - offset_y, object_name, 
                     color=text_color, fontsize=text_size, 
                     bbox=dict(facecolor=textbox_color, edgecolor='none', alpha=1.0),
                     ha='center', va='center')
