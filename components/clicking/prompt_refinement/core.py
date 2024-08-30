@@ -14,37 +14,12 @@ import json
 from clicking.dataset_creator.types import DatasetSample
 from PIL import Image
 import uuid
+from clicking.prompt_refinement.types import *
 
 # set API keys
 dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
-class PromptMode(Enum):
-    OBJECTS_LIST_TO_DESCRIPTIONS = "OBJECTS_LIST_TO_DESCRIPTIONS"
-    IMAGE_TO_OBJECT_DESCRIPTIONS = "IMAGE_TO_OBJECT_DESCRIPTIONS"
-    IMAGE_TO_OBJECTS_LIST = "IMAGE_TO_OBJECTS_LIST"
-
-class ObjectDescription(TypedDict):
-    name: str
-    category: str
-    description: str
-
-class PromptResponse(TypedDict):
-    objects: List[ObjectDescription]
-
-class ProcessedSample(NamedTuple):
-    image: Image.Image
-    image_id: str
-    class_label: str
-    description: PromptResponse
-
-class ProcessedResult(NamedTuple):
-    samples: List[ProcessedSample]
-
-class TemplateValues(TypedDict, total=False):
-    input_description: str
-    word_limit: str
-    description_length: int
 
 class PromptRefiner(ImageProcessorBase):
     def __init__(self, prompt_path: str, model: str = "gpt-4o", temperature: float = 0.0):
