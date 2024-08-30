@@ -14,7 +14,7 @@ def test_verify_bboxes():
     processed_samples = [
         ImageWithDescriptions(
             image=Image.open("./assets/bus.jpg"),
-            image_id="test_image_1",
+            id="test_image_1",
             description=SinglePromptResponse(objects=[
                 ObjectDescription(name="bus", category="vehicle", description="A bus")
             ]),
@@ -50,7 +50,7 @@ def test_verify_bboxes():
 #     processed_samples = [
 #         ImageWithDescriptions(
 #             image=Image.new('RGB', (100, 100)),
-#             image_id="test_image_1",
+#             id="test_image_1",
 #             description=SinglePromptResponse(objects=[
 #                 ObjectDescription(name="dog", category="animal", description="A dog running")
 #             ]),

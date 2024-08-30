@@ -293,7 +293,7 @@ class LocalizationProcessor:
         all_predictions = {}
         for sample in state.processed_prompts.samples:
             image_file = image_to_http_file(sample.image)
-            image_id = sample.image_id
+            image_id = sample.id
 
             all_predictions[image_id] = []
             for obj in sample.description["objects"]:
@@ -337,7 +337,7 @@ class SegmentationProcessor:
         segmentation_results = {}
         for sample in state.localization_results.processed_samples:
             image_file = image_to_http_file(sample.image)
-            image_id = sample.image_id
+            image_id = sample.id
 
             seg_predictions = []
             for bbox in state.localization_results.predictions[image_id]:

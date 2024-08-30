@@ -135,7 +135,7 @@ def show_localization_predictions(localization_results: LocalizationResults):
 
     for processed_sample in localization_results.processed_samples:
         image = processed_sample.image
-        image_id = processed_sample.image_id
+        image_id = processed_sample.id
         predictions = localization_results.predictions[image_id]
         
         fig, ax = plt.subplots()
@@ -193,7 +193,7 @@ def show_segmentation_predictions(segmentation_results: SegmentationResults, tex
 
     for processed_sample in segmentation_results.processed_samples:
         image = processed_sample.image
-        image_id = processed_sample.image_id
+        image_id = processed_sample.id
         predictions = segmentation_results.predictions[image_id]
 
         # Create a new figure and axis

@@ -15,6 +15,7 @@ from clicking.dataset_creator.types import DatasetSample
 from PIL import Image
 import uuid
 from clicking.prompt_refinement.types import *
+from clicking.common.types import SinglePromptResponse, ImageWithDescriptions
 
 # set API keys
 dotenv.load_dotenv()
@@ -35,7 +36,7 @@ class PromptRefiner(ImageProcessorBase):
         processed_samples = [
             ImageWithDescriptions(
                 image=image_sample.image,
-                image_id=image_sample.image_id,
+                id=image_sample.id,
                 object_name=image_sample.object_name,
                 description=description
             )

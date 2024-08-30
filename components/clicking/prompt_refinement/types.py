@@ -1,6 +1,7 @@
 from typing import List, Dict, Optional, TypedDict, Union, NamedTuple
 from enum import Enum, auto
 from PIL import Image
+from clicking.common.types import ImageWithDescriptions
 
 class PromptMode(Enum):
     OBJECTS_LIST_TO_DESCRIPTIONS = "OBJECTS_LIST_TO_DESCRIPTIONS"

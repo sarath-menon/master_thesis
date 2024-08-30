@@ -146,7 +146,7 @@ def convert_to_segmentation_results(parsed_data):
                 break
         
         segmentation_results.processed_samples.append(
-            ImageWithDescriptions(image=image, image_id=image_annotation.id, object_name=object_name)
+            ImageWithDescriptions(image=image, id=image_annotation.id, object_name=object_name)
         )
         
         masks = []
@@ -200,7 +200,7 @@ segmentation_results = convert_to_segmentation_results(parsed_data)
 # Create a new SegmentationResults object with filtered samples and predictions
 filtered_samples = segmentation_results.processed_samples[:num_samples]
 filtered_predictions = {
-    sample.image_id: segmentation_results.predictions[sample.image_id]
+    sample.id: segmentation_results.predictions[sample.id]
     for sample in filtered_samples
 }
 
@@ -221,7 +221,7 @@ def save_annotations_to_json(segmentation_results: SegmentationResults, output_f
     data = []
     
     for sample in segmentation_results.processed_samples:
-        image_id = sample.image_id
+        image_id = sample.id
         image_path = sample.image.filename  # Assuming the PIL Image object has a filename attribute
         
         annotations = []

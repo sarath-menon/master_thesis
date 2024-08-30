@@ -42,7 +42,7 @@ class OutputCorrector(ImageProcessorBase):
     async def verify_bboxes_async(self, localization_results: LocalizationResults) -> LocalizationResults:
         verification_results = {}
         for sample in localization_results.processed_samples:
-            image_id = sample.image_id
+            image_id = sample.id
             screenshot = sample.image
             bboxes = localization_results.predictions[image_id]
             descriptions = [bbox.description for bbox in bboxes]
@@ -61,7 +61,7 @@ class OutputCorrector(ImageProcessorBase):
     async def verify_masks_async(self, localization_results: SegmentationResults) -> SegmentationResults:
         verification_results = {}
         for sample in localization_results.processed_samples:
-            image_id = sample.image_id
+            image_id = sample.id
             screenshot = sample.image
             masks = localization_results.predictions[image_id]
             object_names = [mask.object_name for mask in masks]
@@ -95,7 +95,7 @@ async def demo_verify_bboxes_async():
     
     # Create a sample ImageWithDescriptions
     processed_sample = ImageWithDescriptions(
-        image_id="sample1",
+        id="sample1",
         image=sample_image,
         object_name="Sample Object",
         description="A sample processed image"

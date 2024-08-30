@@ -32,7 +32,7 @@ class CocoDataset:
             image_tensor, annotations = self.coco_dataset[int(index)]
             image = to_pil(image_tensor)
             object_name = self.create_text_input(annotations)
-            image_samples.append(ImageSample(image=image, object_name=object_name, image_id=index))
+            image_samples.append(ImageSample(image=image, object_name=object_name, id=index))
 
         return DatasetSample(images=image_samples)
 
@@ -99,7 +99,7 @@ if __name__ == "__main__":
         segmentation_masks.append(segmentation_mask)
 
     # Create SegmentationResults object
-    processed_sample = ImageWithDescriptions(image=image, image_id=str(random_image_id), object_name=object_name)
+    processed_sample = ImageWithDescriptions(image=image, id=str(random_image_id), object_name=object_name)
     segmentation_results = SegmentationResults(
         processed_samples=[processed_sample],
         predictions={str(random_image_id): segmentation_masks}
