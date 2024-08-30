@@ -3,7 +3,8 @@ from torchvision import transforms, datasets
 from PIL import Image
 import matplotlib.pyplot as plt
 from typing import List
-from .types import DatasetSample
+from .types import DatasetSample, ImageSample
+from clicking.common.pipeline_state import PipelineState
 
 class CocoDataset:
     def __init__(self, data_dir, annFile):
@@ -21,24 +22,23 @@ class CocoDataset:
         text_input = ". ".join(labels) + "." if labels else ""
         return text_input
 
-    def sample_dataset(self, image_ids: List[int]) -> DatasetSample:
-        images = []
-        object_names = []
+    def sample_dataset(self, state: PipelineState) -> PipelineState:
+        image_samples = []
         to_pil = transforms.ToPILImage()
         
-        for index in image_ids:
+        for index in state.image_ids:
             image_tensor, annotations = self.coco_dataset[int(index)]
             image = to_pil(image_tensor)
             object_name = self.create_text_input(annotations)
-            images.append(image)
-            object_names.append(object_name)
+            image_samples.append(ImageSample(image=image, object_name=object_name, image_id=index))
 
-        return DatasetSample(images=images, object_names=object_names)
+        state.dataset_sample = DatasetSample(images=image_samples)
+        return state
 
     def show_images(self, dataset_sample: DatasetSample, show_images_per_batch: int = 4):
-        for image, object_name in zip(dataset_sample.images[:show_images_per_batch], dataset_sample.object_names[:show_images_per_batch]):
-            plt.imshow(image)
+        for image_sample in dataset_sample.images[:show_images_per_batch]:
+            plt.imshow(image_sample.image)
             plt.axis(False)
-            plt.title(object_name)
+            plt.title(image_sample.object_name)
             plt.show()
 

@@ -13,6 +13,7 @@ from clicking.vision_model.bbox import BoundingBox, BBoxMode
 import numpy as np
 from enum import Enum, auto
 from clicking.vision_model.types import *
+from clicking.common.pipeline_state import PipelineState
 
 class VisionModel:
     def __init__(self):
@@ -71,7 +72,7 @@ class VisionModel:
         for name, handle in self._available_models.items():
             model = ModelInfo(name=name, variants=handle.variants(), tasks=handle.tasks())
             models.append(model)
-        return GetModelsResp(models=models)
+        return GetModelsResp(models)
 
 
     async def get_prediction(self, req: PredictionReq) -> PredictionResp:
@@ -96,3 +97,11 @@ class VisionModel:
         response.inference_time = time.time() - start_time
 
         return response
+
+class LocalizationResults(NamedTuple):
+    processed_samples: List[ProcessedSample]
+    predictions: Dict[str, List[BoundingBox]]
+
+class SegmentationResults(NamedTuple):
+    processed_samples: List[ProcessedSample]
+    predictions: Dict[str, List[SegmentationMask]]

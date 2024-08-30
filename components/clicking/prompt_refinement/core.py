@@ -15,6 +15,7 @@ from clicking.dataset_creator.types import DatasetSample
 from PIL import Image
 import uuid
 from clicking.prompt_refinement.types import *
+from clicking.common.pipeline_state import PipelineState
 
 # set API keys
 dotenv.load_dotenv()
@@ -27,22 +28,23 @@ class PromptRefiner(ImageProcessorBase):
         self.prompt_manager = PromptManager(prompt_path)
         self.messages = [{"role": "system", "content": self.prompt_manager.get_prompt(type='system')}]
     
-    async def process_prompts_async(self, dataset_sample: DatasetSample, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ProcessedPrompts:
-        tasks = [self._process_single_prompt(image, mode, object_name, **kwargs) 
-                 for image, object_name in zip(dataset_sample.images, dataset_sample.object_names)]
+    async def process_prompts_async(self, state: PipelineState, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> PipelineState:
+        tasks = [self._process_single_prompt(image_sample.image, mode, image_sample.object_name, **kwargs) 
+                 for image_sample in state.dataset_sample.images]
         results = await asyncio.gather(*tasks)
         
         processed_samples = [
             ProcessedSample(
-                image=image,
-                image_id=str(uuid.uuid4()),  # Generate a unique ID for each image
-                object_name=object_name,
+                image=image_sample.image,
+                image_id=image_sample.image_id,
+                object_name=image_sample.object_name,
                 description=description
             )
-            for image, object_name, description in zip(dataset_sample.images, dataset_sample.object_names, results)
+            for image_sample, description in zip(state.dataset_sample.images, results)
         ]
         
-        return ProcessedPrompts(samples=processed_samples)
+        state.processed_prompts = ProcessedPrompts(samples=processed_samples)
+        return state
 
     async def _process_single_prompt(self, image: Image.Image, mode: PromptMode, object_name: Optional[str] = None, **kwargs) -> SinglePromptResponse:
         base64_image = self._pil_to_base64(image)
@@ -71,8 +73,8 @@ class PromptRefiner(ImageProcessorBase):
         for message in self.messages:
             print(message)
 
-    def process_prompts(self, dataset_sample: DatasetSample, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ProcessedPrompts:
-        return asyncio.run(self.process_prompts_async(dataset_sample, mode, **kwargs))
+    def process_prompts(self, state: PipelineState, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> PipelineState:
+        return asyncio.run(self.process_prompts_async(state, mode, **kwargs))
 
 # %% get expanded description from class label
 

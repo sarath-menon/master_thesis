@@ -8,6 +8,8 @@ from typing import NamedTuple, List, Dict
 from clicking.prompt_refinement.core import ProcessedSample
 from clicking.vision_model.bbox import BoundingBox
 from clicking.vision_model.mask import SegmentationMask
+from clicking.common.pipeline_state import PipelineState
+
 class TaskType(str, Enum):
     LOCALIZATION_WITH_TEXT = "LOCALIZATION_WITH_TEXT"
     LOCALIZATION_WITH_TEXT_GROUNDED = "LOCALIZATION_WITH_TEXT_GROUNDED"
@@ -104,4 +106,4 @@ class LocalizationResults(NamedTuple):
 
 class SegmentationResults(NamedTuple):
     processed_samples: List[ProcessedSample]
-    predictions: Dict[str, List[SegmentationMask]] 
+    predictions: Dict[str, List[SegmentationMask]]

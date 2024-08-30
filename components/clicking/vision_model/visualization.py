@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from PIL import Image, ImageDraw
@@ -14,6 +13,7 @@ from clicking.vision_model.types import SegmentationResp, LocalizationResp
 from clicking.vision_model.utils import get_mask_centroid
 from clicking.vision_model.types import LocalizationResults, SegmentationResults
 from typing import List, Dict
+from clicking.common.pipeline_state import PipelineState
 
 
 def show_mask( mask, ax, random_color=False, borders=True, centroid_point=None):
@@ -164,6 +164,10 @@ def show_clickpoint_predictions(image, responses: List[SegmentationResp], textbo
 
 
 def show_localization_predictions(localization_results: LocalizationResults):
+    if localization_results is None:
+        print("No localization results available.")
+        return
+
     for processed_sample in localization_results.processed_samples:
         image = processed_sample.image
         image_id = processed_sample.image_id
@@ -218,6 +222,10 @@ def object_category_color_map(object_name):
 
 
 def show_segmentation_predictions(segmentation_results: SegmentationResults, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow', mask_alpha=0.7, borders=False, label_offset_y=60):
+    if segmentation_results is None:
+        print("No segmentation results available.")
+        return
+
     for processed_sample in segmentation_results.processed_samples:
         image = processed_sample.image
         image_id = processed_sample.image_id

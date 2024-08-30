@@ -4,8 +4,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from typing import List, Dict, Tuple, Any, NamedTuple
 from clicking.pipeline.core import Pipeline
-from clicking.dataset_creator.core import CocoDataset
-from clicking.dataset_creator.types import DatasetSample
+from clicking.dataset_creator.core import CocoDataset, DatasetSample
 from clicking.prompt_refinement.core import PromptRefiner, PromptMode, ProcessedPrompts, ProcessedSample
 from clicking.vision_model.types import TaskType, LocalizationResults, SegmentationResults
 from clicking.vision_model.bbox import BoundingBox, BBoxMode
@@ -29,6 +28,9 @@ from datetime import datetime
 from tabulate import tabulate
 import asyncio
 from clicking.vision_model.visualization import show_localization_predictions, show_segmentation_predictions
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional
+from clicking.common.pipeline_state import PipelineState
 
 #%%
 
@@ -52,7 +54,7 @@ import asyncio
 
 class Pipeline:
     def __init__(self):
-        self.steps: List[Union[Tuple[str, Callable, bool], List[Tuple[str, Callable, bool]]]] = []
+        self.steps: List[Tuple[str, Callable, str, bool]] = []
         self.visualization_functions: Dict[Type, Callable] = {
             LocalizationResults: show_localization_predictions,
             SegmentationResults: show_segmentation_predictions
@@ -84,129 +86,25 @@ class Pipeline:
             self.cache_data = {}
         return None
 
-    async def run(self, initial_input: Any) -> Any:
-        result = initial_input
-        for step in self.steps:
-            if isinstance(step, list):  # Parallel steps
-                tasks = []
-                for step_name, step_func, verbose in step:
-                    cache = self._load_cache(step_name)
-                    if cache is not None:
-                        print(f"Using cached input for step: {step_name}")
-                        tasks.append(asyncio.create_task(asyncio.to_thread(lambda: cache)))
-                    else:
-                        tasks.append(asyncio.create_task(asyncio.to_thread(step_func, result)))
-                
-                parallel_results = await asyncio.gather(*tasks)
-                
-                for (step_name, _, verbose), step_result in zip(step, parallel_results):
-                    self._save_cache(step_name, step_result)
-                    if verbose:
-                        self._log_step_result(step_name, step_result)
-                
-                result = parallel_results
-            else:  # Sequential step
-                step_name, step_func, verbose = step
-                cache = self._load_cache(step_name)
-                if cache is not None:
-                    print(f"Using cached input for step: {step_name}")
-                    result = cache
-                else:
-                    result = await asyncio.to_thread(step_func, result)
-                    self._save_cache(step_name, result)
-                
-                if verbose:
-                    self._log_step_result(step_name, result)
+    async def run(self, initial_input: List[int]) -> PipelineState:
+        state = PipelineState(image_ids=initial_input)
+        for step_name, step_func, log_var, verbose in self.steps:
+            cache = self._load_cache(step_name)
+            if cache is not None:
+                print(f"Using cached input for step: {step_name}")
+                state = cache
+            else:
+                state = await asyncio.to_thread(step_func, state)
+                self._save_cache(step_name, state)
+            
+            if verbose:
+                self._log_step_result(step_name, getattr(state, log_var), log_var)
         
-        return result
+        return state
 
-    async def run_from_step(self, start_step_name: str):
-        start_index = next((i for i, step in enumerate(self.steps) if (isinstance(step, tuple) and step[0] == start_step_name) or (isinstance(step, list) and any(s[0] == start_step_name for s in step))), None)
-        if start_index is None:
-            raise ValueError(f"Step '{start_step_name}' not found in the pipeline")
-
-        prev_step = self.steps[start_index - 1] if start_index > 0 else None
-        prev_step_name = prev_step[0] if isinstance(prev_step, tuple) else prev_step[-1][0] if isinstance(prev_step, list) else None
-        initial_input = self._load_cache(prev_step_name) if prev_step_name else None
-
-        if initial_input is None:
-            raise ValueError(f"No cached input found for step: {start_step_name}")
-
-        result = initial_input
-        for step in self.steps[start_index:]:
-            if isinstance(step, list):  # Parallel steps
-                tasks = []
-                for step_name, step_func, verbose in step:
-                    tasks.append(asyncio.create_task(asyncio.to_thread(step_func, result)))
-                
-                parallel_results = await asyncio.gather(*tasks)
-                
-                for (step_name, _, verbose), step_result in zip(step, parallel_results):
-                    self._save_cache(step_name, step_result)
-                    if verbose:
-                        self._log_step_result(step_name, step_result)
-                
-                result = parallel_results
-            else:  # Sequential step
-                step_name, step_func, verbose = step
-                result = await asyncio.to_thread(step_func, result)
-                self._save_cache(step_name, result)
-                
-                if verbose:
-                    self._log_step_result(step_name, result)
-        
-        return result
-
-    def _are_types_compatible(self, prev_func: Union[Callable, List[Tuple[str, Callable, bool]], Tuple[str, Callable, bool]], next_func: Union[Callable, List[Tuple[str, Callable, bool]], Tuple[str, Callable, bool]]) -> bool:
-        def get_return_type(func):
-            if isinstance(func, tuple):
-                return inspect.signature(func[1]).return_annotation
-            return inspect.signature(func).return_annotation
-
-        def get_param_type(func):
-            if isinstance(func, tuple):
-                return list(inspect.signature(func[1]).parameters.values())[0].annotation
-            return list(inspect.signature(func).parameters.values())[0].annotation
-
-        if isinstance(prev_func, list):
-            prev_return_types = [get_return_type(step) for step in prev_func]
-        else:
-            prev_return_types = [get_return_type(prev_func)]
-        
-        if isinstance(next_func, list):
-            next_param_types = [get_param_type(step) for step in next_func]
-        else:
-            next_param_types = [get_param_type(next_func)]
-        
-        for prev_return_type in prev_return_types:
-            for next_param_type in next_param_types:
-                if prev_return_type == Any or next_param_type == Any:
-                    continue
-                
-                if get_origin(prev_return_type) is not None:
-                    if not self._check_complex_type_compatibility(prev_return_type, next_param_type):
-                        return False
-                elif not issubclass(prev_return_type, next_param_type):
-                    return False
-        
-        return True
-
-    def _check_complex_type_compatibility(self, type1, type2):
-        origin1, origin2 = get_origin(type1), get_origin(type2)
-        args1, args2 = get_args(type1), get_args(type2)
-        
-        if origin1 is TypedDict and origin2 is TypedDict:
-            # For TypedDict, check if all keys in type2 exist in type1
-            return all(key in type1.__annotations__ for key in type2.__annotations__)
-        
-        if origin1 is origin2:
-            # For other complex types (List, Dict, etc.), check their arguments
-            return all(self._are_types_compatible(arg1, arg2) for arg1, arg2 in zip(args1, args2))
-        
-        return False
-
-    def _log_step_result(self, step_name: str, result: Any):
+    def _log_step_result(self, step_name: str, result: Any, log_var: str):
         print(f"\n--- Step: {step_name} ---")
+        print(f"Logging variable: {log_var}")
         self._recursive_log(step_name, result)
         
         # Check if there's a visualization function for this result type
@@ -288,15 +186,9 @@ class Pipeline:
             current_step = self.steps[i]
             next_step = self.steps[i + 1]
             
-            if isinstance(current_step, list):  # Parallel steps
-                current_return_types = [inspect.signature(step[1]).return_annotation for step in current_step]
-            else:  # Sequential step
-                current_return_types = [inspect.signature(current_step[1]).return_annotation]
+            current_return_types = [inspect.signature(current_step[1]).return_annotation]
             
-            if isinstance(next_step, list):  # Parallel steps
-                next_param_types = [list(inspect.signature(step[1]).parameters.values())[0].annotation for step in next_step]
-            else:  # Sequential step
-                next_param_types = [list(inspect.signature(next_step[1]).parameters.values())[0].annotation]
+            next_param_types = [list(inspect.signature(next_step[1]).parameters.values())[0].annotation]
             
             for current_return_type in current_return_types:
                 for next_param_type in next_param_types:
@@ -304,8 +196,8 @@ class Pipeline:
                         continue
                     
                     if not issubclass(current_return_type, next_param_type):
-                        raise TypeError(f"Output type of {current_step[0] if isinstance(current_step, tuple) else 'parallel step'} ({current_return_type}) "
-                                        f"is not compatible with input type of {next_step[0] if isinstance(next_step, tuple) else 'parallel step'} ({next_param_type})")
+                        raise TypeError(f"Output type of {current_step[0]} ({current_return_type}) "
+                                        f"is not compatible with input type of {next_step[0]} ({next_param_type})")
         
         print("Static analysis complete. All types are compatible.")
 
@@ -313,47 +205,59 @@ class Pipeline:
         headers = ["Step", "Function Name", "Input Type"]
         table_data = []
         
-        for i, step in enumerate(self.steps, 1):
-            if isinstance(step, list):  # Parallel steps
-                for j, (step_name, func, _) in enumerate(step, 1):
-                    input_type = list(inspect.signature(func).parameters.values())[0].annotation.__name__
-                    table_data.append([f"{i}.{j} {step_name} (Parallel)", func.__name__, input_type])
-            else:  # Sequential step
-                step_name, func, _ = step
-                input_type = list(inspect.signature(func).parameters.values())[0].annotation.__name__
-                table_data.append([f"{i}. {step_name}", func.__name__, input_type])
+        for i, (step_name, func, log_var, _) in enumerate(self.steps, 1):
+            input_type = list(inspect.signature(func).parameters.values())[0].annotation.__name__
+            table_data.append([f"{i}. {step_name}", func.__name__, input_type])
         
         print("Pipeline Steps:")
         print(tabulate(table_data, headers=headers, tablefmt="grid"))
 
-    def add_step(self, step_name: str, func: Callable, verbose: bool = True):
-        if self.steps and not self._are_types_compatible(self.steps[-1][1] if isinstance(self.steps[-1], tuple) else self.steps[-1], func):
-            last_step_func = self.steps[-1][1] if isinstance(self.steps[-1], tuple) else self.steps[-1]
+    def add_step(self, step_name: str, func: Callable, log_var: str, verbose: bool = True):
+        if self.steps and not self._are_types_compatible(self.steps[-1][1], func):
+            last_step_func = self.steps[-1][1]
             last_step_output_type = inspect.signature(last_step_func).return_annotation.__name__
             next_step_input_type = inspect.signature(func).parameters[next(iter(inspect.signature(func).parameters))].annotation.__name__
 
             raise TypeError(f"Output type of {last_step_func.__name__} ({last_step_output_type}) is not compatible with input type of {func.__name__} ({next_step_input_type})")
-        self.steps.append((step_name, func, verbose))
+        self.steps.append((step_name, func, log_var, verbose))
 
-    def add_parallel_steps(self, *steps: Tuple[str, Callable, bool]):
-        self.steps.append(list(steps))
+    def _are_types_compatible(self, prev_func: Callable, next_func: Callable) -> bool:
+        def get_return_type(func):
+            return inspect.signature(func).return_annotation
 
-    def replace_step(self, step_name: str, new_func: Callable, new_step_name: str = None, verbose: bool = True):
-        for i, step in enumerate(self.steps):
-            if isinstance(step, tuple) and step[0] == step_name:
-                new_step_name = new_step_name or step_name
-                self.steps[i] = (new_step_name, new_func, verbose)
-                print(f"Step '{step_name}' replaced with '{new_step_name}'")
-                return
-            elif isinstance(step, list):
-                for j, parallel_step in enumerate(step):
-                    if parallel_step[0] == step_name:
-                        new_step_name = new_step_name or step_name
-                        step[j] = (new_step_name, new_func, verbose)
-                        print(f"Parallel step '{step_name}' replaced with '{new_step_name}'")
-                        return
+        def get_param_type(func):
+            return list(inspect.signature(func).parameters.values())[0].annotation
+
+        prev_return_types = [get_return_type(prev_func)]
         
-        raise ValueError(f"Step '{step_name}' not found in the pipeline")
+        next_param_types = [get_param_type(next_func)]
+        
+        for prev_return_type in prev_return_types:
+            for next_param_type in next_param_types:
+                if prev_return_type == Any or next_param_type == Any:
+                    continue
+                
+                if get_origin(prev_return_type) is not None:
+                    if not self._check_complex_type_compatibility(prev_return_type, next_param_type):
+                        return False
+                elif not issubclass(prev_return_type, next_param_type):
+                    return False
+        
+        return True
+
+    def _check_complex_type_compatibility(self, type1, type2):
+        origin1, origin2 = get_origin(type1), get_origin(type2)
+        args1, args2 = get_args(type1), get_args(type2)
+        
+        if origin1 is TypedDict and origin2 is TypedDict:
+            # For TypedDict, check if all keys in type2 exist in type1
+            return all(key in type1.__annotations__ for key in type2.__annotations__)
+        
+        if origin1 is origin2:
+            # For other complex types (List, Dict, etc.), check their arguments
+            return all(self._are_types_compatible(arg1, arg2) for arg1, arg2 in zip(args1, args2))
+        
+        return False
 
 #%%
 from clicking_client.types import File
@@ -367,17 +271,25 @@ def image_to_http_file(image):
     image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime_type="image/jpeg")
     return image_file
 
+# Modify the relevant steps to use PipelineState
+
+def sample_dataset(state: PipelineState) -> PipelineState:
+    return coco_dataset.sample_dataset(state)
+
+def process_prompts(state: PipelineState) -> PipelineState:
+    return prompt_refiner.process_prompts(state)
+
 class LocalizationProcessor:
     def __init__(self, client: Client):
         self.client = client
 
-    def get_localization_results(self, processed_result: ProcessedPrompts) -> LocalizationResults:
+    def get_localization_results(self, state: PipelineState) -> PipelineState:
         set_model.sync(client=self.client, body=SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB))
         
         all_predictions = {}
-        for sample in processed_result.samples:
+        for sample in state.processed_prompts.samples:
             image_file = image_to_http_file(sample.image)
-            image_id = sample.image_id  # Assuming image_id is added to ProcessedSample
+            image_id = sample.image_id
 
             all_predictions[image_id] = []
             for obj in sample.description["objects"]:
@@ -394,25 +306,26 @@ class LocalizationProcessor:
                           for bbox in response.prediction.bboxes]
                 all_predictions[image_id].extend(bboxes)
         
-        return LocalizationResults(
-            processed_samples=processed_result.samples,
+        state.localization_results = LocalizationResults(
+            processed_samples=state.processed_prompts.samples,
             predictions=all_predictions
         )
+        return state
 
 class SegmentationProcessor:
     def __init__(self, client: Client):
         self.client = client
 
-    def get_segmentation_results(self, data: LocalizationResults) -> SegmentationResults:
+    def get_segmentation_results(self, state: PipelineState) -> PipelineState:
         set_model.sync(client=self.client, body=SetModelReq(name="sam2", variant="sam2_hiera_tiny", task=TaskType.SEGMENTATION_WITH_BBOX))
         
         segmentation_results = {}
-        for sample in data.processed_samples:
+        for sample in state.localization_results.processed_samples:
             image_file = image_to_http_file(sample.image)
             image_id = sample.image_id
 
             seg_predictions = []
-            for bbox in data.predictions[image_id]:
+            for bbox in state.localization_results.predictions[image_id]:
                 request = BodyGetPrediction(
                     image=image_file
                 )
@@ -441,10 +354,11 @@ class SegmentationProcessor:
             
             segmentation_results[image_id] = seg_predictions
         
-        return SegmentationResults(
-            processed_samples=data.processed_samples,
+        state.segmentation_results = SegmentationResults(
+            processed_samples=state.localization_results.processed_samples,
             predictions=segmentation_results
         )
+        return state
 
 #%%
 import nest_asyncio
@@ -455,11 +369,11 @@ localization_processor = LocalizationProcessor(client)
 segmentation_processor = SegmentationProcessor(client)
 output_corrector = OutputCorrector(prompt_path="./prompts/output_corrector.md")
 
-pipeline.add_step("Sample Dataset", coco_dataset.sample_dataset, verbose=True)
-pipeline.add_step("Process Prompts", prompt_refiner.process_prompts, verbose=True)
-pipeline.add_step("Get Localization Results", localization_processor.get_localization_results, verbose=True)
-pipeline.add_step("Verify Localization Results", output_corrector.verify_bboxes, verbose=True)
-pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results, verbose=True)
+pipeline.add_step("Sample Dataset", sample_dataset, "dataset_sample", True)
+pipeline.add_step("Process Prompts", process_prompts, "processed_prompts", True)
+pipeline.add_step("Get Localization Results", localization_processor.get_localization_results, "localization_results", True)
+#pipeline.add_step("Verify Localization Results", output_corrector.verify_bboxes, "verified_localization_results", True)
+pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results, "segmentation_results", True)
 
 # Print the pipeline structure
 pipeline.print_pipeline()

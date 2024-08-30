@@ -28,3 +28,6 @@ class TemplateValues(TypedDict, total=False):
     input_description: str
     word_limit: str
     description_length: int
+
+# You might want to import PipelineState here if it's used in this file
+# from clicking.pipeline.types import PipelineState
