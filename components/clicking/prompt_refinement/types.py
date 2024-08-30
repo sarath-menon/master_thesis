@@ -12,16 +12,16 @@ class ObjectDescription(TypedDict):
     category: str
     description: str
 
-class PromptResponse(TypedDict):
+class SinglePromptResponse(TypedDict):
     objects: List[ObjectDescription]
 
 class ProcessedSample(NamedTuple):
     image: Image.Image
     image_id: str
     class_label: str
-    description: PromptResponse
+    description: SinglePromptResponse
 
-class ProcessedResult(NamedTuple):
+class ProcessedPrompts(NamedTuple):
     samples: List[ProcessedSample]
 
 class TemplateValues(TypedDict, total=False):

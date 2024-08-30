@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple, Any, NamedTuple
 from clicking.pipeline.core import Pipeline
 from clicking.dataset_creator.core import CocoDataset
 from clicking.dataset_creator.types import DatasetSample
-from clicking.prompt_refinement.core import PromptRefiner, PromptMode, ProcessedResult, ProcessedSample
+from clicking.prompt_refinement.core import PromptRefiner, PromptMode, ProcessedPrompts, ProcessedSample
 from clicking.vision_model.types import TaskType, LocalizationResults, SegmentationResults
 from clicking.vision_model.bbox import BoundingBox, BBoxMode
 from clicking.vision_model.mask import SegmentationMask, SegmentationMode
@@ -371,7 +371,7 @@ class LocalizationProcessor:
     def __init__(self, client: Client):
         self.client = client
 
-    def get_localization_results(self, processed_result: ProcessedResult) -> LocalizationResults:
+    def get_localization_results(self, processed_result: ProcessedPrompts) -> LocalizationResults:
         set_model.sync(client=self.client, body=SetModelReq(name="florence2", variant="florence-2-base", task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB))
         
         all_predictions = {}
