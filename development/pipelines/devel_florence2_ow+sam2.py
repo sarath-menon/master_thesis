@@ -62,77 +62,93 @@ class Pipeline:
         self.cache_dir = ".pipeline_cache"
         os.makedirs(self.cache_dir, exist_ok=True)
         self.cache_filename = self._generate_cache_filename()
-        self.cache_data = {}
+        self.cache_data: Dict[str, Any] = {}
 
     def _generate_cache_filename(self):
-        return os.path.join(self.cache_dir, f"pipeline_cache_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl")
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        return os.path.join(self.cache_dir, f"pipeline_cache_{timestamp}.pkl")
 
-    def _save_cache(self, step_name: str, data: Any):
-        self.cache_data[step_name] = data
+    def _save_cache(self):
         with open(self.cache_filename, 'wb') as f:
             pickle.dump(self.cache_data, f)
 
-    def _load_cache(self, step_name: str) -> Any:
+    def _load_cache(self):
         if not os.path.exists(self.cache_filename):
-            return None
-        
+            return
+
         try:
             with open(self.cache_filename, 'rb') as f:
                 self.cache_data = pickle.load(f)
-            return self.cache_data.get(step_name)
         except (EOFError, pickle.UnpicklingError):
             print(f"Warning: Cache file is corrupted. Ignoring cache.")
             os.remove(self.cache_filename)
             self.cache_data = {}
-        return None
 
     async def run(self, initial_input: List[int]) -> PipelineState:
-        state = PipelineState(image_ids=initial_input)
-        for step_name, step_func, log_var, verbose in self.steps:
-            cache = self._load_cache(step_name)
-            if cache is not None:
+        self.cache_data = {}  # Reset cache for a new run
+        return await self._run_internal(initial_input)
+
+    async def run_from_step(self, step_name: str, initial_state: PipelineState = None) -> PipelineState:
+        step_index = self._find_step_index(step_name)
+        if step_index == -1:
+            raise ValueError(f"Step '{step_name}' not found in the pipeline.")
+        
+        if initial_state is None:
+            self._load_cache()
+            if step_name not in self.cache_data:
+                raise ValueError(f"No cached state found for step '{step_name}'. Please provide an initial state.")
+            initial_state = self.cache_data[step_name]
+        
+        return await self._run_internal(initial_state, start_index=step_index)
+
+    async def _run_internal(self, initial_input: Union[List[int], PipelineState], start_index: int = 0) -> PipelineState:
+        state = initial_input if isinstance(initial_input, PipelineState) else PipelineState(image_ids=initial_input)
+        
+        for i, (step_name, step_func, log_var, verbose) in enumerate(self.steps[start_index:], start=start_index):
+            if step_name in self.cache_data:
                 print(f"Using cached input for step: {step_name}")
-                state = cache
+                state = self.cache_data[step_name]
             else:
                 state = await asyncio.to_thread(step_func, state)
-                self._save_cache(step_name, state)
+                self.cache_data[step_name] = state
+                self._save_cache()
             
             if verbose:
                 self._log_step_result(step_name, getattr(state, log_var), log_var)
         
         return state
 
+    def get_step_result(self, step_name: str) -> Any:
+        self._load_cache()
+        return self.cache_data.get(step_name)
+
+    def _find_step_index(self, step_name: str) -> int:
+        for i, (name, _, _, _) in enumerate(self.steps):
+            if name == step_name:
+                return i
+        return -1
+
     def _log_step_result(self, step_name: str, result: Any, log_var: str):
         print(f"\n--- Step: {step_name} ---")
         print(f"Logging variable: {log_var}")
         self._recursive_log(step_name, result)
         
-        # Check if there's a visualization function for this result type
         result_type = type(result)
         if result_type in self.visualization_functions:
             self.visualization_functions[result_type](result)
 
     def _recursive_log(self, step_name: str, result: Any, prefix: str = ""):
-        keys_to_avoid = ["objects"]
-
         if isinstance(result, Image.Image):
             self._display_image(step_name, prefix, result)
-            return
-
-        if isinstance(result, list):
+        elif isinstance(result, list):
             self._log_list(step_name, result, prefix)
-            return
-
-        if isinstance(result, dict):
-            self._log_dict(step_name, result, prefix, keys_to_avoid)
-            return
-
-        if isinstance(result, tuple):
+        elif isinstance(result, dict):
+            self._log_dict(step_name, result, prefix)
+        elif isinstance(result, tuple):
             for item in result:
                 self._recursive_log(step_name, item, prefix)
-            return
-
-        print(f"{prefix}{result}")
+        else:
+            print(f"{prefix}{result}")
 
     def _log_list(self, step_name: str, result: List[Any], prefix: str):
         if not result:
@@ -148,13 +164,13 @@ class Pipeline:
                 print(f"{prefix}---")
             self._recursive_log(step_name, item, prefix)
 
-    def _log_dict(self, step_name: str, result: Dict[str, Any], prefix: str, keys_to_avoid: List[str]):
+    def _log_dict(self, step_name: str, result: Dict[str, Any], prefix: str):
         for key, value in result.items():
-            if key in keys_to_avoid:
-                self._recursive_log(step_name, value, prefix)
-            else:
+            if key != "objects":
                 print(f"{prefix}{key}: ", end="")
                 self._recursive_log(step_name, value, "")
+            else:
+                self._recursive_log(step_name, value, prefix)
 
     def _display_image(self, step_name: str, prefix: str, image: Image.Image):
         plt.figure(figsize=(5, 5))
@@ -186,18 +202,13 @@ class Pipeline:
             current_step = self.steps[i]
             next_step = self.steps[i + 1]
             
-            current_return_types = [inspect.signature(current_step[1]).return_annotation]
+            current_return_type = inspect.signature(current_step[1]).return_annotation
+            next_param_type = list(inspect.signature(next_step[1]).parameters.values())[0].annotation
             
-            next_param_types = [list(inspect.signature(next_step[1]).parameters.values())[0].annotation]
-            
-            for current_return_type in current_return_types:
-                for next_param_type in next_param_types:
-                    if current_return_type == Any or next_param_type == Any:
-                        continue
-                    
-                    if not issubclass(current_return_type, next_param_type):
-                        raise TypeError(f"Output type of {current_step[0]} ({current_return_type}) "
-                                        f"is not compatible with input type of {next_step[0]} ({next_param_type})")
+            if current_return_type != Any and next_param_type != Any:
+                if not issubclass(current_return_type, next_param_type):
+                    raise TypeError(f"Output type of {current_step[0]} ({current_return_type}) "
+                                    f"is not compatible with input type of {next_step[0]} ({next_param_type})")
         
         print("Static analysis complete. All types are compatible.")
 
@@ -216,48 +227,19 @@ class Pipeline:
         if self.steps and not self._are_types_compatible(self.steps[-1][1], func):
             last_step_func = self.steps[-1][1]
             last_step_output_type = inspect.signature(last_step_func).return_annotation.__name__
-            next_step_input_type = inspect.signature(func).parameters[next(iter(inspect.signature(func).parameters))].annotation.__name__
+            next_step_input_type = list(inspect.signature(func).parameters.values())[0].annotation.__name__
 
             raise TypeError(f"Output type of {last_step_func.__name__} ({last_step_output_type}) is not compatible with input type of {func.__name__} ({next_step_input_type})")
         self.steps.append((step_name, func, log_var, verbose))
 
     def _are_types_compatible(self, prev_func: Callable, next_func: Callable) -> bool:
-        def get_return_type(func):
-            return inspect.signature(func).return_annotation
-
-        def get_param_type(func):
-            return list(inspect.signature(func).parameters.values())[0].annotation
-
-        prev_return_types = [get_return_type(prev_func)]
+        prev_return_type = inspect.signature(prev_func).return_annotation
+        next_param_type = list(inspect.signature(next_func).parameters.values())[0].annotation
         
-        next_param_types = [get_param_type(next_func)]
+        if prev_return_type == Any or next_param_type == Any:
+            return True
         
-        for prev_return_type in prev_return_types:
-            for next_param_type in next_param_types:
-                if prev_return_type == Any or next_param_type == Any:
-                    continue
-                
-                if get_origin(prev_return_type) is not None:
-                    if not self._check_complex_type_compatibility(prev_return_type, next_param_type):
-                        return False
-                elif not issubclass(prev_return_type, next_param_type):
-                    return False
-        
-        return True
-
-    def _check_complex_type_compatibility(self, type1, type2):
-        origin1, origin2 = get_origin(type1), get_origin(type2)
-        args1, args2 = get_args(type1), get_args(type2)
-        
-        if origin1 is TypedDict and origin2 is TypedDict:
-            # For TypedDict, check if all keys in type2 exist in type1
-            return all(key in type1.__annotations__ for key in type2.__annotations__)
-        
-        if origin1 is origin2:
-            # For other complex types (List, Dict, etc.), check their arguments
-            return all(self._are_types_compatible(arg1, arg2) for arg1, arg2 in zip(args1, args2))
-        
-        return False
+        return issubclass(prev_return_type, next_param_type)
 
 #%%
 from clicking_client.types import File
@@ -372,7 +354,6 @@ output_corrector = OutputCorrector(prompt_path="./prompts/output_corrector.md")
 pipeline.add_step("Sample Dataset", sample_dataset, "dataset_sample", True)
 pipeline.add_step("Process Prompts", process_prompts, "processed_prompts", True)
 pipeline.add_step("Get Localization Results", localization_processor.get_localization_results, "localization_results", True)
-#pipeline.add_step("Verify Localization Results", output_corrector.verify_bboxes, "verified_localization_results", True)
 pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results, "segmentation_results", True)
 
 # Print the pipeline structure
@@ -387,21 +368,20 @@ result = asyncio.run(pipeline.run(image_ids))
 
 #%%
 
-# # You can also keep the same step name if you want
-# segmentation_processor = SegmentationProcessor(client)
-# pipeline.replace_step("Get Localization Results", segmentation_processor.get_segmentation_results)
+# Run from a specific step using cached data
+result = asyncio.run(pipeline.run_from_step("Get Localization Results"))
 
-# Later, run from a specific step
-result = asyncio.run(pipeline.run_from_step("Get Segmentation Results"))
+# # Or provide an initial state if needed
+# initial_state = PipelineState(image_ids=[22, 31, 34])
+# initial_state.processed_prompts = pipeline.get_step_result("Process Prompts").processed_prompts
+# result = asyncio.run(pipeline.run_from_step("Get Localization Results", initial_state))
 
 #%%
-from clicking.vision_model.utils import get_mask_centroid
-from clicking.vision_model.visualization import get_color
-from clicking.vision_model.utils import get_mask_centroid
-import cv2
-import numpy as np
-from pycocotools import mask as mask_utils
+# Access cached results for logging or analysis
+localization_results = pipeline.get_step_result("Get Localization Results")
+segmentation_results = pipeline.get_step_result("Get Segmentation Results")
 
-
-show_segmentation_predictions(result)
+# Visualize results
+show_localization_predictions(localization_results)
+show_segmentation_predictions(segmentation_results)
 #%%
