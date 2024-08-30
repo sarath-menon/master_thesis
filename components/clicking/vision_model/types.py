@@ -5,7 +5,7 @@ from PIL import Image
 import numpy as np
 from fastapi import Form, File, UploadFile, Depends
 from typing import NamedTuple, List, Dict
-from clicking.prompt_refinement.core import ImageWithDescriptions
+from clicking.common.types import ImageWithDescriptions
 from clicking.vision_model.bbox import BoundingBox
 from clicking.vision_model.mask import SegmentationMask
 

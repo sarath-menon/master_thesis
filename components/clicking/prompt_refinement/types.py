@@ -7,20 +7,6 @@ class PromptMode(Enum):
     IMAGE_TO_OBJECT_DESCRIPTIONS = "IMAGE_TO_OBJECT_DESCRIPTIONS"
     IMAGE_TO_OBJECTS_LIST = "IMAGE_TO_OBJECTS_LIST"
 
-class ObjectDescription(TypedDict):
-    name: str
-    category: str
-    description: str
-
-class SinglePromptResponse(TypedDict):
-    objects: List[ObjectDescription]
-
-class ImageWithDescriptions(NamedTuple):
-    image: Image.Image
-    image_id: str
-    object_name: str
-    description: Optional[SinglePromptResponse] = None
-
 class ProcessedPrompts(NamedTuple):
     samples: List[ImageWithDescriptions]
 

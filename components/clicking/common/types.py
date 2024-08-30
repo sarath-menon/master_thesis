@@ -1,5 +1,17 @@
-from dataclasses import dataclass, field
 from typing import List, Optional
-from clicking.dataset_creator.types import DatasetSample
-from clicking.prompt_refinement.types import ProcessedPrompts
-from clicking.vision_model.core import LocalizationResults, SegmentationResults
+from typing import TypedDict, List, Optional, NamedTuple
+from PIL import Image
+
+class ObjectDescription(TypedDict):
+    name: str
+    category: str
+    description: str
+
+class SinglePromptResponse(TypedDict):
+    objects: List[ObjectDescription]
+
+class ImageWithDescriptions(NamedTuple):
+    image: Image.Image
+    image_id: str
+    object_name: str
+    description: Optional[SinglePromptResponse] = None

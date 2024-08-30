@@ -71,7 +71,7 @@ if __name__ == "__main__":
     from clicking.vision_model.visualization import show_segmentation_predictions
     from clicking.vision_model.mask import SegmentationMask, SegmentationMode
     from clicking.vision_model.types import SegmentationResults
-    from clicking.prompt_refinement.core import ImageWithDescriptions
+    from clicking.common.types import ImageWithDescriptions
     import random
 
     data_dir = "./datasets/label_studio_gen/coco_dataset/images"
