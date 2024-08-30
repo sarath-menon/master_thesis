@@ -45,40 +45,6 @@ def show_box( box, ax):
     w, h = box[2] - box[0], box[3] - box[1]
     ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0, 0, 0, 0), lw=2))
 
-
-
-def show_segmentation_prediction(image, masks):
-    # Assuming 'image' is your original PIL Image
-    image_array = np.array(image)
-
-    # Create a new figure and axis
-    fig, ax = plt.subplots(figsize=(10, 10))
-
-    # Display the original image
-    ax.imshow(image)
-
-    borders = False
-    mask_alpha = 0.7
-
-    for mask in masks:
-        m = mask_utils.decode(mask.get(SegmentationMode.COCO_RLE))
-        color_mask = np.random.random(3)
-
-        # Create color overlay with correct shape and alpha channel
-        color_overlay = np.zeros((*image_array.shape[:2], 4))
-        color_overlay[m == 1] = [*color_mask, mask_alpha] 
-        color_overlay[m == 0] = [0, 0, 0, 0]  
-        ax.imshow(color_overlay)
-
-        if borders:
-            contours, _ = cv2.findContours(m.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            for contour in contours:
-                ax.plot(contour[:, 0, 0], contour[:, 0, 1], color='white', linewidth=2)
-
-    ax.axis('off')
-    plt.tight_layout()
-    plt.show()
-
 def show_clickpoint(image, click_point, object_name, size=100, color='yellow'):
     # Convert PIL Image to numpy array
     image_array = np.array(image)
@@ -244,8 +210,13 @@ def show_segmentation_predictions(segmentation_results: SegmentationResults, tex
 
             # Create color overlay with correct shape and alpha channel
             color_overlay = np.zeros((*np.array(image).shape[:2], 4))
-            color_overlay[m == 1] = [*color_mask, mask_alpha] 
-            color_overlay[m == 0] = [0, 0, 0, 0]  
+            m_expanded = np.expand_dims(m, axis=-1)
+            color_overlay = np.where(m_expanded, [*color_mask, mask_alpha], [0, 0, 0, 0])
+
+            # Remove the extra dimension if present
+            if color_overlay.ndim == 4:
+                color_overlay = color_overlay.squeeze(2)
+
             ax.imshow(color_overlay)
 
             if borders:
