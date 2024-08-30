@@ -8,7 +8,6 @@ from typing import NamedTuple, List, Dict
 from clicking.prompt_refinement.core import ProcessedSample
 from clicking.vision_model.bbox import BoundingBox
 from clicking.vision_model.mask import SegmentationMask
-from clicking.common.pipeline_state import PipelineState
 
 class TaskType(str, Enum):
     LOCALIZATION_WITH_TEXT = "LOCALIZATION_WITH_TEXT"

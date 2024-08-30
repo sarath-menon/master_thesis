@@ -13,7 +13,6 @@ from clicking.vision_model.bbox import BoundingBox, BBoxMode
 import numpy as np
 from enum import Enum, auto
 from clicking.vision_model.types import *
-from clicking.common.pipeline_state import PipelineState
 
 class VisionModel:
     def __init__(self):
