@@ -8,7 +8,6 @@ from clicking.dataset_creator.core import CocoDataset
 from clicking.dataset_creator.types import DatasetSample
 from clicking.prompt_refinement.core import PromptRefiner, PromptMode, ProcessedResult, ProcessedSample
 from clicking.vision_model.types import TaskType, LocalizationResults, SegmentationResults
-from clicking.vision_model.types import TaskType, LocalizationResults, SegmentationResults
 from clicking.vision_model.bbox import BoundingBox, BBoxMode
 from clicking.vision_model.mask import SegmentationMask, SegmentationMode
 from clicking.output_corrector.core import OutputCorrector
@@ -29,7 +28,7 @@ import os
 from datetime import datetime
 from tabulate import tabulate
 import asyncio
-from clicking.vision_model.visualization import show_localization_predictions
+from clicking.vision_model.visualization import show_localization_predictions, show_segmentation_predictions
 
 #%%
 
@@ -482,55 +481,6 @@ import cv2
 import numpy as np
 from pycocotools import mask as mask_utils
 
-def show_segmentation_predictions(segmentation_results: SegmentationResults, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow', mask_alpha=0.7, borders=False, label_offset_y=60):
-    for processed_sample in segmentation_results.processed_samples:
-        image = processed_sample.image
-        image_id = processed_sample.image_id
-        predictions = segmentation_results.predictions[image_id]
-
-        # Create a new figure and axis
-        fig, ax = plt.subplots(figsize=(10, 10))
-
-        # Display the original image
-        ax.imshow(image)
-
-        total_classes = len(set(mask.object_name for mask in predictions))
-
-        for i, mask in enumerate(predictions):
-            m = mask_utils.decode(mask.get(SegmentationMode.COCO_RLE))
-            color_mask = get_color(i, total_classes)
-
-            # Create color overlay with correct shape and alpha channel
-            color_overlay = np.zeros((*np.array(image).shape[:2], 4))
-            color_overlay[m == 1] = [*color_mask, mask_alpha] 
-            color_overlay[m == 0] = [0, 0, 0, 0]  
-            ax.imshow(color_overlay)
-
-            if borders:
-                contours, _ = cv2.findContours(m.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                for contour in contours:
-                    ax.plot(contour[:, 0, 0], contour[:, 0, 1], color='white', linewidth=2)
-            
-            # Get mask centroid and plot it as click point
-            centroid = get_mask_centroid(m)
-            ax.scatter(*centroid, marker='*', color=marker_color, s=marker_size, label=mask.object_name)  
-
-            # Plot class label as text in a box on top of the mask
-            ax.text(centroid[0], centroid[1] - label_offset_y, mask.object_name, 
-                    color=text_color, fontsize=text_size, 
-                    bbox=dict(facecolor=textbox_color, edgecolor='none', alpha=1.0),
-                    ha='center', va='center')
-
-        ax.axis('off')
-        plt.title(f"Image ID: {image_id}")
-        plt.tight_layout()
-        plt.show()
-
-        # Print legend (object_name: description)
-        print(f"Legend for Image ID: {image_id}")
-        for mask in predictions:
-            print(f"{mask.object_name}: {mask.description}")
-        print("\n")
 
 show_segmentation_predictions(result)
 #%%
