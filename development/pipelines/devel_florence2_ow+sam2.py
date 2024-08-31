@@ -278,7 +278,7 @@ pipeline.print_pipeline()
 pipeline.static_analysis()
 
 # Run the entire pipeline
-image_ids = [22, 31, 34]
+image_ids = [42, 31, 34]
 results = asyncio.run(pipeline.run(image_ids))
 #%%
 
@@ -324,6 +324,9 @@ def print_image_objects(image_objects: List[ClickingImage]):
         table.add_rows(combined_objects)
         
         print(f"Image ID: {result.id}")
+        plt.imshow(result.image)
+        plt.axis('off')
+        plt.show()
         print(table)
         print("\n")
 
