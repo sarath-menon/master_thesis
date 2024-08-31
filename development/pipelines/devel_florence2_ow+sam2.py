@@ -309,15 +309,15 @@ from typing import List
 def print_image_objects(image_objects: List[ClickingImage]):
     for result in image_objects:
         predicted_objects = [[i, obj.name] for i, obj in enumerate(result.predicted_objects)]
-        true_objects = [[i, obj.name] for i, obj in enumerate(result.true_objects)]
+        annotated_objects = [[i, obj.name] for i, obj in enumerate(result.annotated_objects)]
         
         # Pad the shorter list to match the length of the longer list
-        max_length = max(len(predicted_objects), len(true_objects))
+        max_length = max(len(predicted_objects), len(annotated_objects))
         predicted_objects += [['', '']] * (max_length - len(predicted_objects))
-        true_objects += [['', '']] * (max_length - len(true_objects))
+        annotated_objects += [['', '']] * (max_length - len(annotated_objects))
         
         # Combine predicted and true objects
-        combined_objects = [[i if i < len(predicted_objects) else '', p[1], t[1]] for i, (p, t) in enumerate(zip(predicted_objects, true_objects))]
+        combined_objects = [[i if i < len(predicted_objects) else '', p[1], t[1]] for i, (p, t) in enumerate(zip(predicted_objects, annotated_objects))]
         
         table = PrettyTable()
         table.field_names = ["Index", "Predicted object", "True objects"]
@@ -334,4 +334,21 @@ def print_image_objects(image_objects: List[ClickingImage]):
 print_image_objects(results.images)
     
 #%%
+def print_object_descriptions(image_objects: List[ClickingImage]):
+    for result in image_objects:
+        table = PrettyTable()
+        table.field_names = ["Index", "Predicted Object", "Description"]
+        
+        for i, obj in enumerate(result.predicted_objects):
+            table.add_row([i, obj.name, obj.description or "No description available"])
+        
+        print(f"Image ID: {result.id}")
+        plt.imshow(result.image)
+        plt.axis('off')
+        plt.show()
+        print(table)
+        print("\n")
+
+# Call the function with the results
+print_object_descriptions(results.images)
 
