@@ -6,13 +6,13 @@ import base64
 import io
 from PIL import Image
 import numpy as np
-from clicking.vision_model.mask import SegmentationMask, SegmentationMode
-from components.clicking.prompt_manager.core import PromptManager
+from clicking.common.mask import SegmentationMask, SegmentationMode
+from clicking.prompt_manager.core import PromptManager
 import asyncio
-from components.clicking.common.image_utils import ImageProcessorBase
-from components.clicking.vision_model.visualization import overlay_bounding_box
-from components.clicking.vision_model.core import LocalizationResults, SegmentationResults
-from components.clicking.prompt_refinement.types import *
+from clicking.common.image_utils import ImageProcessorBase
+from clicking.vision_model.visualization import overlay_bounding_box
+from clicking.common.types import ClickingImage
+from clicking.prompt_refinement.types import *
 
 # set API keys
 dotenv.load_dotenv()
@@ -39,85 +39,89 @@ class OutputCorrector(ImageProcessorBase):
         responses = await asyncio.gather(*tasks)
         return responses
 
-    async def verify_bboxes_async(self, localization_results: LocalizationResults) -> LocalizationResults:
+    async def verify_bboxes_async(self, clicking_image: ClickingImage) -> ClickingImage:
         verification_results = {}
-        for sample in localization_results.processed_samples:
-            image_id = sample.id
-            screenshot = sample.image
-            bboxes = localization_results.predictions[image_id]
-            descriptions = [bbox.description for bbox in bboxes]
-            
-            images_overlayed = [overlay_bounding_box(screenshot.copy(), bbox) for bbox in bboxes]
-            base64_images = [self._pil_to_base64(img) for img in images_overlayed]
-            
-            responses = await self._get_image_responses(base64_images, descriptions)
-            verification_results[image_id] = responses
+        screenshot = clicking_image.image
         
-        return localization_results
+        images_overlayed = [overlay_bounding_box(screenshot.copy(), obj.bbox) for obj in clicking_image.objects]
+        base64_images = [self._pil_to_base64(img) for img in images_overlayed]
+        object_names = [obj.name for obj in clicking_image.objects]
+        
+        responses = await self._get_image_responses(base64_images, object_names)
+        verification_results[clicking_image.id] = responses
+        
+        # You might want to update the ClickingImage based on the verification results here
+        
+        return clicking_image
 
-    def verify_bboxes(self, localization_results: LocalizationResults) -> LocalizationResults:
-        return asyncio.run(self.verify_bboxes_async(localization_results))
+    def verify_bboxes(self, clicking_image: ClickingImage) -> ClickingImage:
+        return asyncio.run(self.verify_bboxes_async(clicking_image))
 
-    async def verify_masks_async(self, localization_results: SegmentationResults) -> SegmentationResults:
+    async def verify_masks_async(self, clicking_image: ClickingImage) -> ClickingImage:
         verification_results = {}
-        for sample in localization_results.processed_samples:
-            image_id = sample.id
-            screenshot = sample.image
-            masks = localization_results.predictions[image_id]
-            object_names = [mask.object_name for mask in masks]
-            
-            extracted_areas = [mask.extract_area(screenshot, padding=10) for mask in masks]
-            base64_images = [self._pil_to_base64(area) for area in extracted_areas]
-            
-            responses = await self._get_image_responses(base64_images, object_names)
-            verification_results[image_id] = responses
+        screenshot = clicking_image.image
         
-        return verification_results
+        extracted_areas = [obj.mask.extract_area(screenshot, padding=10) for obj in clicking_image.objects]
+        base64_images = [self._pil_to_base64(area) for area in extracted_areas]
+        object_names = [obj.name for obj in clicking_image.objects]
+        
+        responses = await self._get_image_responses(base64_images, object_names)
+        verification_results[clicking_image.id] = responses
+        
+        # You might want to update the ClickingImage based on the verification results here
+        
+        return clicking_image
 
-    def verify_masks(self, localization_results: SegmentationResults) -> SegmentationResults:
-        return asyncio.run(self.verify_masks_async(localization_results))
+    def verify_masks(self, clicking_image: ClickingImage) -> ClickingImage:
+        return asyncio.run(self.verify_masks_async(clicking_image))
 
 #%%%
 
 # Demo code for verify_bboxes_async
 async def demo_verify_bboxes_async():
-    # Create a sample LocalizationResults object
-    from components.clicking.vision_model.core import ImageWithDescriptions, BoundingBox, BBoxMode
+    from clicking.common.types import ClickingImage, ImageObject, ObjectCategory
+    from clicking.common.bbox import BoundingBox, BBoxMode
     from PIL import Image
     import numpy as np
 
     # Create a sample image
     sample_image = Image.fromarray(np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8))
     
-    # Create sample bounding boxes
-    bbox1 = BoundingBox([10, 10, 50, 50], mode=BBoxMode.XYWH, description="Button")
-    bbox2 = BoundingBox([50, 50, 40, 20], mode=BBoxMode.XYWH, description="Text Input")
-    
-    # Create a sample ImageWithDescriptions
-    processed_sample = ImageWithDescriptions(
-        id="sample1",
-        image=sample_image,
-        object_name="Sample Object",
-        description="A sample processed image"
+    # Create sample ImageObjects
+    obj1 = ImageObject(
+        name="Button",
+        description="A button",
+        category=ObjectCategory.GAME_ASSET,
+        bbox=BoundingBox([10, 10, 50, 50], mode=BBoxMode.XYWH),
+        mask=SegmentationMask(np.zeros((100, 100)), mode=SegmentationMode.BINARY_MASK)
+    )
+    obj2 = ImageObject(
+        name="Text Input",
+        description="A text input field",
+        category=ObjectCategory.GAME_ASSET,
+        bbox=BoundingBox([50, 50, 40, 20], mode=BBoxMode.XYWH),
+        mask=SegmentationMask(np.zeros((100, 100)), mode=SegmentationMode.BINARY_MASK)
     )
     
-    # Create a sample LocalizationResults object
-    localization_results = LocalizationResults(
-        processed_samples=[processed_sample],
-        predictions={"sample1": [bbox1, bbox2]}
+    # Create a sample ClickingImage
+    clicking_image = ClickingImage(
+        id="sample1",
+        image=sample_image,
+        objects=[obj1, obj2]
     )
     
     # Initialize OutputCorrector
     corrector = OutputCorrector(prompt_path="./prompts/output_corrector.md")
     
     # Call verify_bboxes_async
-    verified_results = await corrector.verify_bboxes_async(localization_results)
+    verified_image = await corrector.verify_bboxes_async(clicking_image)
     
     # Print the verification results
-    for image_id, responses in verified_results.predictions.items():
-        print(f"Verification results for image {image_id}:")
-        for response in responses:
-            print(response)
+    print(f"Verification results for image {verified_image.id}:")
+    for obj in verified_image.objects:
+        print(f"Object: {obj.name}")
+        print(f"BBox: {obj.bbox}")
+        print("---")
 
 # Run the demo
 if __name__ == "__main__":

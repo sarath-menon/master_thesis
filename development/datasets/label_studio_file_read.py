@@ -16,7 +16,7 @@ from pycocotools import mask as mask_utils
 
 from clicking.vision_model.visualization import show_segmentation_predictions
 from clicking.vision_model.types import SegmentationResults, SegmentationMask, ImageWithDescriptions
-from clicking.vision_model.mask import SegmentationMode
+from clicking.common.mask import SegmentationMode
 
 class Point(BaseModel):
     x: float

@@ -11,3 +11,5 @@
 /dist
 /wandb
 /.pipeline_cache
+/.interactive
+**/.interactive

@@ -11,16 +11,14 @@ import asyncio
 import nest_asyncio
 from typing import List, Dict, Optional, TypedDict, Union, NamedTuple
 import json
-from clicking.dataset_creator.types import DatasetSample
 from PIL import Image
 import uuid
 from clicking.prompt_refinement.types import *
-from clicking.common.types import SinglePromptResponse, ImageWithDescriptions
+from clicking.common.types import ClickingImage, ObjectCategory, ImageObject
 
 # set API keys
 dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
-
 
 class PromptRefiner(ImageProcessorBase):
     def __init__(self, prompt_path: str, model: str = "gpt-4o", temperature: float = 0.0):
@@ -28,22 +26,24 @@ class PromptRefiner(ImageProcessorBase):
         self.prompt_manager = PromptManager(prompt_path)
         self.messages = [{"role": "system", "content": self.prompt_manager.get_prompt(type='system')}]
     
-    async def process_prompts_async(self, dataset_sample: DatasetSample, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ProcessedPrompts:
-        tasks = [self._process_single_prompt(image_sample.image, mode, image_sample.object_name, **kwargs) 
-                 for image_sample in dataset_sample.images]
-        results = await asyncio.gather(*tasks)
+    async def process_prompts_async(self, clicking_image: ClickingImage, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ClickingImage:
+        description = await self._process_single_prompt(clicking_image.image, mode, **kwargs)
         
-        processed_samples = [
-            ImageWithDescriptions(
-                image=image_sample.image,
-                id=image_sample.id,
-                object_name=image_sample.object_name,
-                description=description
-            )
-            for image_sample, description in zip(dataset_sample.images, results)
-        ]
+        objects = []
+        for obj in description['objects']:
+            # Find matching object in original clicking_image, if any
+            matching_obj = next((o for o in clicking_image.objects if o.name == obj['name']), None)
+            
+            objects.append(ImageObject(
+                name=obj['name'],
+                description=obj['description'],
+                category=ObjectCategory(obj['category']),
+                bbox=matching_obj.bbox if matching_obj else None,
+                mask=matching_obj.mask if matching_obj else None
+            ))
         
-        return ProcessedPrompts(samples=processed_samples)
+        clicking_image.objects = objects
+        return clicking_image
 
     async def _process_single_prompt(self, image: Image.Image, mode: PromptMode, object_name: Optional[str] = None, **kwargs) -> SinglePromptResponse:
         base64_image = self._pil_to_base64(image)
@@ -72,8 +72,8 @@ class PromptRefiner(ImageProcessorBase):
         for message in self.messages:
             print(message)
 
-    def process_prompts(self, dataset_sample: DatasetSample, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ProcessedPrompts:
-        return asyncio.run(self.process_prompts_async(dataset_sample, mode, **kwargs))
+    def process_prompts(self, clicking_image: ClickingImage, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ClickingImage:
+        return asyncio.run(self.process_prompts_async(clicking_image, mode, **kwargs))
 
 # %% get expanded description from class label
 

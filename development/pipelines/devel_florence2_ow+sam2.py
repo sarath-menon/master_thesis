@@ -2,35 +2,31 @@
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
-from typing import List, Dict, Tuple, Any, NamedTuple
+from typing import List, Dict, Tuple, Any
 from clicking.pipeline.core import Pipeline
-from clicking.dataset_creator.core import CocoDataset, DatasetSample
-from clicking.prompt_refinement.core import PromptRefiner, PromptMode, ProcessedPrompts, ImageWithDescriptions
-from clicking.vision_model.types import TaskType, LocalizationResults, SegmentationResults
-from clicking.vision_model.bbox import BoundingBox, BBoxMode
-from clicking.vision_model.mask import SegmentationMask, SegmentationMode
+from clicking.dataset_creator.core import CocoDataset
+from clicking.prompt_refinement.core import PromptRefiner
+from clicking.vision_model.types import TaskType
+from clicking.common.bbox import BoundingBox, BBoxMode
+from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.output_corrector.core import OutputCorrector
 from clicking_client import Client
 from clicking_client.models import SetModelReq, BodyGetPrediction
 from clicking_client.api.default import set_model, get_prediction
-from tabulate import tabulate
+from clicking.common.types import *
 import pickle
 import os
 from datetime import datetime
 import asyncio
-from typing import Callable, List, Any, Dict, Tuple, Union
+from typing import Callable, Union
 import inspect
-import matplotlib.pyplot as plt
-from PIL import Image
-import pickle
-import os
-from datetime import datetime
-from tabulate import tabulate
-import asyncio
-from clicking.vision_model.visualization import show_localization_predictions, show_segmentation_predictions
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 import yaml
+from clicking.vision_model.visualization import show_localization_predictions, show_segmentation_predictions
+from clicking_client.types import File
+from io import BytesIO
+import json
+import nest_asyncio
 
 # Load the configuration file
 with open('config.yml', 'r') as config_file:
@@ -38,11 +34,7 @@ with open('config.yml', 'r') as config_file:
 
 @dataclass
 class PipelineState:
-    image_ids: List[int] = field(default_factory=list)
-    dataset_sample: Optional[DatasetSample] = None
-    processed_prompts: Optional[ProcessedPrompts] = None
-    localization_results: Optional[LocalizationResults] = None
-    segmentation_results: Optional[SegmentationResults] = None
+    images: List[ClickingImage] = field(default_factory=list)
 
 #%%
 
@@ -53,23 +45,14 @@ prompt_refiner = PromptRefiner(prompt_path=config['prompts']['refinement_path'])
 coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
 #%%
 
-from typing import Callable, List, Any, Dict, Tuple, TypedDict, get_origin, get_args
-import inspect
-import matplotlib.pyplot as plt
-from PIL import Image 
 from typing import Type
-import pickle
 from tabulate import tabulate
-from datetime import datetime
-from typing import Union
-import asyncio
 
 class Pipeline:
     def __init__(self):
         self.steps: List[Tuple[str, Callable, str, bool]] = []
         self.visualization_functions: Dict[Type, Callable] = {
-            LocalizationResults: show_localization_predictions,
-            SegmentationResults: show_segmentation_predictions
+            ClickingImage: show_localization_predictions
         }
         self.cache_dir = config['pipeline']['cache_dir']
         os.makedirs(self.cache_dir, exist_ok=True)
@@ -114,7 +97,7 @@ class Pipeline:
         return await self._run_internal(initial_state, start_index=step_index)
 
     async def _run_internal(self, initial_input: Union[List[int], PipelineState], start_index: int = 0) -> PipelineState:
-        state = initial_input if isinstance(initial_input, PipelineState) else PipelineState(image_ids=initial_input)
+        state = initial_input if isinstance(initial_input, PipelineState) else PipelineState(images=initial_input)
         
         for i, (step_name, step_func, log_var, verbose) in enumerate(self.steps[start_index:], start=start_index):
             if step_name in self.cache_data:
@@ -126,7 +109,7 @@ class Pipeline:
                 self._save_cache()
             
             if verbose:
-                self._log_step_result(step_name, getattr(state, log_var), log_var)
+                self._log_step_result(step_name, state, log_var)
         
         return state
 
@@ -140,14 +123,26 @@ class Pipeline:
                 return i
         return -1
 
-    def _log_step_result(self, step_name: str, result: Any, log_var: str):
+    def _log_step_result(self, step_name: str, state: PipelineState, log_var: str):
         print(f"\n--- Step: {step_name} ---")
         print(f"Logging variable: {log_var}")
+        
+        # Split the log_var into parts to handle nested attributes
+        attr_parts = log_var.split('.')
+        result = state
+        for part in attr_parts:
+            if hasattr(result, part):
+                result = getattr(result, part)
+            elif isinstance(result, dict) and part in result:
+                result = result[part]
+            else:
+                print(f"Warning: Unable to access {part} in {log_var}")
+                return
+
         self._recursive_log(step_name, result)
         
-        result_type = type(result)
-        if result_type in self.visualization_functions:
-            self.visualization_functions[result_type](result)
+        if isinstance(result, ClickingImage):
+            self.visualization_functions[ClickingImage](result)
 
     def _recursive_log(self, step_name: str, result: Any, prefix: str = ""):
         if isinstance(result, Image.Image):
@@ -254,10 +249,6 @@ class Pipeline:
         return issubclass(prev_return_type, next_param_type)
 
 #%%
-from clicking_client.types import File
-from io import BytesIO
-import json
-
 def image_to_http_file(image):
     # Convert PIL Image to bytes and create a File object
     image_byte_arr = BytesIO()
@@ -268,11 +259,12 @@ def image_to_http_file(image):
 # Modify the relevant steps to use PipelineState
 
 def sample_dataset(state: PipelineState) -> PipelineState:
-    state.dataset_sample = coco_dataset.sample_dataset(state.image_ids)
+    state.images = coco_dataset.sample_dataset(state.images)
     return state
 
 def process_prompts(state: PipelineState) -> PipelineState:
-    state.processed_prompts = prompt_refiner.process_prompts(state.dataset_sample)
+    for clicking_image in state.images:
+        clicking_image = prompt_refiner.process_prompts(clicking_image)
     return state
 
 class LocalizationProcessor:
@@ -290,33 +282,26 @@ class LocalizationProcessor:
             print(f"Error setting localization model: {str(e)}")
             return state
         
-        all_predictions = {}
-        for sample in state.processed_prompts.samples:
-            image_file = image_to_http_file(sample.image)
-            image_id = sample.id
-
-            all_predictions[image_id] = []
-            for obj in sample.description["objects"]:
-                request = BodyGetPrediction(
-                    image=image_file,
-                )
+        for clicking_image in state.images:
+            image_file = image_to_http_file(clicking_image.image)
+            
+            for obj in clicking_image.objects:
+                request = BodyGetPrediction(image=image_file)
                 try:
-                    response = get_prediction.sync(client=self.client,
+                    response = get_prediction.sync(
+                        client=self.client,
                         body=request,
                         task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
-                        input_text=obj["description"]
+                        input_text=obj.description
                     )
 
-                    bboxes = [BoundingBox(bbox, mode=BBoxMode.XYWH, object_name=obj["name"], description=obj["description"]) 
-                              for bbox in response.prediction.bboxes]
-                    all_predictions[image_id].extend(bboxes)
+                    if response.prediction.bboxes:
+                        obj.bbox = BoundingBox(bbox=response.prediction.bboxes[0], mode=BBoxMode.XYWH)
+                    else:
+                        print(f"No bounding box found for {obj.name}")
                 except Exception as e:
-                    print(f"Error getting prediction for image {image_id}, object {obj['name']}: {str(e)}")
+                    print(f"Error getting prediction for image {clicking_image.id}, object {obj.name}: {str(e)}")
         
-        state.localization_results = LocalizationResults(
-            processed_samples=state.processed_prompts.samples,
-            predictions=all_predictions
-        )
         return state
 
 class SegmentationProcessor:
@@ -334,49 +319,30 @@ class SegmentationProcessor:
             print(f"Error setting segmentation model: {str(e)}")
             return state
         
-        segmentation_results = {}
-        for sample in state.localization_results.processed_samples:
-            image_file = image_to_http_file(sample.image)
-            image_id = sample.id
-
-            seg_predictions = []
-            for bbox in state.localization_results.predictions[image_id]:
-                request = BodyGetPrediction(
-                    image=image_file
-                )
+        for clicking_image in state.images:
+            image_file = image_to_http_file(clicking_image.image)
+            
+            for obj in clicking_image.objects:
+                request = BodyGetPrediction(image=image_file)
                 try:
-                    response = get_prediction.sync(client=self.client,
+                    response = get_prediction.sync(
+                        client=self.client,
                         body=request,
                         task=TaskType.SEGMENTATION_WITH_BBOX,
-                        input_boxes=json.dumps(bbox.get(mode=BBoxMode.XYWH))  
+                        input_boxes=json.dumps(obj.bbox.get(mode=BBoxMode.XYWH))
                     )
-
-                    if response is None or response.prediction is None:
-                        print(f"Warning: No prediction received for image {image_id}, bbox {bbox}")
-                        continue
                     
-                    for mask_data in response.prediction.masks:
-                        seg_mask = SegmentationMask(
-                            mask=mask_data,
-                            mode=SegmentationMode.COCO_RLE,
-                            object_name=bbox.object_name,
-                            description=bbox.description
-                        )
-                        seg_predictions.append(seg_mask)
+                    if response.prediction.masks:
+                        obj.mask = SegmentationMask(coco_rle=response.prediction.masks[0], mode=SegmentationMode.COCO_RLE)
+                    else:
+                        print(f"No segmentation mask found for {obj.name}")
                 except Exception as e:
-                    print(f"Error processing segmentation for image {image_id}, bbox {bbox}: {str(e)}")
-                    continue
-            
-            segmentation_results[image_id] = seg_predictions
+                    print(f"Error processing segmentation for image {clicking_image.id}, object {obj.name}: {str(e)}")
         
-        state.segmentation_results = SegmentationResults(
-            processed_samples=state.localization_results.processed_samples,
-            predictions=segmentation_results
-        )
         return state
 
+
 #%%
-import nest_asyncio
 nest_asyncio.apply()
 
 pipeline = Pipeline()
@@ -384,10 +350,10 @@ localization_processor = LocalizationProcessor(client)
 segmentation_processor = SegmentationProcessor(client)
 output_corrector = OutputCorrector(prompt_path=config['prompts']['output_corrector_path'])
 
-pipeline.add_step("Sample Dataset", sample_dataset, "dataset_sample", True)
-pipeline.add_step("Process Prompts", process_prompts, "processed_prompts", True)
-pipeline.add_step("Get Localization Results", localization_processor.get_localization_results, "localization_results", True)
-pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results, "segmentation_results", True)
+pipeline.add_step("Sample Dataset", sample_dataset, "images", True)
+pipeline.add_step("Process Prompts", process_prompts, "images", True)
+pipeline.add_step("Get Localization Results", localization_processor.get_localization_results, "images", True)
+pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results, "images", True)
 
 # Print the pipeline structure
 pipeline.print_pipeline()
@@ -404,17 +370,13 @@ result = asyncio.run(pipeline.run(image_ids))
 result = asyncio.run(pipeline.run_from_step("Get Localization Results"))
 
 # # Or provide an initial state if needed
-# initial_state = PipelineState(image_ids=[22, 31, 34])
+# initial_state = PipelineState(images=[22, 31, 34])
 # initial_state.processed_prompts = pipeline.get_step_result("Process Prompts").processed_prompts
 # result = asyncio.run(pipeline.run_from_step("Get Localization Results", initial_state))
 
 #%%
-# Access cached results for logging or analysis
-localization_results = pipeline.get_step_result("Get Localization Results")
-segmentation_results = pipeline.get_step_result("Get Segmentation Results")
 
 # Visualize results
-show_localization_predictions(localization_results)
-show_segmentation_predictions(segmentation_results)
-#%%
-
+for clicking_image in result.images:
+    show_localization_predictions(clicking_image)
+    show_segmentation_predictions(clicking_image)

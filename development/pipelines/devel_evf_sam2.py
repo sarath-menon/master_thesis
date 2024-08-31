@@ -27,7 +27,7 @@ images, object_names = coco_dataset.sample_dataset(batch_size=3)
 images, object_names = coco_dataset.sample_dataset(batch_size=3, show_images=True)
 
 #%% get clickable objects from image
-from components.clicking.prompt_refinement.core import PromptRefiner, PromptMode
+from clicking.prompt_refinement.core import PromptRefiner, PromptMode
 
 # Create an instance of PromptRefiner
 prompt_refiner = PromptRefiner(prompt_path="./prompts/prompt_refinement.md")
@@ -74,7 +74,7 @@ from clicking_client.api.default import get_prediction
 from clicking_client.models import BodyGetPrediction
 import io
 from clicking.vision_model.types import TaskType
-from clicking.vision_model.mask import SegmentationMask, SegmentationMode
+from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.vision_model.core import show_clickpoint_predictions
 from clicking.vision_model.utils import image_to_http_file
 from clicking_client.types import File

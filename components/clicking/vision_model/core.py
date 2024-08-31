@@ -9,7 +9,7 @@ import time
 from typing import Dict, List, Type, Any
 from dataclasses import dataclass, field
 from fastapi import HTTPException
-from clicking.vision_model.bbox import BoundingBox, BBoxMode
+from clicking.common.bbox import BoundingBox, BBoxMode
 import numpy as np
 from enum import Enum, auto
 from clicking.vision_model.types import *
@@ -96,11 +96,3 @@ class VisionModel:
         response.inference_time = time.time() - start_time
 
         return response
-
-class LocalizationResults(NamedTuple):
-    processed_samples: List[ImageWithDescriptions]
-    predictions: Dict[str, List[BoundingBox]]
-
-class SegmentationResults(NamedTuple):
-    processed_samples: List[ImageWithDescriptions]
-    predictions: Dict[str, List[SegmentationMask]]

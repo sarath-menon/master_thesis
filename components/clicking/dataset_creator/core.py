@@ -4,9 +4,10 @@ from torchvision import transforms, datasets
 from PIL import Image
 import matplotlib.pyplot as plt
 from typing import List
-from clicking.dataset_creator.types import DatasetSample, ImageSample
+from clicking.common.types import ClickingImage, ImageObject, ObjectCategory
 from pycocotools import mask as mask_utils
-from clicking.vision_model.mask import SegmentationMask, SegmentationMode
+from clicking.common.mask import SegmentationMask, SegmentationMode
+from clicking.common.bbox import BoundingBox, BBoxMode
 
 class CocoDataset:
     def __init__(self, data_dir, annFile):
@@ -19,28 +20,62 @@ class CocoDataset:
         self.all_object_names = [cat['name'] for cat in self.coco_dataset.coco.cats.values()]
         print(f"Dataset size: {len(self.coco_dataset)}")
 
-    def create_text_input(self, annotations):
-        labels = [self.all_object_names[annotation['category_id'] - 1] for annotation in annotations]
-        text_input = ". ".join(labels) + "." if labels else ""
-        return text_input
-
-    def sample_dataset(self, image_ids: List[int]) -> DatasetSample:
-        image_samples = []
+    def sample_dataset(self, image_ids: List[int]) -> List[ClickingImage]:
+        clicking_images = []
         to_pil = transforms.ToPILImage()
         
         for index in image_ids:
             image_tensor, annotations = self.coco_dataset[int(index)]
             image = to_pil(image_tensor)
-            object_name = self.create_text_input(annotations)
-            image_samples.append(ImageSample(image=image, object_name=object_name, id=index))
+            objects = self._create_image_objects(annotations)
+            clicking_images.append(ClickingImage(image=image, id=str(index), objects=objects))
 
-        return DatasetSample(images=image_samples)
+        return clicking_images
 
-    def show_images(self, dataset_sample: DatasetSample, show_images_per_batch: int = 4):
-        for image_sample in dataset_sample.images[:show_images_per_batch]:
-            plt.imshow(image_sample.image)
+    def _create_image_objects(self, annotations) -> List[ImageObject]:
+        objects = []
+        for ann in annotations:
+            category = self._get_object_category(ann['category_id'])
+            bbox = BoundingBox(bbox=ann['bbox'], mode=BBoxMode.XYWH)
+            
+            # Convert polygon to RLE
+            if isinstance(ann['segmentation'], list):
+                # Get image dimensions
+                img_info = self.coco_dataset.coco.loadImgs(ann['image_id'])[0]
+                height, width = img_info['height'], img_info['width']
+                
+                # Convert polygon to RLE
+                rle = mask_utils.frPyObjects(ann['segmentation'], height, width)
+                if len(rle) == 1:
+                    rle = rle[0]
+                else:
+                    rle = mask_utils.merge(rle)
+            else:
+                # If it's already in RLE format, use it as is
+                rle = ann['segmentation']
+            
+            mask = SegmentationMask(coco_rle=rle, mode=SegmentationMode.COCO_RLE)
+            
+            obj = ImageObject(
+                name=self.all_object_names[ann['category_id'] - 1],
+                description="",  # You might want to add a description if available
+                category=category,
+                bbox=bbox,
+                mask=mask
+            )
+            objects.append(obj)
+        return objects
+
+    def _get_object_category(self, category_id: int) -> ObjectCategory:
+        # This is a placeholder. You'll need to implement the logic to map
+        # COCO categories to your ObjectCategory enum
+        return ObjectCategory.GAME_ASSET  # Default to GAME_ASSET for now
+
+    def show_images(self, clicking_images: List[ClickingImage], show_images_per_batch: int = 4):
+        for clicking_image in clicking_images[:show_images_per_batch]:
+            plt.imshow(clicking_image.image)
             plt.axis(False)
-            plt.title(image_sample.object_name)
+            plt.title(", ".join([obj.name for obj in clicking_image.objects]))
             plt.show()
 
     def get_ground_truth(self, image_id: int):
@@ -48,8 +83,7 @@ class CocoDataset:
         ann_ids = self.coco_dataset.coco.getAnnIds(imgIds=image_id)
         anns = self.coco_dataset.coco.loadAnns(ann_ids)
 
-        masks = []
-        class_labels = []
+        objects = []
 
         for ann in anns:
             if 'segmentation' in ann:
@@ -59,18 +93,27 @@ class CocoDataset:
                 else:
                     # Polygon format
                     rle = mask_utils.frPyObjects(ann['segmentation'], img_info['height'], img_info['width'])
-                # Convert RLE to binary mask
-                binary_mask = mask_utils.decode(rle)
-                masks.append(binary_mask)
-                class_labels.append(self.all_object_names[ann['category_id'] - 1])
+                
+                category = self._get_object_category(ann['category_id'])
+                bbox = BoundingBox(ann['bbox'], mode=BBoxMode.XYWH)
+                mask = SegmentationMask(rle, mode=SegmentationMode.COCO_RLE)
+                
+                obj = ImageObject(
+                    name=self.all_object_names[ann['category_id'] - 1],
+                    description="",
+                    category=category,
+                    bbox=bbox,
+                    mask=mask
+                )
+                objects.append(obj)
 
-        return masks, class_labels
+        return objects
 
 #%% Demo code
 if __name__ == "__main__":
     from clicking.vision_model.visualization import show_segmentation_predictions
-    from clicking.vision_model.mask import SegmentationMask, SegmentationMode
-    from clicking.vision_model.types import SegmentationResults
+    from clicking.common.mask import SegmentationMask, SegmentationMode
+    from clicking.common.bbox import BoundingBox, BBoxMode
     from clicking.common.types import ImageWithDescriptions
     import random
 

@@ -1,7 +1,7 @@
 from clicking.output_corrector import core
 from clicking.vision_model.types import LocalizationResults, SegmentationResults
-from clicking.vision_model.bbox import BoundingBox, BBoxMode
-from clicking.vision_model.mask import SegmentationMask, SegmentationMode
+from clicking.common.bbox import BoundingBox, BBoxMode
+from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.prompt_refinement.types import ImageWithDescriptions, SinglePromptResponse, ObjectDescription
 from PIL import Image
 import numpy as np

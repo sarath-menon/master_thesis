@@ -83,7 +83,7 @@ from clicking_client.models import BodyGetAutoAnnotation
 from clicking_client.types import File
 import io
 import json
-from clicking.vision_model.mask import SegmentationMask, SegmentationMode
+from clicking.common.mask import SegmentationMask, SegmentationMode
 
 import requests
 from io import BytesIO

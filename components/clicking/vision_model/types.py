@@ -5,9 +5,8 @@ from PIL import Image
 import numpy as np
 from fastapi import Form, File, UploadFile, Depends
 from typing import NamedTuple, List, Dict
-from clicking.common.types import ImageWithDescriptions
-from clicking.vision_model.bbox import BoundingBox
-from clicking.vision_model.mask import SegmentationMask
+from clicking.common.bbox import BoundingBox
+from clicking.common.mask import SegmentationMask
 
 class TaskType(str, Enum):
     LOCALIZATION_WITH_TEXT = "LOCALIZATION_WITH_TEXT"
@@ -98,11 +97,3 @@ class AutoAnnotationReq(BaseModel):
 class AutoAnnotationResp(BaseModel):
     prediction: SegmentationResp
     inference_time: Optional[float] = 0.0
-
-class LocalizationResults(NamedTuple):
-    processed_samples: List[ImageWithDescriptions]
-    predictions: Dict[str, List[BoundingBox]] 
-
-class SegmentationResults(NamedTuple):
-    processed_samples: List[ImageWithDescriptions]
-    predictions: Dict[str, List[SegmentationMask]]

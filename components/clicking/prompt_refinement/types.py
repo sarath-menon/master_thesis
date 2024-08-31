@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional, TypedDict, Union, NamedTuple
 from enum import Enum, auto
 from PIL import Image
-from clicking.common.types import ImageWithDescriptions
+from clicking.common.types import ClickingImage
 
 class PromptMode(Enum):
     OBJECTS_LIST_TO_DESCRIPTIONS = "OBJECTS_LIST_TO_DESCRIPTIONS"
@@ -9,9 +9,14 @@ class PromptMode(Enum):
     IMAGE_TO_OBJECTS_LIST = "IMAGE_TO_OBJECTS_LIST"
 
 class ProcessedPrompts(NamedTuple):
-    samples: List[ImageWithDescriptions]
+    samples: List[ClickingImage]
 
 class TemplateValues(TypedDict, total=False):
     input_description: str
     word_limit: str
     description_length: int
+
+class SinglePromptResponse(TypedDict):
+    prompt: str
+    mode: PromptMode
+    template_values: TemplateValues
