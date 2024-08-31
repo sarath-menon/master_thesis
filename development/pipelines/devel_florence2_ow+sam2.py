@@ -1,4 +1,8 @@
 #%%
+
+%load_ext autoreload
+%autoreload 2
+
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -268,8 +272,8 @@ output_corrector = OutputCorrector(prompt_path=config['prompts']['output_correct
 
 pipeline.add_step("Sample Dataset", sample_dataset)
 pipeline.add_step("Process Prompts", process_prompts)
-# pipeline.add_step("Get Localization Results", localization_processor.get_localization_results)
-# pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
+pipeline.add_step("Get Localization Results", localization_processor.get_localization_results)
+pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
 
 # Print the pipeline structure
 pipeline.print_pipeline()
@@ -296,59 +300,13 @@ result = asyncio.run(pipeline.run_from_step("Get Localization Results"))
 # segmentation_results = pipeline.get_step_result("Get Segmentation Results")
 
 # Visualize results
-for clicking_image in result.images:
-    show_localization_predictions(clicking_image)
-    show_segmentation_predictions(clicking_image)
+for clicking_image in results.images:
+    show_localization_predictions(clicking_image) 
+    #show_segmentation_predictions(clicking_image)
 #%% print predicted and true objects
-
-from prettytable import PrettyTable
-
-from prettytable import PrettyTable
-from typing import List
-
-def print_image_objects(image_objects: List[ClickingImage]):
-    for result in image_objects:
-        predicted_objects = [[i, obj.name] for i, obj in enumerate(result.predicted_objects)]
-        annotated_objects = [[i, obj.name] for i, obj in enumerate(result.annotated_objects)]
-        
-        # Pad the shorter list to match the length of the longer list
-        max_length = max(len(predicted_objects), len(annotated_objects))
-        predicted_objects += [['', '']] * (max_length - len(predicted_objects))
-        annotated_objects += [['', '']] * (max_length - len(annotated_objects))
-        
-        # Combine predicted and true objects
-        combined_objects = [[i if i < len(predicted_objects) else '', p[1], t[1]] for i, (p, t) in enumerate(zip(predicted_objects, annotated_objects))]
-        
-        table = PrettyTable()
-        table.field_names = ["Index", "Predicted object", "True objects"]
-        table.add_rows(combined_objects)
-        
-        print(f"Image ID: {result.id}")
-        plt.imshow(result.image)
-        plt.axis('off')
-        plt.show()
-        print(table)
-        print("\n")
+from clicking.common.logging import print_image_objects, print_object_descriptions, selva
 
 # Call the function with the results
 print_image_objects(results.images)
-    
+
 #%%
-def print_object_descriptions(image_objects: List[ClickingImage]):
-    for result in image_objects:
-        table = PrettyTable()
-        table.field_names = ["Index", "Predicted Object", "Description"]
-        
-        for i, obj in enumerate(result.predicted_objects):
-            table.add_row([i, obj.name, obj.description or "No description available"])
-        
-        print(f"Image ID: {result.id}")
-        plt.imshow(result.image)
-        plt.axis('off')
-        plt.show()
-        print(table)
-        print("\n")
-
-# Call the function with the results
-print_object_descriptions(results.images)
-

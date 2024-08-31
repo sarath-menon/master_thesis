@@ -9,6 +9,7 @@ import cv2
 from typing import List
 from clicking.common.types import ClickingImage, ImageObject, ObjectCategory, CATEGORY_COLOR_MAP
 from PIL import ImageDraw
+from clicking.common.logging import print_object_descriptions
 
 # overlay bounding box in format (x, y, w, h) on a PIL image
 def overlay_bounding_box(image, bbox: BoundingBox, color='red', thickness=10, padding=0):
@@ -91,8 +92,10 @@ def show_localization_predictions(clicking_image: ClickingImage):
         print(f"{object_id}: {object_name}")
 
     ax.axis('off')
-    plt.title(f"Image ID: {clicking_image.id}")
     plt.show()
+
+    print_object_descriptions([clicking_image])
+    print("\n")
 
 def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow', mask_alpha=0.7, label_offset_y=60):
     fig, ax = plt.subplots(figsize=(10, 10))
@@ -135,8 +138,7 @@ def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='
     plt.show()
 
     print(f"Legend for Image ID: {clicking_image.id}")
-    for obj in clicking_image.predicted_objects:
-        print(f"{obj.name}: {obj.description}")
+    print_object_descriptions([clicking_image])
     print("\n")
 
 def get_mask_centroid(mask):
