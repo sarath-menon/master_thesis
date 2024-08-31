@@ -22,14 +22,13 @@ dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 class PromptRefiner(ImageProcessorBase):
-    def __init__(self, prompt_path: str, config_path: str, model: str = "gpt-4o", temperature: float = 0.0):
+    def __init__(self, prompt_path: str, config: Dict, model: str = "gpt-4o", temperature: float = 0.0):
         super().__init__(model, temperature)
         self.prompt_manager = PromptManager(prompt_path)
         self.messages = [{"role": "system", "content": self.prompt_manager.get_prompt(type='system')}]
         
         # Load configuration
-        with open(config_path, 'r') as config_file:
-            self.config = yaml.safe_load(config_file)
+        self.config = config
         
     async def process_prompts_async(self, clicking_image: ClickingImage, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ClickingImage:
         description = await self._process_single_prompt(clicking_image.image, mode, **kwargs)
@@ -38,9 +37,6 @@ class PromptRefiner(ImageProcessorBase):
         for obj in description['objects']:
             # Find matching object in original clicking_image, if any
             matching_obj = next((o for o in clicking_image.predicted_objects if o.name == obj['name']), None)
-            
-            if matching_obj is None:
-                print(f"Error: No matching object found for '{obj['name']}'")
             
             objects.append(ImageObject(
                 name=obj['name'],
