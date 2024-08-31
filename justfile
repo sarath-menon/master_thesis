@@ -21,5 +21,6 @@ install_openapi_client PORT='8082':
 poetry_shell:
     bash -c 'source ~/.bashrc && poetry shell'
 
-test_component COMPONENT *ARGS:
-    poetry run pytest -p no:warnings test/components/clicking/{{COMPONENT}} -x -v --tb=short {{ARGS}}
+test BRICK NAME *ARGS:
+    poetry run pytest -p no:warnings test/{{BRICK}}/clicking/{{NAME}} -x -v --tb=short {{ARGS}}
+
