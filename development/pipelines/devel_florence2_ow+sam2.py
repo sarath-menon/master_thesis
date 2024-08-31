@@ -201,7 +201,7 @@ class LocalizationProcessor:
         for clicking_image in state.images:
             image_file = image_to_http_file(clicking_image.image)
             
-            for obj in clicking_image.objects:
+            for obj in clicking_image.predicted_objects:
                 request = BodyGetPrediction(image=image_file)
                 try:
                     response = get_prediction.sync(
@@ -238,7 +238,7 @@ class SegmentationProcessor:
         for clicking_image in state.images:
             image_file = image_to_http_file(clicking_image.image)
             
-            for obj in clicking_image.objects:
+            for obj in clicking_image.predicted_objects:
                 request = BodyGetPrediction(image=image_file)
                 try:
                     response = get_prediction.sync(

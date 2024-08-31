@@ -43,14 +43,13 @@ class OutputCorrector(ImageProcessorBase):
         verification_results = {}
         screenshot = clicking_image.image
         
-        images_overlayed = [overlay_bounding_box(screenshot.copy(), obj.bbox) for obj in clicking_image.objects]
+        images_overlayed = [overlay_bounding_box(screenshot.copy(), obj.bbox) for obj in clicking_image.predicted_objects]
         base64_images = [self._pil_to_base64(img) for img in images_overlayed]
-        object_names = [obj.name for obj in clicking_image.objects]
+        object_names = [obj.name for obj in clicking_image.predicted_objects]
         
         responses = await self._get_image_responses(base64_images, object_names)
         verification_results[clicking_image.id] = responses
         
-        # You might want to update the ClickingImage based on the verification results here
         
         return clicking_image
 
@@ -61,9 +60,9 @@ class OutputCorrector(ImageProcessorBase):
         verification_results = {}
         screenshot = clicking_image.image
         
-        extracted_areas = [obj.mask.extract_area(screenshot, padding=10) for obj in clicking_image.objects]
+        extracted_areas = [obj.mask.extract_area(screenshot, padding=10) for obj in clicking_image.predicted_objects]
         base64_images = [self._pil_to_base64(area) for area in extracted_areas]
-        object_names = [obj.name for obj in clicking_image.objects]
+        object_names = [obj.name for obj in clicking_image.predicted_objects]
         
         responses = await self._get_image_responses(base64_images, object_names)
         verification_results[clicking_image.id] = responses
@@ -118,7 +117,7 @@ async def demo_verify_bboxes_async():
     
     # Print the verification results
     print(f"Verification results for image {verified_image.id}:")
-    for obj in verified_image.objects:
+    for obj in verified_image.predicted_objects:
         print(f"Object: {obj.name}")
         print(f"BBox: {obj.bbox}")
         print("---")

@@ -37,9 +37,9 @@ def show_clickpoint_predictions(clicking_image: ClickingImage, textbox_color='re
     ax.imshow(clicking_image.image)
 
     mask_alpha = 0.7
-    total_objects = len(clicking_image.objects)
+    total_objects = len(clicking_image.predicted_objects)
 
-    for i, obj in enumerate(clicking_image.objects):
+    for i, obj in enumerate(clicking_image.predicted_objects):
         m = mask_utils.decode(obj.mask.get(SegmentationMode.COCO_RLE))
         color_mask = get_color(i, total_objects)
 
@@ -70,10 +70,10 @@ def show_localization_predictions(clicking_image: ClickingImage):
     fig, ax = plt.subplots()
     ax.imshow(clicking_image.image)
 
-    object_names = set(obj.name for obj in clicking_image.objects)
+    object_names = set(obj.name for obj in clicking_image.predicted_objects)
     object_ids = {name: i for i, name in enumerate(object_names)}
 
-    for obj in clicking_image.objects:
+    for obj in clicking_image.predicted_objects:
         if obj.bbox is None:
             print(f"Object {obj.name} has no bounding box")
             continue
@@ -98,9 +98,9 @@ def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.imshow(clicking_image.image)
 
-    total_objects = len(clicking_image.objects)
+    total_objects = len(clicking_image.predicted_objects)
 
-    for i, obj in enumerate(clicking_image.objects):
+    for i, obj in enumerate(clicking_image.predicted_objects):
         if obj.mask is None:
             print(f"Warning: Object '{obj.name}' has no segmentation mask.")
             continue
@@ -135,7 +135,7 @@ def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='
     plt.show()
 
     print(f"Legend for Image ID: {clicking_image.id}")
-    for obj in clicking_image.objects:
+    for obj in clicking_image.predicted_objects:
         print(f"{obj.name}: {obj.description}")
     print("\n")
 

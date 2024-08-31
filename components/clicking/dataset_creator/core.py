@@ -75,7 +75,7 @@ class CocoDataset:
         for clicking_image in clicking_images[:show_images_per_batch]:
             plt.imshow(clicking_image.image)
             plt.axis(False)
-            plt.title(", ".join([obj.name for obj in clicking_image.objects]))
+            plt.title(", ".join([obj.name for obj in clicking_image.true_objects]))
             plt.show()
 
     def get_ground_truth(self, image_id: int):

@@ -32,7 +32,7 @@ class PromptRefiner(ImageProcessorBase):
         objects = []
         for obj in description['objects']:
             # Find matching object in original clicking_image, if any
-            matching_obj = next((o for o in clicking_image.objects if o.name == obj['name']), None)
+            matching_obj = next((o for o in clicking_image.predicted_objects if o.name == obj['name']), None)
             
             objects.append(ImageObject(
                 name=obj['name'],
@@ -42,7 +42,7 @@ class PromptRefiner(ImageProcessorBase):
                 mask=matching_obj.mask if matching_obj else None
             ))
         
-        clicking_image.objects = objects
+        clicking_image.predicted_objects = objects
         return clicking_image
 
     async def _process_single_prompt(self, image: Image.Image, mode: PromptMode, object_name: Optional[str] = None, **kwargs) -> SinglePromptResponse:

@@ -87,7 +87,7 @@ bboxes = [BoundingBox(bbox=bbox, mode=BBoxMode.XYXY) for bbox in prediction.bbox
 # Create ClickingImage and ImageObject instances
 clicking_image = ClickingImage(id=index, image=image)
 for bbox, label in zip(bboxes, prediction.labels):
-    clicking_image.objects.append(ImageObject(name=label, bbox=bbox))
+    clicking_image.predicted_objects.append(ImageObject(name=label, bbox=bbox))
 
 # Create PipelineState
 pipeline_state = PipelineState(images=[clicking_image])
@@ -107,14 +107,14 @@ image_file = File(file_name="image.jpg", payload=image_byte_arr.getvalue(), mime
 request = BodyGetPrediction(
     image=image_file,
     task=TaskType.SEGMENTATION_WITH_BBOX,
-    input_boxes=json.dumps([obj.bbox.get(mode=BBoxMode.XYXY) for obj in clicking_image.objects])
+    input_boxes=json.dumps([obj.bbox.get(mode=BBoxMode.XYXY) for obj in clicking_image.predicted_objects])
 )
 
 segmentation_resp = get_prediction.sync(client=client, body=request)
 print(f"inference time: {segmentation_resp.inference_time}")
 
 prediction = segmentation_resp.prediction
-for obj, mask in zip(clicking_image.objects, prediction.masks):
+for obj, mask in zip(clicking_image.predicted_objects, prediction.masks):
     obj.mask = SegmentationMask(coco_rle=mask, mode=SegmentationMode.COCO_RLE)
 
 # Update PipelineState
@@ -125,7 +125,7 @@ show_segmentation_predictions(clicking_image)
 
 #%% verify masks
 output_corrector = OutputCorrector()
-for obj in clicking_image.objects:
+for obj in clicking_image.predicted_objects:
     response = output_corrector.verify_mask(image, obj.mask, obj.name)
     print(f"Verification for {obj.name}: {response}")
 
@@ -133,7 +133,7 @@ for obj in clicking_image.objects:
 from clicking.segmentation.utils import get_mask_centroid
 from clicking.visualization.core import show_clickpoint
 
-for obj in clicking_image.objects:
+for obj in clicking_image.predicted_objects:
     centroid = get_mask_centroid(obj.mask.get(mode=SegmentationMode.BINARY_MASK))
     obj.click_point = centroid
     show_clickpoint(image, centroid, obj.name)

@@ -31,8 +31,8 @@ class ImageObject(BaseModel):
 class ClickingImage(BaseModel):
     image: Image.Image
     id: str
-    objects: List[ImageObject] = Field(default_factory=list)
-
+    true_objects: List[ImageObject] = Field(default_factory=list)
+    predicted_objects: List[ImageObject] = Field(default_factory=list)
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
