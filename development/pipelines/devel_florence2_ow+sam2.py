@@ -50,10 +50,7 @@ from tabulate import tabulate
 
 class Pipeline:
     def __init__(self):
-        self.steps: List[Tuple[str, Callable, str, bool]] = []
-        self.visualization_functions: Dict[Type, Callable] = {
-            ClickingImage: show_localization_predictions
-        }
+        self.steps: List[Tuple[str, Callable]] = []
         self.cache_dir = config['pipeline']['cache_dir']
         os.makedirs(self.cache_dir, exist_ok=True)
         self.cache_filename = self._generate_cache_filename()
@@ -99,7 +96,7 @@ class Pipeline:
     async def _run_internal(self, initial_input: Union[List[int], PipelineState], start_index: int = 0) -> PipelineState:
         state = initial_input if isinstance(initial_input, PipelineState) else PipelineState(images=initial_input)
         
-        for i, (step_name, step_func, log_var, verbose) in enumerate(self.steps[start_index:], start=start_index):
+        for i, (step_name, step_func) in enumerate(self.steps[start_index:], start=start_index):
             if step_name in self.cache_data:
                 print(f"Using cached input for step: {step_name}")
                 state = self.cache_data[step_name]
@@ -107,9 +104,6 @@ class Pipeline:
                 state = await asyncio.to_thread(step_func, state)
                 self.cache_data[step_name] = state
                 self._save_cache()
-            
-            if verbose:
-                self._log_step_result(step_name, state, log_var)
         
         return state
 
@@ -118,88 +112,10 @@ class Pipeline:
         return self.cache_data.get(step_name)
 
     def _find_step_index(self, step_name: str) -> int:
-        for i, (name, _, _, _) in enumerate(self.steps):
+        for i, (name, _) in enumerate(self.steps):
             if name == step_name:
                 return i
         return -1
-
-    def _log_step_result(self, step_name: str, state: PipelineState, log_var: str):
-        print(f"\n--- Step: {step_name} ---")
-        print(f"Logging variable: {log_var}")
-        
-        # Split the log_var into parts to handle nested attributes
-        attr_parts = log_var.split('.')
-        result = state
-        for part in attr_parts:
-            if hasattr(result, part):
-                result = getattr(result, part)
-            elif isinstance(result, dict) and part in result:
-                result = result[part]
-            else:
-                print(f"Warning: Unable to access {part} in {log_var}")
-                return
-
-        self._recursive_log(step_name, result)
-        
-        if isinstance(result, ClickingImage):
-            self.visualization_functions[ClickingImage](result)
-
-    def _recursive_log(self, step_name: str, result: Any, prefix: str = ""):
-        if isinstance(result, Image.Image):
-            self._display_image(step_name, prefix, result)
-        elif isinstance(result, list):
-            self._log_list(step_name, result, prefix)
-        elif isinstance(result, dict):
-            self._log_dict(step_name, result, prefix)
-        elif isinstance(result, tuple):
-            for item in result:
-                self._recursive_log(step_name, item, prefix)
-        else:
-            print(f"{prefix}{result}")
-
-    def _log_list(self, step_name: str, result: List[Any], prefix: str):
-        if not result:
-            print(f"{prefix}Empty list")
-            return
-
-        if all(isinstance(item, Image.Image) for item in result):
-            self._display_image_list(step_name, prefix, result)
-            return
-
-        for i, item in enumerate(result):
-            if i > 0:
-                print(f"{prefix}---")
-            self._recursive_log(step_name, item, prefix)
-
-    def _log_dict(self, step_name: str, result: Dict[str, Any], prefix: str):
-        for key, value in result.items():
-            if key != "objects":
-                print(f"{prefix}{key}: ", end="")
-                self._recursive_log(step_name, value, "")
-            else:
-                self._recursive_log(step_name, value, prefix)
-
-    def _display_image(self, step_name: str, prefix: str, image: Image.Image):
-        plt.figure(figsize=tuple(config['visualization']['figsize']))
-        plt.imshow(image)
-        plt.axis('off')
-        plt.title(f"{step_name} - Image")
-        plt.show()
-
-    def _display_image_list(self, step_name: str, prefix: str, images: List[Image.Image]):
-        if not images:
-            print(f"{prefix}[]")
-            return
-        
-        fig, axes = plt.subplots(1, len(images), figsize=(config['visualization']['figsize'][0]*len(images), config['visualization']['figsize'][1]))
-        if len(images) == 1:
-            axes = [axes]
-        for i, (ax, img) in enumerate(zip(axes, images)):
-            ax.imshow(img)
-            ax.axis('off')
-            ax.set_title(f"{step_name} - Image {i+1}")
-        plt.tight_layout()
-        plt.show()
 
     def static_analysis(self):
         if not self.steps:
@@ -223,21 +139,21 @@ class Pipeline:
         headers = ["Step", "Function Name", "Input Type"]
         table_data = []
         
-        for i, (step_name, func, log_var, _) in enumerate(self.steps, 1):
+        for i, (step_name, func) in enumerate(self.steps, 1):
             input_type = list(inspect.signature(func).parameters.values())[0].annotation.__name__
             table_data.append([f"{i}. {step_name}", func.__name__, input_type])
         
         print("Pipeline Steps:")
         print(tabulate(table_data, headers=headers, tablefmt="grid"))
 
-    def add_step(self, step_name: str, func: Callable, log_var: str, verbose: bool = True):
+    def add_step(self, step_name: str, func: Callable):
         if self.steps and not self._are_types_compatible(self.steps[-1][1], func):
             last_step_func = self.steps[-1][1]
             last_step_output_type = inspect.signature(last_step_func).return_annotation.__name__
             next_step_input_type = list(inspect.signature(func).parameters.values())[0].annotation.__name__
 
             raise TypeError(f"Output type of {last_step_func.__name__} ({last_step_output_type}) is not compatible with input type of {func.__name__} ({next_step_input_type})")
-        self.steps.append((step_name, func, log_var, verbose))
+        self.steps.append((step_name, func))
 
     def _are_types_compatible(self, prev_func: Callable, next_func: Callable) -> bool:
         prev_return_type = inspect.signature(prev_func).return_annotation
@@ -350,10 +266,10 @@ localization_processor = LocalizationProcessor(client)
 segmentation_processor = SegmentationProcessor(client)
 output_corrector = OutputCorrector(prompt_path=config['prompts']['output_corrector_path'])
 
-pipeline.add_step("Sample Dataset", sample_dataset, "images", True)
-pipeline.add_step("Process Prompts", process_prompts, "images", True)
-pipeline.add_step("Get Localization Results", localization_processor.get_localization_results, "images", True)
-pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results, "images", True)
+pipeline.add_step("Sample Dataset", sample_dataset)
+pipeline.add_step("Process Prompts", process_prompts)
+pipeline.add_step("Get Localization Results", localization_processor.get_localization_results)
+pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
 
 # Print the pipeline structure
 pipeline.print_pipeline()
@@ -375,6 +291,9 @@ result = asyncio.run(pipeline.run_from_step("Get Localization Results"))
 # result = asyncio.run(pipeline.run_from_step("Get Localization Results", initial_state))
 
 #%%
+# # Access cached results for logging or analysis
+# localization_results = pipeline.get_step_result("Get Localization Results")
+# segmentation_results = pipeline.get_step_result("Get Segmentation Results")
 
 # Visualize results
 for clicking_image in result.images:
