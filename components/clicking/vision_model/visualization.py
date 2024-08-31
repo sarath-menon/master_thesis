@@ -88,8 +88,7 @@ def show_localization_predictions(clicking_image: ClickingImage):
         object_id = object_ids[obj.name]
         plt.text(x, y, str(object_id), color='white', fontsize=8, bbox=dict(facecolor=bg_color, alpha=0.9))
 
-    for object_name, object_id in object_ids.items():
-        print(f"{object_id}: {object_name}")
+    print_object_descriptions([clicking_image])
 
     ax.axis('off')
     plt.show()
