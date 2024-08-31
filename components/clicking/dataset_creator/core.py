@@ -90,13 +90,26 @@ class CocoDataset:
                 if isinstance(ann['segmentation'], dict):
                     # RLE format
                     rle = ann['segmentation']
-                else:
+                elif isinstance(ann['segmentation'], list):
                     # Polygon format
                     rle = mask_utils.frPyObjects(ann['segmentation'], img_info['height'], img_info['width'])
+                    if len(rle) == 1:
+                        rle = rle[0]
+                    else:
+                        rle = mask_utils.merge(rle)
+                else:
+                    print(f"Skipping annotation with invalid segmentation format: {ann['segmentation']}")
+                    continue
                 
                 category = self._get_object_category(ann['category_id'])
                 bbox = BoundingBox(ann['bbox'], mode=BBoxMode.XYWH)
-                mask = SegmentationMask(rle, mode=SegmentationMode.COCO_RLE)
+                
+                # Ensure the RLE is in the correct format
+                if isinstance(rle, dict) and 'counts' in rle and 'size' in rle:
+                    mask = SegmentationMask(coco_rle=rle, mode=SegmentationMode.COCO_RLE)
+                else:
+                    # If not in the correct format, skip this annotation
+                    continue
                 
                 obj = ImageObject(
                     name=self.all_object_names[ann['category_id'] - 1],
@@ -133,27 +146,5 @@ if __name__ == "__main__":
 
     # Get ground truth
     masks, class_labels = coco_dataset.get_ground_truth(random_image_id)
-
-    # Convert masks to SegmentationMask type
-    segmentation_masks = []
-    for mask, label in zip(masks, class_labels):
-        rle = mask_utils.encode(np.asfortranarray(mask))
-        segmentation_mask = SegmentationMask(rle, mode=SegmentationMode.COCO_RLE, object_name=label, description="")
-        segmentation_masks.append(segmentation_mask)
-
-    # Create SegmentationResults object
-    processed_sample = ImageWithDescriptions(image=image, id=str(random_image_id), object_name=object_name)
-    segmentation_results = SegmentationResults(
-        processed_samples=[processed_sample],
-        predictions={str(random_image_id): segmentation_masks}
-    )
-
-    # Show the segmentation predictions
-    show_segmentation_predictions(segmentation_results)
-
-    # Print the class labels
-    print("Class labels:")
-    for label in class_labels:
-        print(f"- {label}")
 
 # %%
