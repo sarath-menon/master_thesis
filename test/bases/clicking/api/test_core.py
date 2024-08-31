@@ -1,4 +1,4 @@
-from clicking.demo_client import core
+from clicking.api import core
 
 
 def test_sample():

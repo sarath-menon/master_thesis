@@ -45,34 +45,35 @@ class VisionModel:
 
     def set_model(self, req: SetModelReq):
         if req.name not in self._available_models:
+            print(f"Model {req.name} not supported")
             raise HTTPException(status_code=400, detail=f"Model {req.name} not supported")
         
         model_class_obj = self._available_models[req.name]
-        
         if req.variant not in model_class_obj.variants():
+            print(f"Variant {req.variant} not supported for model {req.name}")
             raise HTTPException(status_code=400, detail=f"Variant {req.variant} not supported for model {req.name}")
 
         task_type = TaskType(req.task)
-
-        # Check if model has the task
         if task_type not in model_class_obj.tasks():
+            print(f"Model {req.name} does not support task {req.task}")
             raise HTTPException(status_code=400, detail=f"Model {req.name} does not support task {req.task}")
 
         model_handle = model_class_obj(variant=req.variant)
         
-        # Save the model for the task
-        self._task_models[task_type] = model_handle
-        
-        message = f"{req.task.capitalize()} model set to {req.name} with variant {req.variant}."
-        return {"message": message, "status_code": 200}
+        try:
+            self._task_models[task_type] = model_handle
+            message = f"{req.task.capitalize()} model set to {req.name} with variant {req.variant}."
+            return {"message": message, "status_code": 200}
+        except Exception as e:
+            error_message = f"Failed to set model for task {req.task}: {str(e)}"
+            return {"message": error_message, "status_code": 500}
 
     def get_available_models(self):
         models = []
         for name, handle in self._available_models.items():
             model = ModelInfo(name=name, variants=handle.variants(), tasks=handle.tasks())
             models.append(model)
-        return GetModelsResp(models)
-
+        return GetModelsResp(models=models)  # Change this line
 
     async def get_prediction(self, req: PredictionReq) -> PredictionResp:
         model_handle = self._get_model_for_task(req.task)

@@ -59,10 +59,10 @@ class SegmentationResp(BaseModel):
 class PredictionReq(BaseModel):
     image: UploadFile = Field(..., description="Uploaded image file")
     task: TaskType
+    input_text: Optional[str] = Field(None, description="Text input for text-based tasks")
     input_boxes: Optional[str] = Field(None)
     input_point: Optional[str] = Field(None)
     input_label: Optional[str] = Field(None)
-    input_text: Optional[str] = Field(None)
     enable_cache: Optional[bool] = Field(True)
     reset_cache: Optional[bool] = Field(False)
 
