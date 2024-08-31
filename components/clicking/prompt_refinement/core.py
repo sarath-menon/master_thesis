@@ -9,6 +9,7 @@ from enum import Enum, auto
 from clicking.prompt_manager.core import PromptManager
 import asyncio
 import nest_asyncio
+import yaml
 from typing import List, Dict, Optional, TypedDict, Union, NamedTuple
 import json
 from PIL import Image
@@ -21,11 +22,15 @@ dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 class PromptRefiner(ImageProcessorBase):
-    def __init__(self, prompt_path: str, model: str = "gpt-4o", temperature: float = 0.0):
+    def __init__(self, prompt_path: str, config_path: str, model: str = "gpt-4o", temperature: float = 0.0):
         super().__init__(model, temperature)
         self.prompt_manager = PromptManager(prompt_path)
         self.messages = [{"role": "system", "content": self.prompt_manager.get_prompt(type='system')}]
-    
+        
+        # Load configuration
+        with open(config_path, 'r') as config_file:
+            self.config = yaml.safe_load(config_file)
+        
     async def process_prompts_async(self, clicking_image: ClickingImage, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ClickingImage:
         description = await self._process_single_prompt(clicking_image.image, mode, **kwargs)
         
@@ -34,12 +39,13 @@ class PromptRefiner(ImageProcessorBase):
             # Find matching object in original clicking_image, if any
             matching_obj = next((o for o in clicking_image.predicted_objects if o.name == obj['name']), None)
             
+            if matching_obj is None:
+                print(f"Error: No matching object found for '{obj['name']}'")
+            
             objects.append(ImageObject(
                 name=obj['name'],
                 description=obj['description'],
                 category=ObjectCategory(obj['category']),
-                bbox=matching_obj.bbox if matching_obj else None,
-                mask=matching_obj.mask if matching_obj else None
             ))
         
         clicking_image.predicted_objects = objects
@@ -60,12 +66,21 @@ class PromptRefiner(ImageProcessorBase):
         return response_dict
 
     def _get_template_values(self, mode: PromptMode, object_name: Optional[str], **kwargs) -> TemplateValues:
-        if object_name is None:
-            return {}
-        elif mode == PromptMode.OBJECTS_LIST_TO_DESCRIPTIONS:
-            return {"input_description": object_name, "word_limit": str(kwargs.get('word_limit', 10))}
+        word_limits = self.config['prompts']['word_limits'].get(mode.value, {})
+        description_length = word_limits.get('description_length', 20)  # Default to 20 if not specified
+        object_name_limit = word_limits.get('object_name', 5)  # Default to 5 if not specified
+        
+        if mode == PromptMode.OBJECTS_LIST_TO_DESCRIPTIONS:
+            return {
+                "input_description": object_name,
+                "description_length": description_length,
+                "object_name_limit": object_name_limit
+            }
         elif mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
-            return {"description_length": kwargs.get('description_length', 20)}
+            return {
+                "description_length": description_length,
+                "object_name_limit": object_name_limit
+            }
         raise ValueError(f"Invalid mode: {mode}")
 
     def show_messages(self) -> None:

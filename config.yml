@@ -22,6 +22,13 @@ models:
 prompts:
   refinement_path: './prompts/prompt_refinement.md'
   output_corrector_path: './prompts/output_corrector.md'
+  word_limits:
+    IMAGE_TO_OBJECT_DESCRIPTIONS:
+      description_length: 30
+      object_name: 5
+    OBJECTS_LIST_TO_DESCRIPTIONS:
+      description_length: 10
+      object_name: 3
 
 # Pipeline settings
 pipeline:

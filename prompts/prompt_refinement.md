@@ -20,8 +20,8 @@ Review the videogame screenshot to identify interactive game objects (e.g., door
 4. For each object, provide a brief rationale (up to 10 words) for its classification.
 
 Output the information as a JSON list under the key "objects", with each entry including:
-- "name": "object name (up to 2 words)"
-- "description": "brief details of the object (up to 10 words)"
+- "name": "object name (up to {object_name_limit} words)"
+- "description": "brief details of the object (up to {description_length} words)"
 - "category": "visibility category",
 - "reasoning": "rationale for classification (up to 10 words)"
 
@@ -35,18 +35,16 @@ Examine the videogame screenshot to identify crucial game objects for each of th
 2. **Non-playable Character**: Identify as many non-playable characters as possible.
 3. **Information Display**: Identify all objects that provide game state information (e.g., health bar, ammo count, minimap, score, notification pop-ups).
 
-<!-- 2. Navigation Controls: Elements that help players navigate the game or menus (e.g., directional pad, joystick, back button, menu button). Identify 3 objects or less.
 
-2. Interactive UI Elements: UI elements that players interact with to perform actions (e.g., action buttons like jump or shoot, inventory slots, dialogue options). Identify 3 objects or less. -->
 
 For each object, provide:
-- Name: A name for the object in 2 words or less.
+- Name: A name for the object in {object_name_limit} words or less.
 - Description: A detailed description of the object's location, shape, color, and appearance, using no more than {description_length} words. Use full sentences.
 - Category: The category the object belongs to (Game Asset, Navigation Control, Information Display, Interactive UI Element).
 - Reasoning: A concise 10-word explanation of why the object is important for interaction.
 
 Format the output as a JSON list under the key "objects", with each entry containing:
-- "name": "object name in 2 words or less",
+- "name": "object name in {object_name_limit} words or less",
 - "description": "details of the object including location, shape, color, and appearance",
 - "category": "category name",
 - "reasoning": "10-word explanation of its significance"
