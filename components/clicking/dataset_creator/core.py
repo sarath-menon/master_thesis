@@ -28,7 +28,7 @@ class CocoDataset:
             image_tensor, annotations = self.coco_dataset[int(index)]
             image = to_pil(image_tensor)
             objects = self._create_image_objects(annotations)
-            clicking_images.append(ClickingImage(image=image, id=str(index), true_objects=objects))
+            clicking_images.append(ClickingImage(image=image, id=str(index), annotated_objects=objects))
 
         return clicking_images
 
@@ -74,7 +74,7 @@ class CocoDataset:
         for clicking_image in clicking_images[:show_images_per_batch]:
             plt.imshow(clicking_image.image)
             plt.axis(False)
-            plt.title(", ".join([obj.name for obj in clicking_image.true_objects]))
+            plt.title(", ".join([obj.name for obj in clicking_image.annotated_objects]))
             plt.show()
 
     def get_ground_truth(self, image_id: int):
