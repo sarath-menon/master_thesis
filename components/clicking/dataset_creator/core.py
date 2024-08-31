@@ -28,7 +28,7 @@ class CocoDataset:
             image_tensor, annotations = self.coco_dataset[int(index)]
             image = to_pil(image_tensor)
             objects = self._create_image_objects(annotations)
-            clicking_images.append(ClickingImage(image=image, id=str(index), objects=objects))
+            clicking_images.append(ClickingImage(image=image, id=str(index), true_objects=objects))
 
         return clicking_images
 
@@ -57,8 +57,7 @@ class CocoDataset:
             mask = SegmentationMask(coco_rle=rle, mode=SegmentationMode.COCO_RLE)
             
             obj = ImageObject(
-                name=self.all_object_names[ann['category_id'] - 1],
-                description="",  # You might want to add a description if available
+                name=self.all_object_names[ann['category_id']],
                 category=category,
                 bbox=bbox,
                 mask=mask

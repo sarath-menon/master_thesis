@@ -21,8 +21,8 @@ CATEGORY_COLOR_MAP = {
 
 class ImageObject(BaseModel):
     name: str
-    description: str
-    category: ObjectCategory
+    description: Optional[str] = None
+    category: Optional[ObjectCategory] = None
     bbox: Optional[BoundingBox] = None
     mask: Optional[SegmentationMask] = None
 

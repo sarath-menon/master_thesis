@@ -40,7 +40,7 @@ class PipelineState:
 
 client = Client(base_url=config['api']['base_url'])
 
-prompt_refiner = PromptRefiner(prompt_path=config['prompts']['refinement_path'])
+prompt_refiner = PromptRefiner(prompt_path=config['prompts']['refinement_path'], config=config)
 
 coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
 #%%
@@ -268,8 +268,8 @@ output_corrector = OutputCorrector(prompt_path=config['prompts']['output_correct
 
 pipeline.add_step("Sample Dataset", sample_dataset)
 pipeline.add_step("Process Prompts", process_prompts)
-pipeline.add_step("Get Localization Results", localization_processor.get_localization_results)
-pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
+# pipeline.add_step("Get Localization Results", localization_processor.get_localization_results)
+# pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
 
 # Print the pipeline structure
 pipeline.print_pipeline()
@@ -279,7 +279,7 @@ pipeline.static_analysis()
 
 # Run the entire pipeline
 image_ids = [22, 31, 34]
-result = asyncio.run(pipeline.run(image_ids))
+results = asyncio.run(pipeline.run(image_ids))
 #%%
 
 # Run from a specific step using cached data
@@ -299,3 +299,36 @@ result = asyncio.run(pipeline.run_from_step("Get Localization Results"))
 for clicking_image in result.images:
     show_localization_predictions(clicking_image)
     show_segmentation_predictions(clicking_image)
+#%% print predicted and true objects
+
+from prettytable import PrettyTable
+
+from prettytable import PrettyTable
+from typing import List
+
+def print_image_objects(image_objects: List[ClickingImage]):
+    for result in image_objects:
+        predicted_objects = [[i, obj.name] for i, obj in enumerate(result.predicted_objects)]
+        true_objects = [[i, obj.name] for i, obj in enumerate(result.true_objects)]
+        
+        # Pad the shorter list to match the length of the longer list
+        max_length = max(len(predicted_objects), len(true_objects))
+        predicted_objects += [['', '']] * (max_length - len(predicted_objects))
+        true_objects += [['', '']] * (max_length - len(true_objects))
+        
+        # Combine predicted and true objects
+        combined_objects = [[i if i < len(predicted_objects) else '', p[1], t[1]] for i, (p, t) in enumerate(zip(predicted_objects, true_objects))]
+        
+        table = PrettyTable()
+        table.field_names = ["Index", "Predicted object", "True objects"]
+        table.add_rows(combined_objects)
+        
+        print(f"Image ID: {result.id}")
+        print(table)
+        print("\n")
+
+# Call the function with the results
+print_image_objects(results.images)
+    
+#%%
+
