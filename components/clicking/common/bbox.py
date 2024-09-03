@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Tuple, List, Union, Optional
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from PIL import Image
 
 class BBoxMode(Enum):
     XYWH = 1
@@ -58,3 +59,15 @@ class BoundingBox:
 
     def __repr__(self):
         return f"BoundingBox(xyxy={self.get(BBoxMode.XYXY)}, object_name={self.object_name}, description={self.description})"
+
+    def extract_area(self, image: Image.Image, padding: int = 0) -> Image.Image:
+        x1, y1, x2, y2 = self.get(BBoxMode.XYXY)
+        
+        width, height = image.size
+        
+        x1 = max(0, int(x1) - padding)
+        y1 = max(0, int(y1) - padding)
+        x2 = min(width, int(x2) + padding)
+        y2 = min(height, int(y2) + padding)
+        
+        return image.crop((x1, y1, x2, y2))
