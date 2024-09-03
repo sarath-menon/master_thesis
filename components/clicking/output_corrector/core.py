@@ -42,16 +42,17 @@ class OutputCorrector(ImageProcessorBase):
         images_overlayed = [overlay_bounding_box(screenshot.copy(), obj.bbox) for obj in clicking_image.predicted_objects]
         base64_images = [self._pil_to_base64(img) for img in images_overlayed]
         
-        for base64_image, obj in zip(base64_images, clicking_image.predicted_objects):
+        async def process_object(base64_image, obj):
             template_values = {"object_name": obj.name}
             prompt = self.prompt_manager.get_prompt(type='user', prompt_key='bbox_crop', template_values=template_values)
 
             response: CorrectedResponse = await self._get_image_response(base64_image, prompt, self.messages, output_type=CorrectedResponse)
 
-            if response.judgement == "false":
-                obj.validity.is_valid = False
-
+            obj.validity.is_valid = response.judgement != "false"
             obj.validity.reason = response.reasoning
+
+        tasks = [process_object(base64_image, obj) for base64_image, obj in zip(base64_images, clicking_image.predicted_objects)]
+        await asyncio.gather(*tasks)
 
         return clicking_image
 
