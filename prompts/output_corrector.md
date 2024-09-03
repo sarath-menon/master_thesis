@@ -6,14 +6,12 @@ You are a helpful assistant and in an annotating videogame images.
 # User prompt
 
 ## correct_object_name
-Evaluate if the object in the bounding box is a {object_name}. Choose one:
-    1. Class label is correct: Return the same class label.
-    2. Class label is slightly off: Provide the correct class label.
-    3. Class label is completely wrong: Provide the correct class label.
+Examine the object enclosed by the red bounding box and assess whether it accurately represents a {object_name}. Provide your response in the following format:
 
-    Return JSON:
-    {{
-        "object_name": "correct or updated label",
-        "judgement": "correct|slightly_off|wrong",
-        "reasoning": "Brief 10-word explanation"
-    }}
+Return a JSON object structured as follows:
+{{
+    "judgement": "correct" if the label accurately describes the object and it is entirely contained within the bounding box, "bbox_off" if the object is depicted in the image but not completely enclosed by the bounding box, "wrong label" if the label does not correctly describe the object or the object is absent from the image,
+    "reasoning": "Provide a precise explanation using exactly 20 words."
+}}
+
+Note: Ensure your evaluation is highly precise and specific. Avoid using generalizations or unclear terms.
