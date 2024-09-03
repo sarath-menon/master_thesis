@@ -62,13 +62,19 @@ class OutputCorrector(ImageProcessorBase):
 
             response: CorrectedResponse = await self._get_image_response(image, prompt, messages, output_type=CorrectedResponse)
 
-            obj.validity.is_valid = response.judgement != "false"
-            obj.validity.reason = response.reasoning
+            if response.judgement == "false" or response.visibility != "fully visible":
+                obj.validity.is_valid = False
 
             print(f"Object: {obj.name}, Visibility: {response.visibility}")
+            obj.validity.reason = response.reasoning
 
             # save_path = f"{self.save_path}/{obj.name}.png"
             # image.save(save_path)
+
+            plt.imshow(image)
+            plt.axis('off')
+            plt.title(f"Object: {obj.name}, Visibility: {response.visibility}")
+            plt.show()
 
         tasks = [process_object(image, obj) for image, obj in zip(images, clicking_image.predicted_objects)]
         await asyncio.gather(*tasks)
