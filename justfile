@@ -2,6 +2,10 @@
 start_server PORT='8082':
     uvicorn core:app --reload --port {{PORT}} --app-dir bases/clicking/api --reload-dir bases/clicking/api
 
+just install_dependencies:
+    apt update
+    apt-get install -y libgl1-mesa-glx  git-lfs 
+
 install_wheels_cpu:
     pip install ./wheels/evf_sam2/evf_sam-1.0-py3-none-any.whl
     pip install ./wheels/sam2_cpu/SAM_2-1.0-py3-none-any.whl
