@@ -224,7 +224,7 @@ result = asyncio.run(pipeline.run_from_step("Get Localization Results"))
 # Visualize results
 for clicking_image in results.images:
     show_localization_predictions(clicking_image) 
-    show_segmentation_predictions(clicking_image)
+    # show_segmentation_predictions(clicking_image)
 #%% print predicted and true objects
 from clicking.common.logging import print_image_objects, print_object_descriptions, selva
 
@@ -238,4 +238,27 @@ output_corrector_results =  output_corrector.verify_bboxes(results.images[0])
 id = 0
 show_localization_predictions(results.images[id], object_names_to_show=['Sewing Machine']) 
 #%%
+
+def save_validity_results(results: PipelineState, output_file: str):
+    validity_data = []
+    
+    for clicking_image in results.images:
+        for obj in clicking_image.predicted_objects:
+            validity_data.append({
+                'image_id': clicking_image.id,
+                # 'object_id': obj.id,
+                'object_name': obj.name,
+                'is_valid': obj.validity.is_valid,
+                'reason': obj.validity.reason
+            })
+    
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    with open(output_file, 'w') as f:
+        json.dump(validity_data, f, indent=2)
+    
+    print(f"Validity results saved to {output_file}")
+
+# Example usage:
+EVALS_PATH = "./evals/output_corrector"
+save_validity_results(results, f'{EVALS_PATH}/validity_results.json')
 
