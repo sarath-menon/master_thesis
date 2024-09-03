@@ -75,7 +75,7 @@ def show_clickpoint_predictions(clicking_image: ClickingImage, textbox_color='re
         offset_y = 60
         ax.text(centroid[0], centroid[1] - offset_y, obj.name, 
                 color=text_color, fontsize=text_size, 
-                bbox=dict(facecolor=textbox_color, edgecolor='none', alpha=1.0),
+                bbox=dict(facecolor=textbox_color, edgecolor='none', alpha=0.7),
                 ha='center', va='center')
 
     ax.axis('off')
@@ -90,7 +90,9 @@ def show_localization_predictions(clicking_image: ClickingImage, object_names_to
     object_names = set(obj.name for obj in clicking_image.predicted_objects)
     object_ids = {name: i for i, name in enumerate(object_names)}
 
-    for obj in clicking_image.predicted_objects:
+    label_y_offset = 0
+
+    for i, obj in enumerate(clicking_image.predicted_objects):
         if obj.bbox is None:
             print(f"Object {obj.name} has no bounding box")
             continue
@@ -106,7 +108,9 @@ def show_localization_predictions(clicking_image: ClickingImage, object_names_to
         ax.add_patch(rect)
 
         object_id = object_ids[obj.name]
-        plt.text(x, y, str(object_id), color='white', fontsize=8, bbox=dict(facecolor=bg_color, alpha=0.9))
+        plt.text(x , y + label_y_offset, str(object_id), color='white', fontsize=8, bbox=dict(facecolor=bg_color, alpha=0.4))
+
+        label_y_offset += 0 
 
 
     ax.axis('off')
@@ -150,7 +154,7 @@ def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='
 
         ax.text(centroid[0], centroid[1] - label_offset_y, obj.name, 
                 color=text_color, fontsize=text_size, 
-                bbox=dict(facecolor=textbox_color, edgecolor='none', alpha=1.0),
+                bbox=dict(facecolor=textbox_color, edgecolor='none', alpha=0.7),
                 ha='center', va='center')
 
     ax.axis('off')
