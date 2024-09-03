@@ -16,10 +16,16 @@ Return a JSON object structured as follows:
 
 ## bbox_crop
 
-Carefully examine the object in the image and determine if it accurately matches the label {object_name}. Provide your response in the following JSON format:
+Examine the object in the image and determine the following:
+1. Does it match the label "{object_name}"?
+2. Is the "{object_name}" fully visible in the image?
+
+Provide your response in the following JSON format:
 
 Return a JSON object structured as follows:
 {{
-    "judgement": "true" if the label accurately describes the object, "false" if the label does not correctly describe the object or if the object is not present in the image,
-    "reasoning": "Provide a clear and concise explanation in 10 words or less."
+    "judgement": "true" if the label accurately describes the object, "false" if the label does not accurately describe the object,
+    "reasoning": "Provide a clear and concise explanation in 10 words or fewer.",
+    "visibility": "fully visible" if the object is fully visible in the image, "partially visible" if the object is partially visible in the image, "hidden" if the object is not visible in the image."
 }}
+
