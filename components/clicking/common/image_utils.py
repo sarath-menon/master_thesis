@@ -20,7 +20,9 @@ class ImageProcessorBase:
             return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
     @cache_result(expiration_time=3000)
-    async def _get_image_response(self, base64_image: str, text_prompt: str, messages: list, output_type: Type[T]) -> T:
+    async def _get_image_response(self, image: Image.Image, text_prompt: str, messages: list, output_type: Type[T]) -> T:
+        
+        base64_image = self._pil_to_base64(image)
         msg = {
             "role": "user", 
             "content": [

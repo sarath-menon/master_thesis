@@ -171,8 +171,8 @@ pipeline = Pipeline(config=config)
 pipeline.add_step("Sample Dataset", sample_dataset)
 pipeline.add_step("Process Prompts", process_prompts)
 pipeline.add_step("Get Localization Results", localization_processor.get_localization_results)
-pipeline.add_step("Verify bboxes", verify_bboxes)
-# pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
+# pipeline.add_step("Verify bboxes", verify_bboxes)
+pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
 
 # Print the pipeline structure
 pipeline.print_pipeline()
@@ -195,7 +195,7 @@ pipeline.replace_step("Verify bboxes", verify_bboxes)
 # Run from a specific step using cached data
 result = asyncio.run(pipeline.run_from_step("Verify bboxes"))
 for obj in results.images[0].predicted_objects:
-    print(obj.validity)
+    print(f"{obj.name}: {obj.validity}")
     
 # # Or provide an initial state if needed
 # initial_state = PipelineState(images=[22, 31, 34])
@@ -209,8 +209,8 @@ for obj in results.images[0].predicted_objects:
 
 # Visualize results
 for clicking_image in results.images:
-    show_localization_predictions(clicking_image, object_names_to_show=['Sewing Machine']) 
-    show_segmentation_predictions(clicking_image, object_names_to_show=['Sewing Machine'])
+    show_localization_predictions(clicking_image) 
+    show_segmentation_predictions(clicking_image)
 #%% print predicted and true objects
 from clicking.common.logging import print_image_objects, print_object_descriptions, selva
 
@@ -219,10 +219,19 @@ print_image_objects(results.images)
 
 #%%
 output_corrector_results =  output_corrector.verify_bboxes(results.images[0])
-#%%
-for image in output_corrector_results:
-    print(image)
 
 #%%
 id = 0
 show_localization_predictions(results.images[id], object_names_to_show=['Sewing Machine']) 
+#%%
+
+id = 1
+for result in results.images[id].predicted_objects:
+    print(result.name)
+    print(result.description)
+    print(result.bbox)
+    print(result.mask)
+    print(result.validity)
+    print("\n")
+
+#%%

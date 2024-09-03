@@ -47,12 +47,11 @@ class PromptRefiner(ImageProcessorBase):
         return clicking_image
 
     async def _process_single_prompt(self, image: Image.Image, mode: PromptMode, object_name: Optional[str] = None, **kwargs) -> List[ImageObject]:
-        base64_image = self._pil_to_base64(image)
         template_values = self._get_template_values(mode, object_name, **kwargs)
         prompt = self.prompt_manager.get_prompt(type='user', prompt_key=mode.value, template_values=template_values)
         
         try:
-            response = await super()._get_image_response(base64_image, prompt, self.messages, PromptResponse)
+            response = await super()._get_image_response(image, prompt, self.messages, PromptResponse)
         except ValueError as e:
             print(f"Error processing prompt: {e}")
             return []
