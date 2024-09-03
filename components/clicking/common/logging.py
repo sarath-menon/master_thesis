@@ -2,7 +2,7 @@
 from clicking.common.types import ClickingImage
 
 from prettytable import PrettyTable
-from typing import List
+from typing import List 
 from matplotlib import pyplot as plt
 
 def print_image_objects(image_objects: List[ClickingImage], show_image=False):

@@ -74,5 +74,8 @@ def test_segmentation_mask_invalid_creation():
     with pytest.raises(ValueError):
         SegmentationMask()
 
+
+
+
 if __name__ == '__main__':
     pytest.main()

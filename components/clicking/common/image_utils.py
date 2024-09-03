@@ -3,9 +3,11 @@ import io
 from PIL import Image
 from litellm import acompletion
 import asyncio
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Type, TypeVar, Any
 import json
 from .caching import cache_result
+
+T = TypeVar('T')
 
 class ImageProcessorBase:
     def __init__(self, model: str = "gpt-4o", temperature: float = 0.0):
@@ -19,7 +21,7 @@ class ImageProcessorBase:
             return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
     @cache_result(expiration_time=3000)
-    async def _get_image_response(self, base64_image: str, text_prompt: str, messages: list, json_mode: bool = False):
+    async def _get_image_response(self, base64_image: str, text_prompt: str, messages: list, output_type: Type[T]) -> T:
         msg = {
             "role": "user", 
             "content": [
@@ -32,7 +34,7 @@ class ImageProcessorBase:
             messages_copy = messages.copy()
             messages_copy.append(msg)
 
-        response_format = {"type": "json_object"} if json_mode else None
+        response_format = {"type": "json_object"}
         response = await acompletion(
             model=self.model, 
             messages=messages_copy, 
@@ -41,7 +43,11 @@ class ImageProcessorBase:
         )
         result = response["choices"][0]["message"]["content"]
 
-        return result
+        try:
+            parsed_result = json.loads(result)
+            return output_type(**parsed_result)
+        except (json.JSONDecodeError, TypeError) as e:
+            raise ValueError(f"Response does not match the specified output type: {e}")
 
     def clear_cache(self):
         self._get_image_response.clear_cache()

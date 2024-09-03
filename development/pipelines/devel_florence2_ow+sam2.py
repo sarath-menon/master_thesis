@@ -162,15 +162,17 @@ localization_processor = LocalizationProcessor(client, config=config)
 segmentation_processor = SegmentationProcessor(client, config=config)
 output_corrector = OutputCorrector(prompt_path=config['prompts']['output_corrector_path'])
 
-pipeline = Pipeline(config=config)
+
 #%%
 nest_asyncio.apply()
 
+pipeline = Pipeline(config=config)
+
 pipeline.add_step("Sample Dataset", sample_dataset)
 pipeline.add_step("Process Prompts", process_prompts)
-pipeline.add_step("Get Localization Results", localization_processor.get_localization_results)
-pipeline.add_step("Verify bboxes", verify_bboxes)
-pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
+# pipeline.add_step("Get Localization Results", localization_processor.get_localization_results)
+# pipeline.add_step("Verify bboxes", verify_bboxes)
+# pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
 
 # Print the pipeline structure
 pipeline.print_pipeline()
@@ -182,15 +184,19 @@ pipeline.static_analysis()
 image_ids = [38, 31]
 results = asyncio.run(pipeline.run(image_ids))
 
-#%%
 for obj in results.images[0].predicted_objects:
     print(obj.validity)
 
 #%%
 
-# Run from a specific step using cached data
-result = asyncio.run(pipeline.run_from_step("Get Localization Results"))
+# replace pipeline step
+pipeline.replace_step("Verify bboxes", output_corrector.verify_bboxes)
 
+# Run from a specific step using cached data
+result = asyncio.run(pipeline.run_from_step("Verify bboxes"))
+for obj in results.images[0].predicted_objects:
+    print(obj.validity)
+    
 # # Or provide an initial state if needed
 # initial_state = PipelineState(images=[22, 31, 34])
 # initial_state.processed_prompts = pipeline.get_step_result("Process Prompts").processed_prompts

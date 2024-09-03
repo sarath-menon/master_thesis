@@ -10,16 +10,21 @@ from clicking.prompt_manager.core import PromptManager
 import asyncio
 import nest_asyncio
 import yaml
-from typing import List, Dict, Optional, TypedDict, Union, NamedTuple
+from typing import List, Dict, Optional, TypedDict, Union, NamedTuple, Type, Any
+from pydantic import BaseModel
 import json
 from PIL import Image
 import uuid
 from clicking.prompt_refinement.types import *
 from clicking.common.types import ClickingImage, ObjectCategory, ImageObject
+from pydantic import Field
 
 # set API keys
 dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
+
+class PromptResponse(BaseModel):
+    objects: list[ImageObject]
 
 class PromptRefiner(ImageProcessorBase):
     def __init__(self, prompt_path: str, config: Dict, model: str = "gpt-4o", temperature: float = 0.0):
@@ -45,21 +50,19 @@ class PromptRefiner(ImageProcessorBase):
         base64_image = self._pil_to_base64(image)
         template_values = self._get_template_values(mode, object_name, **kwargs)
         prompt = self.prompt_manager.get_prompt(type='user', prompt_key=mode.value, template_values=template_values)
-        response = await super()._get_image_response(base64_image, prompt, self.messages, json_mode=True)
         
-        response_dict = json.loads(response)
-
-        objects = []
-        for obj in response_dict['objects']:
-            try:
-                objects.append(ImageObject(**obj, id=str(uuid.uuid4())))
-            except TypeError as e:
-                print(f"Error creating ImageObject: {e}. Object data: {obj}")
+        try:
+            response = await super()._get_image_response(base64_image, prompt, self.messages, PromptResponse)
+        except ValueError as e:
+            print(f"Error processing prompt: {e}")
+            return []
 
         if mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
-            objects.sort(key=lambda x: x.category)
+            response.objects.sort(key=lambda x: x.category)
 
-        return objects
+        print(response.objects)
+
+        return response.objects
 
     def _get_template_values(self, mode: PromptMode, object_name: Optional[str], **kwargs) -> TemplateValues:
         word_limits = self.config['prompts']['word_limits'].get(mode.value, {})

@@ -6,6 +6,7 @@ from enum import Enum
 from clicking.common.mask import SegmentationMask
 from clicking.common.bbox import BoundingBox
 from pydantic import ConfigDict
+import uuid
 
 class ObjectCategory(str, Enum):
     GAME_ASSET = "Game Asset"
@@ -24,7 +25,7 @@ class Validity(BaseModel):
     reason: Optional[str] = None
 
 class ImageObject(BaseModel):
-    id: str
+    id: str = Field(default_factory=uuid.uuid4)
     name: str
     description: Optional[str] = None
     category: Optional[ObjectCategory] = None
