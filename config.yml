@@ -5,7 +5,8 @@ dataset:
 
 # API settings
 api:
-  base_url: 'http://localhost:8082'
+  local_url: 'http://localhost:8082'
+  cloud_url: 'http://localhost:8083'
 
 # Model settings
 models:
