@@ -261,4 +261,68 @@ def save_validity_results(results: PipelineState, output_file: str):
 # Example usage:
 EVALS_PATH = "./evals/output_corrector"
 save_validity_results(results, f'{EVALS_PATH}/validity_results.json')
+#%%
+import json
+from evaluate import load
 
+import json
+from evaluate import load
+from collections import Counter
+
+def evaluate_validity_results(ground_truth_file: str, predictions_file: str):
+    # Load the metric
+    accuracy_metric = load("accuracy")
+    
+    # Load ground truth data
+    with open(ground_truth_file, 'r') as f:
+        ground_truth = json.load(f)
+    
+    # Load predictions
+    with open(predictions_file, 'r') as f:
+        predictions = json.load(f)
+    
+    # Prepare data for evaluation
+    gt_labels = []
+    pred_labels = []
+    
+    for gt_item in ground_truth:
+        gt_image_id = gt_item['meta']['image_id']
+        gt_label = gt_item['annotations'][0]['result'][1]['value']['choices'][0]  # 'correct' or 'incorrect'
+        
+        # Find corresponding prediction
+        pred_item = next((p for p in predictions if p['image_id'] == gt_image_id), None)
+        
+        if pred_item:
+            # Convert string labels to integers
+            gt_labels.append(1 if gt_label == 'correct' else 0)
+            pred_labels.append(1 if pred_item['is_valid'] else 0)
+    
+    # Calculate accuracy
+    results = accuracy_metric.compute(references=gt_labels, predictions=pred_labels)
+    
+    # Count correct and incorrect predictions
+    correct_count = sum(1 for gt, pred in zip(gt_labels, pred_labels) if gt == pred)
+    incorrect_count = len(gt_labels) - correct_count
+    
+    # Count predictions by class
+    gt_counter = Counter(gt_labels)
+    pred_counter = Counter(pred_labels)
+    
+    # Add counts to results
+    results['total_predictions'] = len(gt_labels)
+    results['correct_predictions'] = correct_count
+    results['incorrect_predictions'] = incorrect_count
+    results['ground_truth_counts'] = dict(gt_counter)
+    results['prediction_counts'] = dict(pred_counter)
+    
+    # Print results
+    print(f"Accuracy: {results['accuracy']:.2f}")
+    print(f"Correct predictions: {results['correct_predictions']} / {results['total_predictions']} ({results['accuracy']:.2%})")
+    return results
+
+# Example usage:
+EVALS_PATH = "./evals/output_corrector"
+ground_truth_file = f'{EVALS_PATH}/ground_truth.json'
+predictions_file = f'{EVALS_PATH}/validity_results.json'
+
+evaluation_results = evaluate_validity_results(ground_truth_file, predictions_file)
