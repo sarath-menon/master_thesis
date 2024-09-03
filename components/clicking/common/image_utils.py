@@ -13,7 +13,6 @@ class ImageProcessorBase:
     def __init__(self, model: str = "gpt-4o", temperature: float = 0.0):
         self.model = model
         self.temperature = temperature
-        self.lock = asyncio.Lock()
 
     def _pil_to_base64(self, image: Image.Image) -> str:
         with io.BytesIO() as buffer:
@@ -30,14 +29,12 @@ class ImageProcessorBase:
             ]
         }
 
-        async with self.lock: 
-            messages_copy = messages.copy()
-            messages_copy.append(msg)
+        messages.append(msg)
 
         response_format = {"type": "json_object"}
         response = await acompletion(
             model=self.model, 
-            messages=messages_copy, 
+            messages=messages, 
             temperature=self.temperature, 
             response_format=response_format
         )
