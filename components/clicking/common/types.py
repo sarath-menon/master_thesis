@@ -19,12 +19,18 @@ CATEGORY_COLOR_MAP = {
     ObjectCategory.NPC: (0, 0, 1)                # Blue
 }
 
+class Validity(BaseModel):
+    is_valid: bool = Field(default=True)
+    reason: Optional[str] = None
+
 class ImageObject(BaseModel):
+    id: str
     name: str
     description: Optional[str] = None
     category: Optional[ObjectCategory] = None
     bbox: Optional[BoundingBox] = None
     mask: Optional[SegmentationMask] = None
+    validity: Validity = Field(default=Validity())
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

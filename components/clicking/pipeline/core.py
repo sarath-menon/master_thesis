@@ -18,7 +18,6 @@ import asyncio
 class PipelineState:
     images: List[ClickingImage] = field(default_factory=list)
 
-
 class Pipeline:
     def __init__(self, config: Dict[str, Any]):
         self.steps: List[Tuple[str, Callable]] = []

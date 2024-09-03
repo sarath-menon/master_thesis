@@ -13,10 +13,17 @@ from clicking.common.image_utils import ImageProcessorBase
 from clicking.vision_model.visualization import overlay_bounding_box
 from clicking.common.types import ClickingImage
 from clicking.prompt_refinement.types import *
+import json
+from pydantic import BaseModel, Field
+from typing import Literal
 
 # set API keys
 dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
+
+class CorrectedResponse(BaseModel):
+    judgement: Literal["true", "false"]
+    reasoning: str
 
 class OutputCorrector(ImageProcessorBase):
     def __init__(self, prompt_path: str, model: str = "gpt-4o", temperature: float = 0.0):
@@ -27,20 +34,20 @@ class OutputCorrector(ImageProcessorBase):
             {"role": "system", "content": self.prompt_manager.get_prompt(type='system')},
         ]
 
-    async def _get_image_responses(self, base64_images: list, object_names: list):
+    async def _get_image_responses(self, base64_images: list, object_names: list) -> list[CorrectedResponse]:
         tasks = []
 
         for base64_image, object_name in zip(base64_images, object_names):
             template_values = {"object_name": object_name}
-            prompt = self.prompt_manager.get_prompt(type='user', prompt_key='correct_object_name', template_values=template_values)
+            prompt = self.prompt_manager.get_prompt(type='user', prompt_key='bbox_crop', template_values=template_values)
+
             task = self._get_image_response(base64_image, prompt, self.messages, json_mode=True)
             tasks.append(task)
         
         responses = await asyncio.gather(*tasks)
-        return responses
+        return [CorrectedResponse(**json.loads(response)) for response in responses]
 
     async def verify_bboxes_async(self, clicking_image: ClickingImage) -> ClickingImage:
-        verification_results = {}
         screenshot = clicking_image.image
         
         images_overlayed = [overlay_bounding_box(screenshot.copy(), obj.bbox) for obj in clicking_image.predicted_objects]
@@ -48,9 +55,10 @@ class OutputCorrector(ImageProcessorBase):
         object_names = [obj.name for obj in clicking_image.predicted_objects]
         
         responses = await self._get_image_responses(base64_images, object_names)
-        verification_results[clicking_image.id] = responses
-        
-        
+    
+        for response in responses:
+            print(response)
+
         return clicking_image
 
     def verify_bboxes(self, clicking_image: ClickingImage) -> ClickingImage:
@@ -66,8 +74,9 @@ class OutputCorrector(ImageProcessorBase):
         
         responses = await self._get_image_responses(base64_images, object_names)
         verification_results[clicking_image.id] = responses
-        
-        # You might want to update the ClickingImage based on the verification results here
+
+        for response in responses:
+            print(response)
         
         return clicking_image
 
@@ -129,5 +138,7 @@ if __name__ == "__main__":
     
     asyncio.run(demo_verify_bboxes_async())
 
-
 # %%
+
+
+

@@ -8,6 +8,7 @@ from clicking.common.types import ClickingImage, ImageObject, ObjectCategory
 from pycocotools import mask as mask_utils
 from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.common.bbox import BoundingBox, BBoxMode
+import uuid
 
 class CocoDataset:
     def __init__(self, data_dir, annFile):
@@ -57,12 +58,15 @@ class CocoDataset:
             mask = SegmentationMask(coco_rle=rle, mode=SegmentationMode.COCO_RLE)
             
             obj = ImageObject(
+                id=str(uuid.uuid4()),
                 name=self.all_object_names[ann['category_id']],
                 category=category,
                 bbox=bbox,
                 mask=mask
             )
             objects.append(obj)
+
+        print(objects)
         return objects
 
     def _get_object_category(self, category_id: int) -> ObjectCategory:

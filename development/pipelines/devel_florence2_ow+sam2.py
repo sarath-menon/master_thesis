@@ -32,16 +32,6 @@ from io import BytesIO
 import json
 import nest_asyncio
 from clicking.pipeline.core import PipelineState
-# Load the configuration file
-with open('config.yml', 'r') as config_file:
-    config = yaml.safe_load(config_file)
-
-#%%
-client = Client(base_url=config['api']['base_url'])
-
-prompt_refiner = PromptRefiner(prompt_path=config['prompts']['refinement_path'], config=config)
-
-coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
 
 #%%
 def image_to_http_file(image):
@@ -58,8 +48,7 @@ def sample_dataset(state: PipelineState) -> PipelineState:
     return state
 
 def process_prompts(state: PipelineState) -> PipelineState:
-    for clicking_image in state.images:
-        clicking_image = prompt_refiner.process_prompts(clicking_image)
+    state.images = prompt_refiner.process_prompts(state.images)
     return state
 
 from prettytable import PrettyTable
@@ -85,15 +74,16 @@ def verify_bboxes(state: PipelineState) -> PipelineState:
     return state
 
 class LocalizationProcessor:
-    def __init__(self, client: Client):
+    def __init__(self, client: Client, config: Dict):
         self.client = client
+        self.config = config
 
     def get_localization_results(self, state: PipelineState) -> PipelineState:
         try:
             set_model.sync(client=self.client, body=SetModelReq(
-                name=config['models']['localization']['name'],
-                variant=config['models']['localization']['variant'],
-                task=TaskType[config['models']['localization']['task']]
+                name=self.config['models']['localization']['name'],
+                variant=self.config['models']['localization']['variant'],
+                task=TaskType[self.config['models']['localization']['task']]
             ))
         except Exception as e:
             print(f"Error setting localization model: {str(e)}")
@@ -122,15 +112,16 @@ class LocalizationProcessor:
         return state
 
 class SegmentationProcessor:
-    def __init__(self, client: Client):
+    def __init__(self, client: Client, config: Dict):
         self.client = client
+        self.config = config
 
     def get_segmentation_results(self, state: PipelineState) -> PipelineState:
         try:
             set_model.sync(client=self.client, body=SetModelReq(
-                name=config['models']['segmentation']['name'],
-                variant=config['models']['segmentation']['variant'],
-                task=TaskType[config['models']['segmentation']['task']]
+                name=self.config['models']['segmentation']['name'],
+                variant=self.config['models']['segmentation']['variant'],
+                task=TaskType[self.config['models']['segmentation']['task']]
             ))
         except Exception as e:
             print(f"Error setting segmentation model: {str(e)}")
@@ -158,14 +149,22 @@ class SegmentationProcessor:
         
         return state
 
-
 #%%
-nest_asyncio.apply()
+# Load the configuration file
+with open('config.yml', 'r') as config_file:
+    config = yaml.safe_load(config_file)
+
+client = Client(base_url=config['api']['base_url'])
+coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
+
+prompt_refiner = PromptRefiner(prompt_path=config['prompts']['refinement_path'], config=config)
+localization_processor = LocalizationProcessor(client, config=config)
+segmentation_processor = SegmentationProcessor(client, config=config)
+output_corrector = OutputCorrector(prompt_path=config['prompts']['output_corrector_path'])
 
 pipeline = Pipeline(config=config)
-localization_processor = LocalizationProcessor(client)
-segmentation_processor = SegmentationProcessor(client)
-output_corrector = OutputCorrector(prompt_path=config['prompts']['output_corrector_path'])
+#%%
+nest_asyncio.apply()
 
 pipeline.add_step("Sample Dataset", sample_dataset)
 pipeline.add_step("Process Prompts", process_prompts)
@@ -180,8 +179,13 @@ pipeline.print_pipeline()
 pipeline.static_analysis()
 
 # Run the entire pipeline
-image_ids = [38, 31, 34]
+image_ids = [38, 31]
 results = asyncio.run(pipeline.run(image_ids))
+
+#%%
+for obj in results.images[0].predicted_objects:
+    print(obj.validity)
+
 #%%
 
 # Run from a specific step using cached data
@@ -210,6 +214,9 @@ print_image_objects(results.images)
 #%%
 output_corrector_results =  output_corrector.verify_bboxes(results.images[0])
 #%%
+for image in output_corrector_results:
+    print(image)
+
+#%%
 id = 0
 show_localization_predictions(results.images[id], object_names_to_show=['Sewing Machine']) 
-show_segmentation_predictions(results.images[id], object_names_to_show=['Sewing Machine'])

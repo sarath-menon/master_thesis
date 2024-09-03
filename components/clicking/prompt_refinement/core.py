@@ -30,36 +30,36 @@ class PromptRefiner(ImageProcessorBase):
         # Load configuration
         self.config = config
         
-    async def process_prompts_async(self, clicking_image: ClickingImage, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ClickingImage:
-        description = await self._process_single_prompt(clicking_image.image, mode, **kwargs)
+    async def process_prompts_async(self, clicking_images: List[ClickingImage], mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> List[ClickingImage]:
+        tasks = [self._process_single_image(clicking_image, mode, **kwargs) for clicking_image in clicking_images]
+        processed_images = await asyncio.gather(*tasks)
+        return processed_images
+
+    async def _process_single_image(self, clicking_image: ClickingImage, mode: PromptMode, **kwargs) -> ClickingImage:
+        objects = await self._process_single_prompt(clicking_image.image, mode, **kwargs)
         
-        objects = []
-        for obj in description['objects']:
-            # Find matching object in original clicking_image, if any
-            matching_obj = next((o for o in clicking_image.predicted_objects if o.name == obj['name']), None)
-            
-            objects.append(ImageObject(
-                name=obj['name'],
-                description=obj['description'],
-                category=ObjectCategory(obj['category']),
-            ))
-        
-        clicking_image.predicted_objects = objects
+        clicking_image.predicted_objects = [obj for obj in objects if obj.category == ObjectCategory.GAME_ASSET]
         return clicking_image
 
-    async def _process_single_prompt(self, image: Image.Image, mode: PromptMode, object_name: Optional[str] = None, **kwargs) -> SinglePromptResponse:
+    async def _process_single_prompt(self, image: Image.Image, mode: PromptMode, object_name: Optional[str] = None, **kwargs) -> List[ImageObject]:
         base64_image = self._pil_to_base64(image)
         template_values = self._get_template_values(mode, object_name, **kwargs)
         prompt = self.prompt_manager.get_prompt(type='user', prompt_key=mode.value, template_values=template_values)
         response = await super()._get_image_response(base64_image, prompt, self.messages, json_mode=True)
-
+        
         response_dict = json.loads(response)
 
-        if mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
-            # sort objects by category
-            response_dict['objects'] = sorted(response_dict['objects'], key=lambda x: x['category'])
+        objects = []
+        for obj in response_dict['objects']:
+            try:
+                objects.append(ImageObject(**obj, id=str(uuid.uuid4())))
+            except TypeError as e:
+                print(f"Error creating ImageObject: {e}. Object data: {obj}")
 
-        return response_dict
+        if mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
+            objects.sort(key=lambda x: x.category)
+
+        return objects
 
     def _get_template_values(self, mode: PromptMode, object_name: Optional[str], **kwargs) -> TemplateValues:
         word_limits = self.config['prompts']['word_limits'].get(mode.value, {})
@@ -83,8 +83,8 @@ class PromptRefiner(ImageProcessorBase):
         for message in self.messages:
             print(message)
 
-    def process_prompts(self, clicking_image: ClickingImage, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> ClickingImage:
-        return asyncio.run(self.process_prompts_async(clicking_image, mode, **kwargs))
+    def process_prompts(self, clicking_images: List[ClickingImage], mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> List[ClickingImage]:
+        return asyncio.run(self.process_prompts_async(clicking_images, mode, **kwargs))
 
 # %% get expanded description from class label
 
