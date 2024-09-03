@@ -3,107 +3,136 @@ import inspect
 import matplotlib.pyplot as plt
 from PIL import Image
 
+from typing import Type
+from tabulate import tabulate
+from dataclasses import dataclass
+from datetime import datetime
+import os
+import pickle
+from typing import Union
+from dataclasses import dataclass, field
+from clicking.common.types import ClickingImage
+import asyncio
+
+@dataclass
+class PipelineState:
+    images: List[ClickingImage] = field(default_factory=list)
+
+
 class Pipeline:
-    def __init__(self):
-        self.steps: List[Tuple[Callable, bool]] = []
+    def __init__(self, config: Dict[str, Any]):
+        self.steps: List[Tuple[str, Callable]] = []
+        self.config = config
+        self.cache_dir = config['pipeline']['cache_dir']
+        os.makedirs(self.cache_dir, exist_ok=True)
+        self.cache_filename = self._generate_cache_filename()
+        self.cache_data: Dict[str, Any] = {}
 
-    def add_step(self, func: Callable, verbose: bool = True):
-        if self.steps and not self._are_types_compatible(self.steps[-1][0], func):
-            last_step_func = self.steps[-1][0]
-            last_step_output_type = inspect.signature(last_step_func).return_annotation.__name__
-            next_step_input_type = inspect.signature(func).parameters[next(iter(inspect.signature(func).parameters))].annotation.__name__
+    def _generate_cache_filename(self):
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        return os.path.join(self.cache_dir, f"pipeline_cache_{timestamp}.pkl")
 
-            raise TypeError(f"Output type of {last_step_func.__name__} ({last_step_output_type}) is not compatible with input type of {func.__name__} ({next_step_input_type})")
-        self.steps.append((func, verbose))
+    def _save_cache(self):
+        with open(self.cache_filename, 'wb') as f:
+            pickle.dump(self.cache_data, f)
 
-    def _are_types_compatible(self, prev_func: Callable, next_func: Callable) -> bool:
-        prev_return_type = inspect.signature(prev_func).return_annotation
-        next_param_types = [param.annotation for param in inspect.signature(next_func).parameters.values()]
-        
-        if not next_param_types:
-            return True
-        
-        if prev_return_type == Any or next_param_types[0] == Any:
-            return True
-        
-        # Handle TypedDict and other complex types
-        if get_origin(prev_return_type) is not None:
-            return self._check_complex_type_compatibility(prev_return_type, next_param_types[0])
-        
-        # For simple types, use isinstance check instead of issubclass
-        return isinstance(prev_return_type, type(next_param_types[0]))
+    def _load_cache(self):
+        if not os.path.exists(self.cache_filename):
+            return
 
-    def _check_complex_type_compatibility(self, type1, type2):
-        origin1, origin2 = get_origin(type1), get_origin(type2)
-        args1, args2 = get_args(type1), get_args(type2)
-        
-        if origin1 is TypedDict and origin2 is TypedDict:
-            # For TypedDict, check if all keys in type2 exist in type1
-            return all(key in type1.__annotations__ for key in type2.__annotations__)
-        
-        if origin1 is origin2:
-            # For other complex types (List, Dict, etc.), check their arguments
-            return all(self._are_types_compatible(arg1, arg2) for arg1, arg2 in zip(args1, args2))
-        
-        return False
+        try:
+            with open(self.cache_filename, 'rb') as f:
+                self.cache_data = pickle.load(f)
+        except (EOFError, pickle.UnpicklingError):
+            print(f"Warning: Cache file is corrupted. Ignoring cache.")
+            os.remove(self.cache_filename)
+            self.cache_data = {}
 
-    def run(self, initial_input: Any) -> Any:
-        result = initial_input
-        for step, verbose in self.steps:
-            result = step(result)
-            if verbose:
-                self._log_step_result(step.__name__, result)
-        return result
+    async def run(self, initial_input: List[int]) -> PipelineState:
+        self.cache_data = {}  # Reset cache for a new run
+        return await self._run_internal(initial_input)
 
-    def _log_step_result(self, step_name: str, result: Any):
-        print(f"\n--- Step: {step_name} ---")
-        if isinstance(result, dict):
-            for key, value in result.items():
-                if isinstance(value, Image.Image):
-                    print(f"{key}: <PIL.Image.Image object>")
-                    plt.figure(figsize=(5, 5))
-                    plt.imshow(value)
-                    plt.axis('off')
-                    plt.title(f"{step_name} - {key}")
-                    plt.show()
-                elif isinstance(value, list) and all(isinstance(item, Image.Image) for item in value):
-                    print(f"{key}: <List of PIL.Image.Image objects>")
-                    fig, axes = plt.subplots(1, len(value), figsize=(5*len(value), 5))
-                    if len(value) == 1:
-                        axes = [axes]
-                    for i, (ax, img) in enumerate(zip(axes, value)):
-                        ax.imshow(img)
-                        ax.axis('off')
-                        ax.set_title(f"{step_name} - {key}[{i}]")
-                    plt.tight_layout()
-                    plt.show()
-                else:
-                    print(f"{key}: {value}")
-        else:
-            print(result)
+    async def run_from_step(self, step_name: str, initial_state: PipelineState = None) -> PipelineState:
+        step_index = self._find_step_index(step_name)
+        if step_index == -1:
+            raise ValueError(f"Step '{step_name}' not found in the pipeline.")
+        
+        if initial_state is None:
+            self._load_cache()
+            if step_name not in self.cache_data:
+                raise ValueError(f"No cached state found for step '{step_name}'. Please provide an initial state.")
+            initial_state = self.cache_data[step_name]
+        
+        return await self._run_internal(initial_state, start_index=step_index)
+
+    async def _run_internal(self, initial_input: Union[List[int], PipelineState], start_index: int = 0) -> PipelineState:
+        state = initial_input if isinstance(initial_input, PipelineState) else PipelineState(images=initial_input)
+        
+        for i, (step_name, step_func) in enumerate(self.steps[start_index:], start=start_index):
+            if step_name in self.cache_data:
+                print(f"Using cached input for step: {step_name}")
+                state = self.cache_data[step_name]
+            else:
+                state = await asyncio.to_thread(step_func, state)
+                self.cache_data[step_name] = state
+                self._save_cache()
+        
+        return state
+
+    def get_step_result(self, step_name: str) -> Any:
+        self._load_cache()
+        return self.cache_data.get(step_name)
+
+    def _find_step_index(self, step_name: str) -> int:
+        for i, (name, _) in enumerate(self.steps):
+            if name == step_name:
+                return i
+        return -1
 
     def static_analysis(self):
         if not self.steps:
             raise ValueError("Pipeline has no steps.")
         
         for i in range(len(self.steps) - 1):
-            current_step, _ = self.steps[i]
-            next_step, _ = self.steps[i + 1]
+            current_step = self.steps[i]
+            next_step = self.steps[i + 1]
             
-            current_return_type = inspect.signature(current_step).return_annotation
-            next_param_types = list(inspect.signature(next_step).parameters.values())
+            current_return_type = inspect.signature(current_step[1]).return_annotation
+            next_param_type = list(inspect.signature(next_step[1]).parameters.values())[0].annotation
             
-            if not next_param_types:
-                continue
-            
-            next_param_type = next_param_types[0].annotation
-            
-            if current_return_type == Any or next_param_type == Any:
-                continue
-            
-            if not issubclass(current_return_type, next_param_type):
-                raise TypeError(f"Output type of {current_step.__name__} ({current_return_type}) "
-                                f"is not compatible with input type of {next_step.__name__} ({next_param_type})")
+            if current_return_type != Any and next_param_type != Any:
+                if not issubclass(current_return_type, next_param_type):
+                    raise TypeError(f"Output type of {current_step[0]} ({current_return_type}) "
+                                    f"is not compatible with input type of {next_step[0]} ({next_param_type})")
         
         print("Static analysis complete. All types are compatible.")
+
+    def print_pipeline(self):
+        headers = ["Step", "Function Name", "Input Type"]
+        table_data = []
+        
+        for i, (step_name, func) in enumerate(self.steps, 1):
+            input_type = list(inspect.signature(func).parameters.values())[0].annotation.__name__
+            table_data.append([f"{i}. {step_name}", func.__name__, input_type])
+        
+        print("Pipeline Steps:")
+        print(tabulate(table_data, headers=headers, tablefmt="grid"))
+
+    def add_step(self, step_name: str, func: Callable):
+        if self.steps and not self._are_types_compatible(self.steps[-1][1], func):
+            last_step_func = self.steps[-1][1]
+            last_step_output_type = inspect.signature(last_step_func).return_annotation.__name__
+            next_step_input_type = list(inspect.signature(func).parameters.values())[0].annotation.__name__
+
+            raise TypeError(f"Output type of {last_step_func.__name__} ({last_step_output_type}) is not compatible with input type of {func.__name__} ({next_step_input_type})")
+        self.steps.append((step_name, func))
+
+    def _are_types_compatible(self, prev_func: Callable, next_func: Callable) -> bool:
+        prev_return_type = inspect.signature(prev_func).return_annotation
+        next_param_type = list(inspect.signature(next_func).parameters.values())[0].annotation
+        
+        if prev_return_type == Any or next_param_type == Any:
+            return True
+        
+        return issubclass(prev_return_type, next_param_type)
 
