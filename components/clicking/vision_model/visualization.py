@@ -12,11 +12,23 @@ from PIL import ImageDraw
 from clicking.common.logging import print_object_descriptions
 
 # overlay bounding box in format (x, y, w, h) on a PIL image
-def overlay_bounding_box(image, bbox: BoundingBox, color='red', thickness=10, padding=0):
+def overlay_bounding_box(image, bbox: BoundingBox, color='red', thickness=14, padding=0):
     bbox = bbox.get(BBoxMode.XYXY)
     draw = ImageDraw.Draw(image)
 
-    draw.rectangle((bbox[0] - padding, bbox[1] - padding, bbox[2] + padding, bbox[3] + padding), outline=color, width=thickness)
+    # Ensure the bounding box is within the image boundaries
+    width, height = image.size
+    x1 = max(0, min(bbox[0] - padding, width - 1))
+    y1 = max(0, min(bbox[1] - padding, height - 1))
+    x2 = max(0, min(bbox[2] + padding, width - 1))
+    y2 = max(0, min(bbox[3] + padding, height - 1))
+
+    # Adjust thickness if the box is too small
+    box_width = x2 - x1
+    box_height = y2 - y1
+    thickness = min(thickness, min(box_width, box_height) // 2)
+
+    draw.rectangle((x1, y1, x2, y2), outline=color, width=thickness)
     return image
 
 def get_color(index, total):
@@ -32,7 +44,7 @@ def get_color(index, total):
     return color_dict[color_index]
 
 
-def show_clickpoint_predictions(clicking_image: ClickingImage, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow'):
+def show_clickpoint_predictions(clicking_image: ClickingImage, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow', object_names_to_show=None):
     image_array = np.array(clicking_image.image)
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.imshow(clicking_image.image)
@@ -41,6 +53,10 @@ def show_clickpoint_predictions(clicking_image: ClickingImage, textbox_color='re
     total_objects = len(clicking_image.predicted_objects)
 
     for i, obj in enumerate(clicking_image.predicted_objects):
+
+        if object_names_to_show and obj.name not in object_names_to_show:
+            continue
+
         m = mask_utils.decode(obj.mask.get(SegmentationMode.COCO_RLE))
         color_mask = get_color(i, total_objects)
 
@@ -67,7 +83,7 @@ def show_clickpoint_predictions(clicking_image: ClickingImage, textbox_color='re
     plt.tight_layout()
     plt.show()
 
-def show_localization_predictions(clicking_image: ClickingImage):
+def show_localization_predictions(clicking_image: ClickingImage, object_names_to_show=None):
     fig, ax = plt.subplots()
     ax.imshow(clicking_image.image)
 
@@ -79,7 +95,11 @@ def show_localization_predictions(clicking_image: ClickingImage):
             print(f"Object {obj.name} has no bounding box")
             continue
 
+        if object_names_to_show and obj.name not in object_names_to_show:
+            continue
+
         x, y, w, h = obj.bbox.get(mode=BBoxMode.XYWH)
+
         bg_color = CATEGORY_COLOR_MAP.get(obj.category, (0.5, 0.5, 0.5))  # Default to gray if category not found
         
         rect = patches.Rectangle((x, y), w, h, linewidth=1, edgecolor=bg_color, facecolor='none')
@@ -88,7 +108,6 @@ def show_localization_predictions(clicking_image: ClickingImage):
         object_id = object_ids[obj.name]
         plt.text(x, y, str(object_id), color='white', fontsize=8, bbox=dict(facecolor=bg_color, alpha=0.9))
 
-    print_object_descriptions([clicking_image])
 
     ax.axis('off')
     plt.show()
@@ -96,7 +115,7 @@ def show_localization_predictions(clicking_image: ClickingImage):
     print_object_descriptions([clicking_image])
     print("\n")
 
-def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow', mask_alpha=0.7, label_offset_y=60):
+def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow', mask_alpha=0.7, label_offset_y=60, object_names_to_show=None):
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.imshow(clicking_image.image)
 
@@ -105,6 +124,9 @@ def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='
     for i, obj in enumerate(clicking_image.predicted_objects):
         if obj.mask is None:
             print(f"Warning: Object '{obj.name}' has no segmentation mask.")
+            continue
+
+        if object_names_to_show and obj.name not in object_names_to_show:
             continue
 
         m = mask_utils.decode(obj.mask.get(SegmentationMode.COCO_RLE))
