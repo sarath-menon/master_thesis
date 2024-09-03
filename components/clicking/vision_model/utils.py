@@ -6,7 +6,6 @@ from scipy.ndimage import center_of_mass
 from scipy.ndimage import distance_transform_edt
 import io
 import base64
-from clicking_client.types import File
 
 def coco_encode_rle(mask: np.ndarray) -> Dict[str, Any]:
     binary_mask = mask.astype(bool)
