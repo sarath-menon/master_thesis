@@ -11,19 +11,20 @@ from clicking.prompt_manager.core import PromptManager
 import asyncio
 from clicking.common.image_utils import ImageProcessorBase
 from clicking.vision_model.visualization import overlay_bounding_box
-from clicking.common.types import ClickingImage
-from clicking.prompt_refinement.types import *
+from clicking.common.data_structures import ClickingImage
+from clicking.prompt_refinement.data_structures import *
 import json
 from pydantic import BaseModel, Field
 from typing import Literal
-from clicking.common.types import Validity
+from clicking.common.data_structures import Validity
 
 # set API keys
 dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 class CorrectedResponse(BaseModel):
-    judgement: Literal["true", "false"] = "true"
+    judgement: Literal["true", "false"] = Field(default="true")
+    visibility: Literal["fully visible", "partially visible", "hidden"] = Field(default="fully visible")
     reasoning: str
 
 class BBoxVerificationMode(str):
@@ -36,6 +37,7 @@ class OutputCorrector(ImageProcessorBase):
         self.PROMPT_PATH = prompt_path
         self.prompt_manager = PromptManager(self.PROMPT_PATH)
         self.system_message = {"role": "system", "content": self.prompt_manager.get_prompt(type='system')}
+        self.save_path = "./datasets/resized_media/gameplay_images/unpacking"
 
     async def verify_bboxes_async(self, clicking_image: ClickingImage, mode: BBoxVerificationMode = BBoxVerificationMode.CROP) -> ClickingImage:
         screenshot = clicking_image.image
@@ -63,10 +65,10 @@ class OutputCorrector(ImageProcessorBase):
             obj.validity.is_valid = response.judgement != "false"
             obj.validity.reason = response.reasoning
 
-            plt.axis('off')
-            plt.imshow(image)
-            plt.title(f"Object {obj.name}")
-            plt.show()
+            print(f"Object: {obj.name}, Visibility: {response.visibility}")
+
+            # save_path = f"{self.save_path}/{obj.name}.png"
+            # image.save(save_path)
 
         tasks = [process_object(image, obj) for image, obj in zip(images, clicking_image.predicted_objects)]
         await asyncio.gather(*tasks)
@@ -94,63 +96,3 @@ class OutputCorrector(ImageProcessorBase):
 
     def verify_masks(self, clicking_image: ClickingImage) -> ClickingImage:
         return asyncio.run(self.verify_masks_async(clicking_image))
-
-#%%%
-
-# Demo code for verify_bboxes_async
-async def demo_verify_bboxes_async():
-    from clicking.common.types import ClickingImage, ImageObject, ObjectCategory
-    from clicking.common.bbox import BoundingBox, BBoxMode
-    from PIL import Image
-    import numpy as np
-
-    # Create a sample image
-    sample_image = Image.fromarray(np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8))
-    
-    # Create sample ImageObjects
-    obj1 = ImageObject(
-        name="Button",
-        description="A button",
-        category=ObjectCategory.GAME_ASSET,
-        bbox=BoundingBox([10, 10, 50, 50], mode=BBoxMode.XYWH),
-        mask=SegmentationMask(np.zeros((100, 100)), mode=SegmentationMode.BINARY_MASK)
-    )
-    obj2 = ImageObject(
-        name="Text Input",
-        description="A text input field",
-        category=ObjectCategory.GAME_ASSET,
-        bbox=BoundingBox([50, 50, 40, 20], mode=BBoxMode.XYWH),
-        mask=SegmentationMask(np.zeros((100, 100)), mode=SegmentationMode.BINARY_MASK)
-    )
-    
-    # Create a sample ClickingImage
-    clicking_image = ClickingImage(
-        id="sample1",
-        image=sample_image,
-        objects=[obj1, obj2]
-    )
-    
-    # Initialize OutputCorrector
-    corrector = OutputCorrector(prompt_path="./prompts/output_corrector.md")
-    
-    # Call verify_bboxes_async
-    verified_image = await corrector.verify_bboxes_async(clicking_image)
-    
-    # Print the verification results
-    print(f"Verification results for image {verified_image.id}:")
-    for obj in verified_image.predicted_objects:
-        print(f"Object: {obj.name}")
-        print(f"BBox: {obj.bbox}")
-        print("---")
-
-# Run the demo
-if __name__ == "__main__":
-    from nest_asyncio import apply
-    apply()
-    
-    asyncio.run(demo_verify_bboxes_async())
-
-# %%
-
-
-

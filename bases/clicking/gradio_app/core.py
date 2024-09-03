@@ -14,7 +14,7 @@ import sys
 from gradio_log import Log
 from clicking_client.models  import SetModelReq
 from clicking_client.models import BodyGetSegmentationPrediction
-from clicking_client.types import File
+from clicking_client.data_structures import File
 import io
 import json
 from pycocotools import mask as mask_utils

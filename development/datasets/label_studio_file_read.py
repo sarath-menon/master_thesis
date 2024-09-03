@@ -15,7 +15,7 @@ from io import BytesIO
 from pycocotools import mask as mask_utils
 
 from clicking.vision_model.visualization import show_segmentation_predictions
-from clicking.vision_model.types import SegmentationResults, SegmentationMask, ImageWithDescriptions
+from clicking.vision_model.data_structures import SegmentationResults, SegmentationMask, ImageWithDescriptions
 from clicking.common.mask import SegmentationMode
 
 class Point(BaseModel):
@@ -107,7 +107,7 @@ def parse_json_data(json_data):
     return ImageAnnotationCollection(images=images)
 
 #%%
-from clicking.vision_model.types import ImageWithDescriptions
+from clicking.vision_model.data_structures import ImageWithDescriptions
 from urllib.parse import urlparse, unquote
 from pycocotools import mask as mask_utils
 
@@ -179,7 +179,7 @@ def convert_to_segmentation_results(parsed_data):
     return segmentation_results
 
 #%%
-from clicking.vision_model.types import SegmentationResults, SegmentationMask
+from clicking.vision_model.data_structures import SegmentationResults, SegmentationMask
 LABEL_STUDIO_EXPORTED_FILE = "./datasets/label_studio_gen/label_studio_tasks_export.json"
 
 LABEL_STUDIO_EXPORTED_DATASET = "./datasets/label_studio_gen/coco_dataset"

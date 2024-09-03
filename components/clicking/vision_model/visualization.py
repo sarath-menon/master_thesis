@@ -7,7 +7,7 @@ from clicking.common.mask import SegmentationMask, SegmentationMode
 from pycocotools import mask as mask_utils
 import cv2
 from typing import List
-from clicking.common.types import ClickingImage, ImageObject, ObjectCategory, CATEGORY_COLOR_MAP
+from clicking.common.data_structures import ClickingImage, ImageObject, ObjectCategory, CATEGORY_COLOR_MAP
 from PIL import ImageDraw
 from clicking.common.logging import print_object_descriptions
 

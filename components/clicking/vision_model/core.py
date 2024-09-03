@@ -12,7 +12,7 @@ from fastapi import HTTPException
 from clicking.common.bbox import BoundingBox, BBoxMode
 import numpy as np
 from enum import Enum, auto
-from clicking.vision_model.types import *
+from clicking.vision_model.data_structures import *
 
 import asyncio
 

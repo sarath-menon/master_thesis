@@ -1,5 +1,5 @@
 
-from clicking.common.types import ClickingImage
+from clicking.common.data_structures import ClickingImage
 
 from prettytable import PrettyTable
 from typing import List 

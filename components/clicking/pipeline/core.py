@@ -11,7 +11,7 @@ import os
 import pickle
 from typing import Union
 from dataclasses import dataclass, field
-from clicking.common.types import ClickingImage
+from clicking.common.data_structures import ClickingImage
 import asyncio
 
 @dataclass

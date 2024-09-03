@@ -4,7 +4,7 @@ from torchvision import transforms, datasets
 from PIL import Image
 import matplotlib.pyplot as plt
 from typing import List
-from clicking.common.types import ClickingImage, ImageObject, ObjectCategory
+from clicking.common.data_structures import ClickingImage, ImageObject, ObjectCategory
 from pycocotools import mask as mask_utils
 from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.common.bbox import BoundingBox, BBoxMode
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     from clicking.vision_model.visualization import show_segmentation_predictions
     from clicking.common.mask import SegmentationMask, SegmentationMode
     from clicking.common.bbox import BoundingBox, BBoxMode
-    from clicking.common.types import ImageWithDescriptions
+    from clicking.common.data_structures import ImageWithDescriptions
     import random
 
     data_dir = "./datasets/label_studio_gen/coco_dataset/images"

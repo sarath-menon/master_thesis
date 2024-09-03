@@ -7,8 +7,8 @@ import numpy as np
 from transformers.dynamic_module_utils import get_imports
 import torch
 from dataclasses import dataclass
-from clicking.vision_model.types import TaskType
-from clicking.vision_model.types import TaskType, PredictionReq, SegmentationResp, PredictionResp, LocalizationResp
+from clicking.vision_model.data_structures import TaskType
+from clicking.vision_model.data_structures import TaskType, PredictionReq, SegmentationResp, PredictionResp, LocalizationResp
 import io
 #%%
 class Florence2():

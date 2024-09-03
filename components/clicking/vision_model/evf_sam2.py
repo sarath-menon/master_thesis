@@ -12,7 +12,7 @@ from torchvision.transforms.functional import InterpolationMode
 from transformers import AutoTokenizer, BitsAndBytesConfig
 from evf_sam.model.segment_anything.utils.transforms import ResizeLongestSide
 from evf_sam.model.evf_sam2 import EvfSam2Model
-from clicking.vision_model.types import TaskType, PredictionReq, SegmentationResp, PredictionResp
+from clicking.vision_model.data_structures import TaskType, PredictionReq, SegmentationResp, PredictionResp
 from clicking.vision_model.utils import coco_encode_rle
 from fastapi import HTTPException
 

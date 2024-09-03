@@ -15,8 +15,8 @@ from pydantic import BaseModel
 import json
 from PIL import Image
 import uuid
-from clicking.prompt_refinement.types import *
-from clicking.common.types import ClickingImage, ObjectCategory, ImageObject
+from clicking.prompt_refinement.data_structures import *
+from clicking.common.data_structures import ClickingImage, ObjectCategory, ImageObject
 from pydantic import Field
 
 # set API keys

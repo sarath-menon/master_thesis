@@ -10,14 +10,14 @@ from typing import List, Dict, Tuple, Any
 from clicking.pipeline.core import Pipeline
 from clicking.dataset_creator.core import CocoDataset
 from clicking.prompt_refinement.core import PromptRefiner
-from clicking.vision_model.types import TaskType
+from clicking.vision_model.data_structures import TaskType
 from clicking.common.bbox import BoundingBox, BBoxMode
 from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.output_corrector.core import OutputCorrector
 from clicking_client import Client
 from clicking_client.models import SetModelReq, BodyGetPrediction
 from clicking_client.api.default import set_model, get_prediction
-from clicking.common.types import *
+from clicking.common.data_structures import *
 import pickle
 import os
 from datetime import datetime
@@ -27,7 +27,7 @@ import inspect
 from dataclasses import dataclass, field
 import yaml
 from clicking.vision_model.visualization import show_localization_predictions, show_segmentation_predictions
-from clicking_client.types import File
+from clicking_client.data_structures import File
 from io import BytesIO
 import json
 import nest_asyncio
@@ -239,11 +239,3 @@ id = 0
 show_localization_predictions(results.images[id], object_names_to_show=['Sewing Machine']) 
 #%%
 
-id = 1
-for result in results.images[id].predicted_objects:
-    print(result.name)
-    print(result.description)
-    print(result.bbox)
-    print(result.mask)
-    print(result.validity)
-    print("\n")

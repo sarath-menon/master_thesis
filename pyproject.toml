@@ -15,6 +15,7 @@ packages = [
     { include = "clicking/prompt_manager", from = "components" },
     { include = "clicking/prompt_refinement", from = "components" },
     { include = "clicking/dataset_creator", from = "components" },
+    { include = "clicking/common", from = "components" },
 ]
 
 [tool.poetry.dependencies]

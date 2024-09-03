@@ -57,7 +57,7 @@ client = Client(base_url="http://localhost:8083")
 from clicking_client.api.default import get_models
 from clicking_client.models  import SetModelReq
 from clicking_client.api.default import set_model
-from clicking.vision_model.types import TaskType
+from clicking.vision_model.data_structures import TaskType
 
 api_response = get_models.sync(client=client)
 print(api_response)
@@ -80,7 +80,7 @@ plt.show()
 #%% Segmentation
 from clicking_client.api.default import get_auto_annotation
 from clicking_client.models import BodyGetAutoAnnotation
-from clicking_client.types import File
+from clicking_client.data_structures import File
 import io
 import json
 from clicking.common.mask import SegmentationMask, SegmentationMode
