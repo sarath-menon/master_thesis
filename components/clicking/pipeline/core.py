@@ -62,6 +62,13 @@ class Pipeline:
                 raise ValueError(f"No cached state found for step '{step_name}'. Please provide an initial state.")
             initial_state = self.cache_data[step_name]
         
+        # Delete cache for steps after the specified step
+        steps_to_remove = [self.steps[i][0] for i in range(step_index + 1, len(self.steps))]
+        for step in steps_to_remove:
+            if step in self.cache_data:
+                del self.cache_data[step]
+        self._save_cache()
+        
         return await self._run_internal(initial_state, start_index=step_index)
 
     async def _run_internal(self, initial_input: Union[List[int], PipelineState], start_index: int = 0) -> PipelineState:
@@ -71,9 +78,11 @@ class Pipeline:
             if step_name in self.cache_data:
                 print(f"Using cached input for step: {step_name}")
                 state = self.cache_data[step_name]
-            else:
-                state = await asyncio.to_thread(step_func, state)
-                self.cache_data[step_name] = state
+            
+            state = await asyncio.to_thread(step_func, state)
+            
+            if i < len(self.steps) - 1:
+                self.cache_data[self.steps[i+1][0]] = state
                 self._save_cache()
         
         return state
