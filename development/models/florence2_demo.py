@@ -66,7 +66,7 @@ def run_example(task_prompt, text_input=None):
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-def plot_bbox(image, data, bboxes, labels):
+def plot_bbox(image, data, results):
    # Create a figure and axes
     fig, ax = plt.subplots()
 
@@ -74,7 +74,7 @@ def plot_bbox(image, data, bboxes, labels):
     ax.imshow(image)
 
     # Plot each bounding box
-    for bbox, label in zip(bboxes, labels):
+    for bbox, label in zip(results['bboxes'], results['labels']):
         # Unpack the bounding box coordinates
         x1, y1, x2, y2 = bbox
         # Create a Rectangle patch
@@ -127,29 +127,8 @@ def draw_ocr_bboxes(image, prediction):
                     fill=color)
     display(image)
 
-# # OCR
-# In[9]:
-image = Image.open(images_path + "/captain_toad/1.jpg").convert("RGB")
 
-task_prompt = '<OCR_WITH_REGION>'
-results = run_example(task_prompt)
-print(results['<OCR_WITH_REGION>']['labels'])
-draw_ocr_bboxes(image, results['<OCR_WITH_REGION>'])
-
-# In[ ]:
-
-
-image = Image.open(images_path + "/captain_toad/2.jpeg").convert("RGB")
-
-task_prompt = '<OCR_WITH_REGION>'
-results = run_example(task_prompt)
-print(results['<OCR_WITH_REGION>']['labels'])
-draw_ocr_bboxes(image, results['<OCR_WITH_REGION>'])
-
-
-# In[ ]:
-
-
+#%% OCR
 image = Image.open(images_path + "/captain_toad/3.jpeg").convert("RGB")
 
 task_prompt = '<OCR_WITH_REGION>'
@@ -158,82 +137,12 @@ print(results['<OCR_WITH_REGION>']['labels'])
 draw_ocr_bboxes(image, results['<OCR_WITH_REGION>'])
 
 
-# In[15]:
+#%% Open Vocabulary Detection
 
-
-images_path = "../datasets/resized_media/gameplay_images"
-
-
-# # Mario
-
-# In[16]:
-
-
-image = Image.open(images_path + "/mario_odessey/0.jpg")
-
-task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
-results = run_example(task_prompt, text_input="pillars.")
-print(results)
-plot_bbox(image, results['<CAPTION_TO_PHRASE_GROUNDING>'])
-
-
-# # Hogwarts legacy
-
-# In[7]:
-
-
+images_path = "./datasets/resized_media/gameplay_images"
 image = Image.open(images_path + "/hogwarts_legacy/2.jpg")
 
 task_prompt = '<OPEN_VOCABULARY_DETECTION>'
-results = run_example(task_prompt, text_input=" A circular platform with glowing, mystical symbols, located on the ground beneath the floating book. It emits a faint light.")
+results = run_example(task_prompt, text_input="A glowing circular platform on the ground, with mystical symbols and patterns.")
 print(results)
-plot_bbox(image, results[task_prompt], results[task_prompt]['bboxes'], results[task_prompt]['bboxes_labels'])
-
-
-# ## Unpacking
-
-# In[147]:
-
-
-image = Image.open(images_path + "/unpacking/0.jpg")
-
-task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
-results = run_example(task_prompt, text_input="computer. chair. pillow. open box.")
-print(results)
-plot_bbox(image, results['<CAPTION_TO_PHRASE_GROUNDING>'])
-
-
-# In[155]:
-
-
-image = Image.open(images_path + "/unpacking/6.jpg")
-
-task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
-results = run_example(task_prompt, text_input="oven. trash can.")
-print(results)
-plot_bbox(image, results['<CAPTION_TO_PHRASE_GROUNDING>'])
-
-
-# ## Fortnite
-
-# In[37]:
-
-
-image = Image.open(images_path + "/fortnite/3.jpg")
-
-task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
-results = run_example(task_prompt, text_input="box.")
-print(results)
-plot_bbox(image, results['<CAPTION_TO_PHRASE_GROUNDING>'])
-
-
-# In[45]:
-
-
-image = Image.open(images_path + "/fortnite/4.jpg")
-
-task_prompt = '<CAPTION_TO_PHRASE_GROUNDING>'
-results = run_example(task_prompt, text_input="barrel.")
-print(results)
-plot_bbox(image, results['<CAPTION_TO_PHRASE_GROUNDING>'])
-
+plot_bbox(image, results[task_prompt], convert_to_od_format(results[task_prompt]))
