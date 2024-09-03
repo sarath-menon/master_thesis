@@ -110,7 +110,7 @@ pip install ./wheels/evf_sam2/evf_sam-1.0-py3-none-any.whl
 
 Generate wheel
 ```  
-python setup.py sdist bdist_wheel --dist-dir ../wheels/sam2
+python setup.py sdist bdist_wheel --dist-dir ../wheels/sam2_cuda
 ```  
 
 Install wheel
