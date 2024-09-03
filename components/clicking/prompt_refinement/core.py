@@ -60,8 +60,6 @@ class PromptRefiner(ImageProcessorBase):
         if mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
             response.objects.sort(key=lambda x: x.category)
 
-        print(response.objects)
-
         return response.objects
 
     def _get_template_values(self, mode: PromptMode, object_name: Optional[str], **kwargs) -> TemplateValues:

@@ -16,6 +16,7 @@ from clicking.prompt_refinement.types import *
 import json
 from pydantic import BaseModel, Field
 from typing import Literal
+from clicking.common.types import Validity
 
 # set API keys
 dotenv.load_dotenv()
@@ -34,30 +35,23 @@ class OutputCorrector(ImageProcessorBase):
             {"role": "system", "content": self.prompt_manager.get_prompt(type='system')},
         ]
 
-    async def _get_image_responses(self, base64_images: list, object_names: list) -> list[CorrectedResponse]:
-        tasks = []
-
-        for base64_image, object_name in zip(base64_images, object_names):
-            template_values = {"object_name": object_name}
-            prompt = self.prompt_manager.get_prompt(type='user', prompt_key='bbox_crop', template_values=template_values)
-
-            task = self._get_image_response(base64_image, prompt, self.messages, json_mode=True)
-            tasks.append(task)
-        
-        responses = await asyncio.gather(*tasks)
-        return [CorrectedResponse(**json.loads(response)) for response in responses]
 
     async def verify_bboxes_async(self, clicking_image: ClickingImage) -> ClickingImage:
         screenshot = clicking_image.image
         
         images_overlayed = [overlay_bounding_box(screenshot.copy(), obj.bbox) for obj in clicking_image.predicted_objects]
         base64_images = [self._pil_to_base64(img) for img in images_overlayed]
-        object_names = [obj.name for obj in clicking_image.predicted_objects]
         
-        responses = await self._get_image_responses(base64_images, object_names)
-    
-        for response in responses:
-            print(response)
+        for base64_image, obj in zip(base64_images, clicking_image.predicted_objects):
+            template_values = {"object_name": obj.name}
+            prompt = self.prompt_manager.get_prompt(type='user', prompt_key='bbox_crop', template_values=template_values)
+
+            response: CorrectedResponse = await self._get_image_response(base64_image, prompt, self.messages, output_type=CorrectedResponse)
+
+            if response.judgement == "false":
+                obj.validity.is_valid = False
+
+            obj.validity.reason = response.reasoning
 
         return clicking_image
 

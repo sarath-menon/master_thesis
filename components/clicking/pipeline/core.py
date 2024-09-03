@@ -135,3 +135,20 @@ class Pipeline:
         
         return issubclass(prev_return_type, next_param_type)
 
+    def replace_step(self, step_name: str, new_func: Callable):
+        step_index = self._find_step_index(step_name)
+        if step_index == -1:
+            raise ValueError(f"Step '{step_name}' not found in the pipeline.")
+
+        prev_step = self.steps[step_index - 1][1] if step_index > 0 else None
+        next_step = self.steps[step_index + 1][1] if step_index < len(self.steps) - 1 else None
+
+        if prev_step and not self._are_types_compatible(prev_step, new_func):
+            raise TypeError(f"Output type of previous step is not compatible with input type of new function.")
+        
+        if next_step and not self._are_types_compatible(new_func, next_step):
+            raise TypeError(f"Output type of new function is not compatible with input type of next step.")
+
+        self.steps[step_index] = (step_name, new_func)
+        print(f"Step '{step_name}' has been replaced successfully.")
+

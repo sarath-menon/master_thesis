@@ -170,9 +170,9 @@ pipeline = Pipeline(config=config)
 
 pipeline.add_step("Sample Dataset", sample_dataset)
 pipeline.add_step("Process Prompts", process_prompts)
-# pipeline.add_step("Get Localization Results", localization_processor.get_localization_results)
-# pipeline.add_step("Verify bboxes", verify_bboxes)
-# pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
+pipeline.add_step("Get Localization Results", localization_processor.get_localization_results)
+pipeline.add_step("Verify bboxes", verify_bboxes)
+pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
 
 # Print the pipeline structure
 pipeline.print_pipeline()
@@ -190,7 +190,7 @@ for obj in results.images[0].predicted_objects:
 #%%
 
 # replace pipeline step
-pipeline.replace_step("Verify bboxes", output_corrector.verify_bboxes)
+pipeline.replace_step("Verify bboxes", verify_bboxes)
 
 # Run from a specific step using cached data
 result = asyncio.run(pipeline.run_from_step("Verify bboxes"))
