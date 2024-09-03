@@ -26,5 +26,5 @@ Return a JSON object structured as follows:
 {{
     "judgement": "true" if the label accurately describes the object, "false" if the label does not accurately describe the object,
     "visibility": "fully visible" if the object is fully visible in the image, "partially visible" if the object is partially visible in the image, "hidden" if the object is not visible in the image."
-    "reasoning": "Explain the judgement and the visibility in 20 words or fewer, without any preamble.",
+    "reasoning": "Explain the judgement and the visibility in 20 words or fewer, without any preamble."
 }}
