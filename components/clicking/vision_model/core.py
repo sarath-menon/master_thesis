@@ -14,6 +14,8 @@ import numpy as np
 from enum import Enum, auto
 from clicking.vision_model.types import *
 
+import asyncio
+
 class VisionModel:
     def __init__(self):
         self._available_models = {
@@ -23,6 +25,7 @@ class VisionModel:
         }
         # to store task-model mappings
         self._task_models = {}  
+        self._model_locks = {}
 
     def tasks(self) -> list[str]:
         return [task.value for task in TaskType]
@@ -80,9 +83,14 @@ class VisionModel:
         if model_handle is None:
             raise HTTPException(status_code=404, detail=f"{req.task.name.capitalize()} model not set")
 
-        start_time = time.time()
-        response = await model_handle.predict(req)
-        response.inference_time = time.time() - start_time
+        # Create a lock for this model if it doesn't exist
+        if req.task not in self._model_locks:
+            self._model_locks[req.task] = asyncio.Semaphore(1)
+
+        async with self._model_locks[req.task]:
+            start_time = time.time()
+            response = await model_handle.predict(req)
+            response.inference_time = time.time() - start_time
 
         return response
 
