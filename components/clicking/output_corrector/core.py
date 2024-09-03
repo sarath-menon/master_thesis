@@ -35,9 +35,7 @@ class OutputCorrector(ImageProcessorBase):
         super().__init__(model, temperature)
         self.PROMPT_PATH = prompt_path
         self.prompt_manager = PromptManager(self.PROMPT_PATH)
-        self.messages = [
-            {"role": "system", "content": self.prompt_manager.get_prompt(type='system')},
-        ]
+        self.system_message = {"role": "system", "content": self.prompt_manager.get_prompt(type='system')}
 
     async def verify_bboxes_async(self, clicking_image: ClickingImage, mode: BBoxVerificationMode = BBoxVerificationMode.CROP) -> ClickingImage:
         screenshot = clicking_image.image
@@ -54,12 +52,13 @@ class OutputCorrector(ImageProcessorBase):
         import matplotlib.pyplot as plt
 
         async def process_object(image, obj):
-            base64_image = self._pil_to_base64(image)
-            
             template_values = {"object_name": obj.name}
             prompt = self.prompt_manager.get_prompt(type='user', prompt_key=mode, template_values=template_values)
 
-            response: CorrectedResponse = await self._get_image_response(base64_image, prompt, self.messages, output_type=CorrectedResponse)
+            # Create a new message list for each object
+            messages = [self.system_message, {"role": "user", "content": prompt}]
+
+            response: CorrectedResponse = await self._get_image_response(image, prompt, messages, output_type=CorrectedResponse)
 
             obj.validity.is_valid = response.judgement != "false"
             obj.validity.reason = response.reasoning
@@ -68,7 +67,6 @@ class OutputCorrector(ImageProcessorBase):
             plt.imshow(image)
             plt.title(f"Object {obj.name}")
             plt.show()
-
 
         tasks = [process_object(image, obj) for image, obj in zip(images, clicking_image.predicted_objects)]
         await asyncio.gather(*tasks)
