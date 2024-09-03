@@ -40,7 +40,7 @@ class SegmentationMask:
     def convert(self, mode: SegmentationMode) -> Union[np.ndarray, dict]:
         return self.get(mode)
 
-    def crop_using_bbox(self, image_np, bbox, padding=10):
+    def crop_using_bbox(self, image_np, bbox, padding=0):
         x1, y1, x2, y2 = map(int, bbox)
 
         x1 = max(0, x1 - padding)

@@ -23,8 +23,12 @@ dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 class CorrectedResponse(BaseModel):
-    judgement: Literal["true", "false"]
+    judgement: Literal["true", "false"] = "true"
     reasoning: str
+
+class BBoxVerificationMode(str):
+    OVERLAY = "bbox_overlay"
+    CROP = "bbox_crop"
 
 class OutputCorrector(ImageProcessorBase):
     def __init__(self, prompt_path: str, model: str = "gpt-4o", temperature: float = 0.0):
@@ -35,23 +39,38 @@ class OutputCorrector(ImageProcessorBase):
             {"role": "system", "content": self.prompt_manager.get_prompt(type='system')},
         ]
 
-
-    async def verify_bboxes_async(self, clicking_image: ClickingImage) -> ClickingImage:
+    async def verify_bboxes_async(self, clicking_image: ClickingImage, mode: BBoxVerificationMode = BBoxVerificationMode.CROP) -> ClickingImage:
         screenshot = clicking_image.image
+
+        print(f"Predicted objects: {clicking_image.predicted_objects}")
         
-        images_overlayed = [overlay_bounding_box(screenshot.copy(), obj.bbox) for obj in clicking_image.predicted_objects]
-        base64_images = [self._pil_to_base64(img) for img in images_overlayed]
+        if mode == BBoxVerificationMode.OVERLAY:
+            images = [overlay_bounding_box(screenshot.copy(), obj.bbox) for obj in clicking_image.predicted_objects]
+        elif mode == BBoxVerificationMode.CROP:
+            images = [obj.bbox.extract_area(screenshot.copy(), padding=0) for obj in clicking_image.predicted_objects]
+        else:
+            raise ValueError(f"Invalid mode: {mode}")
         
-        async def process_object(base64_image, obj):
+        import matplotlib.pyplot as plt
+
+        async def process_object(image, obj):
+            base64_image = self._pil_to_base64(image)
+            
             template_values = {"object_name": obj.name}
-            prompt = self.prompt_manager.get_prompt(type='user', prompt_key='bbox_crop', template_values=template_values)
+            prompt = self.prompt_manager.get_prompt(type='user', prompt_key=mode, template_values=template_values)
 
             response: CorrectedResponse = await self._get_image_response(base64_image, prompt, self.messages, output_type=CorrectedResponse)
 
             obj.validity.is_valid = response.judgement != "false"
             obj.validity.reason = response.reasoning
 
-        tasks = [process_object(base64_image, obj) for base64_image, obj in zip(base64_images, clicking_image.predicted_objects)]
+            plt.axis('off')
+            plt.imshow(image)
+            plt.title(f"Object {obj.name}")
+            plt.show()
+
+
+        tasks = [process_object(image, obj) for image, obj in zip(images, clicking_image.predicted_objects)]
         await asyncio.gather(*tasks)
 
         return clicking_image
