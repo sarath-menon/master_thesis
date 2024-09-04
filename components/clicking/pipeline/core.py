@@ -47,32 +47,26 @@ class Pipeline:
             os.remove(self.cache_filename)
             self.cache_data = {}
 
-    async def run(self, initial_input: List[int], stop_after_step: str = None) -> PipelineState:
+    async def run(self, initial_input: Union[List[int], PipelineState], start_from_step: str = None, stop_after_step: str = None) -> PipelineState:
+        start_index = 0
+        if start_from_step:
+            start_index = self._find_step_index(start_from_step)
+            if start_index == -1:
+                raise ValueError(f"Invalid start_from_step: '{start_from_step}'. Step not found in the pipeline.")
+
         if stop_after_step and self._find_step_index(stop_after_step) == -1:
             raise ValueError(f"Invalid stop_after_step: '{stop_after_step}'. Step not found in the pipeline.")
+
+        print(f"Running pipeline from step: {self.steps[start_index][start_index]} to step: {stop_after_step}")
+        
+        if start_index > 0:
+            self._load_cache()
+            if start_from_step not in self.cache_data:
+                raise ValueError(f"No cached state found for step '{start_from_step}'. Please provide an initial state or run from the beginning.")
+            initial_input = self.cache_data[start_from_step]
         
         self.cache_data = {}  # Reset cache for a new run
-        return await self._run_internal(initial_input, stop_after_step=stop_after_step)
-
-    async def run_from_step(self, step_name: str, initial_state: PipelineState = None) -> PipelineState:
-        step_index = self._find_step_index(step_name)
-        if step_index == -1:
-            raise ValueError(f"Step '{step_name}' not found in the pipeline.")
-        
-        if initial_state is None:
-            self._load_cache()
-            if step_name not in self.cache_data:
-                raise ValueError(f"No cached state found for step '{step_name}'. Please provide an initial state.")
-            initial_state = self.cache_data[step_name]
-        
-        # Delete cache for steps after the specified step
-        steps_to_remove = [self.steps[i][0] for i in range(step_index + 1, len(self.steps))]
-        for step in steps_to_remove:
-            if step in self.cache_data:
-                del self.cache_data[step]
-        self._save_cache()
-        
-        return await self._run_internal(initial_state, start_index=step_index)
+        return await self._run_internal(initial_input, start_index=start_index, stop_after_step=stop_after_step)
 
     async def _run_internal(self, initial_input: Union[List[int], PipelineState], start_index: int = 0, stop_after_step: str = None) -> PipelineState:
         state = initial_input if isinstance(initial_input, PipelineState) else PipelineState(images=initial_input)
