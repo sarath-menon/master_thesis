@@ -18,6 +18,7 @@ import uuid
 from clicking.prompt_refinement.data_structures import *
 from clicking.common.data_structures import ClickingImage, ObjectCategory, ImageObject
 from pydantic import Field
+from tqdm.asyncio import tqdm
 
 # set API keys
 dotenv.load_dotenv()
@@ -35,9 +36,18 @@ class PromptRefiner(ImageProcessorBase):
         # Load configuration
         self.config = config
         
-    async def process_prompts_async(self, clicking_images: List[ClickingImage], mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> List[ClickingImage]:
-        tasks = [self._process_single_image(clicking_image, mode, **kwargs) for clicking_image in clicking_images]
-        processed_images = await asyncio.gather(*tasks)
+    async def process_prompts_async(self, clicking_images: List[ClickingImage], mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, delay: float|None = None, **kwargs) -> List[ClickingImage]:
+
+        if delay is None or delay <= 0:
+            tasks = [self._process_single_image(clicking_image, mode, **kwargs) for clicking_image in clicking_images]
+            processed_images = await asyncio.gather(*tasks)
+        else:
+            print(f"Processing prompts with delay: {delay}")
+            processed_images = []
+            for i, clicking_image in enumerate(tqdm(clicking_images, desc="Processing images")):
+                processed_image = await self._process_single_image(clicking_image, mode, **kwargs)
+                processed_images.append(processed_image)
+                await asyncio.sleep(delay)
         return processed_images
 
     async def _process_single_image(self, clicking_image: ClickingImage, mode: PromptMode, **kwargs) -> ClickingImage:
