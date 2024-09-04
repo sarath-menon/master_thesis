@@ -47,7 +47,7 @@ class Pipeline:
             os.remove(self.cache_filename)
             self.cache_data = {}
 
-    async def run(self, initial_input: Union[List[int], PipelineState], start_from_step: str = None, stop_after_step: str = None) -> PipelineState:
+    async def run(self, initial_input: Union[List[int], PipelineState, None] = None, start_from_step: str = None, stop_after_step: str = None) -> PipelineState:
         start_index = 0
         if start_from_step:
             start_index = self._find_step_index(start_from_step)
@@ -57,14 +57,16 @@ class Pipeline:
         if stop_after_step and self._find_step_index(stop_after_step) == -1:
             raise ValueError(f"Invalid stop_after_step: '{stop_after_step}'. Step not found in the pipeline.")
 
-        # print(f"Running pipeline from step: {self.steps[start_index][start_index]} to step: {stop_after_step}")
-        
         if start_index > 0:
             self._load_cache()
             if start_from_step not in self.cache_data:
-                raise ValueError(f"No cached state found for step '{start_from_step}'. Please provide an initial state or run from the beginning.")
-            initial_input = self.cache_data[start_from_step]
-        
+                if initial_input is None:
+                    raise ValueError(f"No cached state found for step '{start_from_step}' and no initial input provided. Please provide an initial state or run from the beginning.")
+            else:
+                initial_input = self.cache_data[start_from_step]
+        elif initial_input is None:
+            raise ValueError("Initial input must be provided when starting from the beginning of the pipeline.")
+
         self.cache_data = {}  # Reset cache for a new run
         return await self._run_internal(initial_input, start_index=start_index, stop_after_step=stop_after_step)
 
