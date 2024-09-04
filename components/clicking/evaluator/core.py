@@ -1,17 +1,28 @@
 from clicking.vision_model.visualization import overlay_bounding_box
 from clicking.pipeline.core import PipelineState
-from typing import List
+from typing import List, Dict
 import os
 import json
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from evaluate import load
 from collections import Counter
-from typing import List
+from typing import List, Dict, Literal
+
+class ChoiceResult(BaseModel):
+    value: Dict[str, List[str]]
+    id: str
+    from_name: str
+    to_name: str
+    type: Literal["choices"]
+
+class Prediction(BaseModel):
+    model_name: str = ""
+    result: List[ChoiceResult]
 
 class FormattedData(BaseModel):
-    data: dict
+    data: Dict[str, str]
     annotations: List[dict] = []
-    predictions: List[dict] = []
+    predictions: List[Prediction] = []
 
 def save_validity_results(results: PipelineState, output_folder: str):
     images_folder = os.path.join(output_folder, 'images')
@@ -25,14 +36,27 @@ def save_validity_results(results: PipelineState, output_folder: str):
         image = clicking_image.image
 
         for obj in clicking_image.predicted_objects:
-            overlay_image = overlay_bounding_box(image.copy(), obj.bbox)
+            overlay_image = overlay_bounding_box(image.copy(), obj.bbox, thickness=10)
+
             filename = f"{clicking_image.id}_{obj.name}.jpg"
             overlay_image.save(os.path.join(images_folder, filename))
 
+            validity_choice = "true" if obj.validity.is_valid else "false"
+
+            choice_result = ChoiceResult(
+                value={"choices": [validity_choice]},
+                from_name="Labelling",
+                to_name="image",
+                type="choices"
+            )
+
             formatted_data = FormattedData(
                 data={
-                    "image": f"/data/local-files/?d=evals/output_corrector/images/{clicking_image.id}_{obj.name}.jpg"
-                }
+                    "image": f"/data/local-files/?d=evals/output_corrector/images/{clicking_image.id}_{obj.name}.jpg",
+                    "label": obj.name,
+                    "description": obj.description
+                },
+                predictions=[Prediction(result=[choice_result])]
             )
             entries.append(formatted_data.dict())
 
