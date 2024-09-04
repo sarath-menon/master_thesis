@@ -47,9 +47,12 @@ class Pipeline:
             os.remove(self.cache_filename)
             self.cache_data = {}
 
-    async def run(self, initial_input: List[int]) -> PipelineState:
+    async def run(self, initial_input: List[int], stop_after_step: str = None) -> PipelineState:
+        if stop_after_step and self._find_step_index(stop_after_step) == -1:
+            raise ValueError(f"Invalid stop_after_step: '{stop_after_step}'. Step not found in the pipeline.")
+        
         self.cache_data = {}  # Reset cache for a new run
-        return await self._run_internal(initial_input)
+        return await self._run_internal(initial_input, stop_after_step=stop_after_step)
 
     async def run_from_step(self, step_name: str, initial_state: PipelineState = None) -> PipelineState:
         step_index = self._find_step_index(step_name)
@@ -71,7 +74,7 @@ class Pipeline:
         
         return await self._run_internal(initial_state, start_index=step_index)
 
-    async def _run_internal(self, initial_input: Union[List[int], PipelineState], start_index: int = 0) -> PipelineState:
+    async def _run_internal(self, initial_input: Union[List[int], PipelineState], start_index: int = 0, stop_after_step: str = None) -> PipelineState:
         state = initial_input if isinstance(initial_input, PipelineState) else PipelineState(images=initial_input)
         
         for i, (step_name, step_func) in enumerate(self.steps[start_index:], start=start_index):
@@ -84,6 +87,10 @@ class Pipeline:
             if i < len(self.steps) - 1:
                 self.cache_data[self.steps[i+1][0]] = state
                 self._save_cache()
+            
+            if stop_after_step and step_name == stop_after_step:
+                print(f"Stopping execution after step: {step_name}")
+                break
         
         return state
 
