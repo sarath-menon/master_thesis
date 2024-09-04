@@ -57,7 +57,7 @@ class Pipeline:
         if stop_after_step and self._find_step_index(stop_after_step) == -1:
             raise ValueError(f"Invalid stop_after_step: '{stop_after_step}'. Step not found in the pipeline.")
 
-        print(f"Running pipeline from step: {self.steps[start_index][start_index]} to step: {stop_after_step}")
+        # print(f"Running pipeline from step: {self.steps[start_index][start_index]} to step: {stop_after_step}")
         
         if start_index > 0:
             self._load_cache()

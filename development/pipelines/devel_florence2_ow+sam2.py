@@ -174,6 +174,7 @@ segmentation_processor = SegmentationProcessor(client, config=config)
 output_corrector = OutputCorrector(prompt_path=config['prompts']['output_corrector_path'])
 
 #%%
+from clicking.common.logging import print_object_descriptions
 nest_asyncio.apply()
 
 pipeline = Pipeline(config=config)
@@ -182,7 +183,7 @@ pipeline.add_step("Sample Dataset", sample_dataset)
 pipeline.add_step("Process Prompts", process_prompts)
 pipeline.add_step("Get Localization Results", localization_processor.get_localization_results)
 pipeline.add_step("Verify bboxes", verify_bboxes)
-# pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
+pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
 
 # Print the pipeline structure
 pipeline.print_pipeline()
@@ -190,26 +191,23 @@ pipeline.print_pipeline()
 # Perform static analysis before running the pipeline
 pipeline.static_analysis()
 
-# Run the entire pipeline
+#%% Run the entire pipeline, stopping after "Verify bboxes" step
 image_ids = [38, 31]
-results = asyncio.run(pipeline.run(image_ids))
+results = asyncio.run(pipeline.run(image_ids,
+start_from_step="Get Localization Results",
+stop_after_step="Verify bboxes"
+))
 
-# for obj in results.images[0].predicted_objects:
-#     print(obj.validity)
+# Print and visualize results
+print_object_descriptions(results.images)
 
+# for clicking_image in results.images:
+#     show_localization_predictions(clicking_image)
 
-# Visualize results
-for clicking_image in results.images:
-    show_localization_predictions(clicking_image) 
-    # show_segmentation_predictions(clicking_image)
- 
 #%%
 
 # # replace pipeline step
 # pipeline.replace_step("Verify bboxes", verify_bboxes)
-
-# Run from a specific step using cached data
-result = asyncio.run(pipeline.run_from_step("Verify bboxes"))
     
 # # Or provide an initial state if needed
 # initial_state = PipelineState(images=[22, 31, 34])
@@ -218,11 +216,6 @@ result = asyncio.run(pipeline.run_from_step("Verify bboxes"))
 # result = asyncio.run(pipeline.run_from_step("Get Localization Results", initial_state))
 
 #%%
-# # Access cached results for logging or analysis
-# localization_results = pipeline.get_step_result("Get Localization Results")
-# segmentation_results = pipeline.get_step_result("Get Segmentation Results")
-
-result = asyncio.run(pipeline.run_from_step("Get Localization Results"))
 
 # Visualize results
 for clicking_image in results.images:
