@@ -27,13 +27,16 @@ import inspect
 from dataclasses import dataclass, field
 import yaml
 from clicking.vision_model.visualization import show_localization_predictions, show_segmentation_predictions
-from clicking_client.data_structures import File
 from io import BytesIO
 import json
 import nest_asyncio
 from clicking.pipeline.core import PipelineState
+from fastapi import File, UploadFile
+
 
 #%%
+from clicking_client.types import File
+
 def image_to_http_file(image):
     # Convert PIL Image to bytes and create a File object
     image_byte_arr = BytesIO()
@@ -238,87 +241,13 @@ output_corrector_results =  output_corrector.verify_bboxes(results.images[0])
 id = 0
 show_localization_predictions(results.images[id], object_names_to_show=['Sewing Machine']) 
 #%%
-
-def save_validity_results(results: PipelineState, output_file: str):
-    validity_data = []
-    
-    for clicking_image in results.images:
-        for obj in clicking_image.predicted_objects:
-            validity_data.append({
-                'image_id': clicking_image.id,
-                # 'object_id': obj.id,
-                'object_name': obj.name,
-                'is_valid': obj.validity.is_valid,
-                'reason': obj.validity.reason
-            })
-    
-    os.makedirs(os.path.dirname(output_file), exist_ok=True)
-    with open(output_file, 'w') as f:
-        json.dump(validity_data, f, indent=2)
-    
-    print(f"Validity results saved to {output_file}")
+from clicking.evaluator.core import save_validity_results
 
 # Example usage:
-EVALS_PATH = "./evals/output_corrector"
-save_validity_results(results, f'{EVALS_PATH}/validity_results.json')
+EVALS_PATH = "./datasets/evals/output_corrector"
+save_validity_results(results, EVALS_PATH)
 #%%
-import json
-from evaluate import load
-
-import json
-from evaluate import load
-from collections import Counter
-
-def evaluate_validity_results(ground_truth_file: str, predictions_file: str):
-    # Load the metric
-    accuracy_metric = load("accuracy")
-    
-    # Load ground truth data
-    with open(ground_truth_file, 'r') as f:
-        ground_truth = json.load(f)
-    
-    # Load predictions
-    with open(predictions_file, 'r') as f:
-        predictions = json.load(f)
-    
-    # Prepare data for evaluation
-    gt_labels = []
-    pred_labels = []
-    
-    for gt_item in ground_truth:
-        gt_image_id = gt_item['meta']['image_id']
-        gt_label = gt_item['annotations'][0]['result'][1]['value']['choices'][0]  # 'correct' or 'incorrect'
-        
-        # Find corresponding prediction
-        pred_item = next((p for p in predictions if p['image_id'] == gt_image_id), None)
-        
-        if pred_item:
-            # Convert string labels to integers
-            gt_labels.append(1 if gt_label == 'correct' else 0)
-            pred_labels.append(1 if pred_item['is_valid'] else 0)
-    
-    # Calculate accuracy
-    results = accuracy_metric.compute(references=gt_labels, predictions=pred_labels)
-    
-    # Count correct and incorrect predictions
-    correct_count = sum(1 for gt, pred in zip(gt_labels, pred_labels) if gt == pred)
-    incorrect_count = len(gt_labels) - correct_count
-    
-    # Count predictions by class
-    gt_counter = Counter(gt_labels)
-    pred_counter = Counter(pred_labels)
-    
-    # Add counts to results
-    results['total_predictions'] = len(gt_labels)
-    results['correct_predictions'] = correct_count
-    results['incorrect_predictions'] = incorrect_count
-    results['ground_truth_counts'] = dict(gt_counter)
-    results['prediction_counts'] = dict(pred_counter)
-    
-    # Print results
-    print(f"Accuracy: {results['accuracy']:.2f}")
-    print(f"Correct predictions: {results['correct_predictions']} / {results['total_predictions']} ({results['accuracy']:.2%})")
-    return results
+from clicking.evaluator.core import evaluate_validity_results
 
 # Example usage:
 EVALS_PATH = "./evals/output_corrector"
