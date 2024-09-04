@@ -37,7 +37,7 @@ Examine the videogame screenshot to identify crucial game objects for each of th
 
 For each object, provide:
 - Name: A name for the object in {object_name_limit} words or less.
-- Description: A detailed description of the object's location, shape, color, and appearance, using no more than {description_length} words.
+- Description: Provide a detailed description of the object's location on the screen, its shape, color, and appearance. Use no more than {description_length} words. Format the description as follows: "object_name" located at the "object_location" of the screen with a "shape", "color", and "appearance".
 - Category: The category the object belongs to one of the above.
 - Reasoning: A concise 10-word explanation of why the object is important for interaction.
 
