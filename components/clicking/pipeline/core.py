@@ -26,6 +26,7 @@ class Pipeline:
         os.makedirs(self.cache_dir, exist_ok=True)
         self.cache_filename = self._generate_cache_filename()
         self.cache_data: Dict[str, Any] = {}
+        self.last_run_cache: Dict[str, Any] = {}
 
     def _generate_cache_filename(self):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -59,16 +60,24 @@ class Pipeline:
 
         if start_index > 0:
             self._load_cache()
-            if start_from_step not in self.cache_data:
+            if start_from_step not in self.cache_data and start_from_step not in self.last_run_cache:
                 if initial_input is None:
                     raise ValueError(f"No cached state found for step '{start_from_step}' and no initial input provided. Please provide an initial state or run from the beginning.")
             else:
-                initial_input = self.cache_data[start_from_step]
+                initial_input = self.cache_data.get(start_from_step) or self.last_run_cache.get(start_from_step)
         elif initial_input is None:
             raise ValueError("Initial input must be provided when starting from the beginning of the pipeline.")
 
-        self.cache_data = {}  # Reset cache for a new run
-        return await self._run_internal(initial_input, start_index=start_index, stop_after_step=stop_after_step)
+        # Only reset cache when starting from the beginning
+        if start_index == 0:
+            self.cache_data = {}  # Reset cache for a new run from the beginning
+
+        result = await self._run_internal(initial_input, start_index=start_index, stop_after_step=stop_after_step)
+        
+        # Store the cache from this run
+        self.last_run_cache = self.cache_data.copy()
+        
+        return result
 
     async def _run_internal(self, initial_input: Union[List[int], PipelineState], start_index: int = 0, stop_after_step: str = None) -> PipelineState:
         state = initial_input if isinstance(initial_input, PipelineState) else PipelineState(images=initial_input)
@@ -77,6 +86,9 @@ class Pipeline:
             if step_name in self.cache_data:
                 print(f"Using cached input for step: {step_name}")
                 state = self.cache_data[step_name]
+            elif step_name in self.last_run_cache:
+                print(f"Using last run cached input for step: {step_name}")
+                state = self.last_run_cache[step_name]
             
             state = await asyncio.to_thread(step_func, state)
             
