@@ -7,10 +7,10 @@ from pydantic import BaseModel, Field
 from evaluate import load
 from collections import Counter
 from typing import List, Dict, Literal
+from clicking.common.data_structures import ClickingImage
 
 class ChoiceResult(BaseModel):
     value: Dict[str, List[str]]
-    id: str
     from_name: str
     to_name: str
     type: Literal["choices"]
@@ -116,3 +116,24 @@ def evaluate_validity_results(ground_truth_file: str, predictions_file: str):
     print(f"Accuracy: {results['accuracy']:.2f}")
     print(f"Correct predictions: {results['correct_predictions']} / {results['total_predictions']} ({results['accuracy']:.2%})")
     return results
+
+def save_image_descriptions(clicking_images: List[ClickingImage], output_folder: str):
+    descriptions = []
+    for image in clicking_images:
+        image_data = {
+            "id": image.id,
+            "objects": [
+                {
+                    "name": obj.name,
+                    "description": obj.description
+                } for obj in image.predicted_objects
+            ]
+        }
+        descriptions.append(image_data)
+    
+    output_file = os.path.join(output_folder, 'image_descriptions.json')
+    with open(output_file, 'w') as f:
+        json.dump(descriptions, f, indent=2)
+    
+    print(f"Image descriptions saved to {output_file}")
+

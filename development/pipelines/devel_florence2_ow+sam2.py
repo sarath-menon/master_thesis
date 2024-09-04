@@ -193,13 +193,20 @@ pipeline.static_analysis()
 
 #%% Run the entire pipeline, stopping after "Verify bboxes" step
 image_ids = [38, 31]
-results = asyncio.run(pipeline.run(image_ids,
-start_from_step="Get Localization Results",
-stop_after_step="Verify bboxes"
+
+results = asyncio.run(pipeline.run( 
+    initial_input=image_ids,
+    start_from_step="Get Localization Results",
+    stop_after_step="Verify bboxes",
 ))
 
 # Print and visualize results
-print_object_descriptions(results.images)
+# print_object_descriptions(results.images)
+
+#%%
+
+for result in results.images:
+    print(result.predicted_objects[0].validity)
 
 # for clicking_image in results.images:
 #     show_localization_predictions(clicking_image)
@@ -248,3 +255,11 @@ ground_truth_file = f'{EVALS_PATH}/ground_truth.json'
 predictions_file = f'{EVALS_PATH}/validity_results.json'
 
 evaluation_results = evaluate_validity_results(ground_truth_file, predictions_file)
+
+#%%
+from clicking.evaluator.core import save_image_descriptions
+
+save_image_descriptions(results.images, EVALS_PATH)
+
+#%%
+
