@@ -38,7 +38,9 @@ class ImageProcessorBase:
             model=self.model, 
             messages=messages, 
             temperature=self.temperature, 
-            response_format=response_format
+            response_format=response_format,
+            num_retries=3,
+            timeout=60
         )
         result = response["choices"][0]["message"]["content"]
 
