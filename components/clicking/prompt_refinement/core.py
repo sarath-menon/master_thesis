@@ -36,19 +36,34 @@ class PromptRefiner(ImageProcessorBase):
         # Load configuration
         self.config = config
         
-    async def process_prompts_async(self, clicking_images: List[ClickingImage], mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, delay: float|None = None, **kwargs) -> List[ClickingImage]:
+    async def process_prompts_async(self, clicking_images: List[ClickingImage], mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> List[ClickingImage]:
+        images = [ci.image for ci in clicking_images]
+        template_values = [self._get_template_values(mode, None, **kwargs) for _ in clicking_images]
 
-        if delay is None or delay <= 0:
-            tasks = [self._process_single_image(clicking_image, mode, **kwargs) for clicking_image in clicking_images]
-            processed_images = await asyncio.gather(*tasks)
-        else:
-            print(f"Processing prompts with delay: {delay}")
-            processed_images = []
-            for i, clicking_image in enumerate(tqdm(clicking_images, desc="Processing images")):
-                processed_image = await self._process_single_image(clicking_image, mode, **kwargs)
-                processed_images.append(processed_image)
-                await asyncio.sleep(delay)
-        return processed_images
+        prompts = [self.prompt_manager.get_prompt(type='user', prompt_key=mode.value, template_values=tv) for tv in template_values]
+        messages = [self.messages.copy() for _ in clicking_images] 
+
+        batch_results = []
+        batch_size = 20  # Adjust this value based on your needs and API limits
+        batch_delay = 10  # Delay between batches in seconds
+
+        total_batches = (len(images) + batch_size - 1) // batch_size
+
+        async for batch_start in tqdm(range(0, len(images), batch_size), total=total_batches, desc="Processing images"):
+            batch_end = min(batch_start + batch_size, len(images))
+            batch_images = images[batch_start:batch_end]
+            batch_prompts = prompts[batch_start:batch_end]
+            batch_messages = messages[batch_start:batch_end]
+
+            batch_response = await self._get_batch_image_responses(batch_images, batch_prompts, batch_messages, PromptResponse)
+            batch_results.extend(batch_response)
+
+            # Add delay between batches to respect API rate limits
+            await asyncio.sleep(batch_delay)  # Adjust the delay as needed
+
+        for clicking_image, result in zip(clicking_images, batch_results):
+            clicking_image.predicted_objects = [obj for obj in result.objects]
+        return clicking_images
 
     async def _process_single_image(self, clicking_image: ClickingImage, mode: PromptMode, **kwargs) -> ClickingImage:
         objects = await self._process_single_prompt(clicking_image.image, mode, **kwargs)
