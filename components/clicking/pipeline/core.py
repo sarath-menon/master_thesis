@@ -48,7 +48,13 @@ class Pipeline:
             os.remove(self.cache_filename)
             self.cache_data = {}
 
-    async def run(self, initial_input: Union[List[int], PipelineState, None] = None, start_from_step: str = None, stop_after_step: str = None) -> PipelineState:
+    async def run(
+        self,
+        initial_images: List[int] = None,
+        initial_state: PipelineState = None,
+        start_from_step: str = None,
+        stop_after_step: str = None
+    ) -> PipelineState:
         start_index = 0
         if start_from_step:
             start_index = self._find_step_index(start_from_step)
@@ -61,17 +67,18 @@ class Pipeline:
         if start_index > 0:
             self._load_cache()
             if start_from_step not in self.cache_data and start_from_step not in self.last_run_cache:
-                if initial_input is None:
-                    raise ValueError(f"No cached state found for step '{start_from_step}' and no initial input provided. Please provide an initial state or run from the beginning.")
+                if initial_state is None and initial_images is None:
+                    raise ValueError(f"No cached state found for step '{start_from_step}' and no initial input provided. Please provide an initial state or images, or run from the beginning.")
             else:
-                initial_input = self.cache_data.get(start_from_step) or self.last_run_cache.get(start_from_step)
-        elif initial_input is None:
-            raise ValueError("Initial input must be provided when starting from the beginning of the pipeline.")
+                initial_state = self.cache_data.get(start_from_step) or self.last_run_cache.get(start_from_step)
+        elif initial_state is None and initial_images is None:
+            raise ValueError("Either initial_state or initial_images must be provided when starting from the beginning of the pipeline.")
 
         # Only reset cache when starting from the beginning
         if start_index == 0:
             self.cache_data = {}  # Reset cache for a new run from the beginning
 
+        initial_input = initial_state if initial_state else PipelineState(images=initial_images)
         result = await self._run_internal(initial_input, start_index=start_index, stop_after_step=stop_after_step)
         
         # Store the cache from this run
