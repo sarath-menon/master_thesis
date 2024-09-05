@@ -28,16 +28,17 @@ Output the information as a JSON list under the key "objects", with each entry i
 ## IMAGE_TO_OBJECT_DESCRIPTIONS
 Examine the videogame screenshot to identify crucial game objects for each of the following categories:
 
-1. **Game Asset**: Identify as many game assets as possible. Strictly exclude the following:
+1. **Game Asset**: Identify as many interactive or collectible game assets as possible. Strictly exclude the following:
    - player characters
    - UI elements (such as buttons, menus, status bars, and information displays)
-   - common background elements (such as grass, sky, walls, floors, rocks, and bushes)
+   - common background elements (such as grass, sky, walls, floors, generic trees, generic rocks, fog, etc.)
+   - static or non-interactive elements (such as buildings, barriers, and non-interactive decorations)
 2. **Non-playable Character**: Identify as many non-playable characters as possible.
 3. **Information Display**: Identify all objects that provide game state information (e.g., health bar, ammo count, minimap, score, notification pop-ups).
 
 For each object, provide:
 - Name: A name for the object in {object_name_limit} words or less.
-- Description: Provide a detailed description of the object's location on the screen, its shape, color, and appearance. Use no more than {description_length} words. Format the description as follows: "object_name" located at the "object_location" of the screen with a "shape", "color", and "appearance".
+- Description: Provide a detailed description of the object's location on the screen, its shape, color, and appearance. Use no more than {description_length} words. Format the description as follows: <object_name> located at the <object_location> of the screen with a <shape>, <color> and <appearance>.
 - Category: The category the object belongs to one of the above.
 - Reasoning: A concise 10-word explanation of why the object is important for interaction.
 
