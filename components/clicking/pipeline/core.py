@@ -13,8 +13,9 @@ from typing import Union
 from dataclasses import dataclass, field
 from clicking.common.data_structures import ClickingImage
 import asyncio
-import dill
 import json
+import markdown
+import bleach
 
 @dataclass
 class PipelineState:
@@ -225,13 +226,19 @@ class Pipeline:
             pickle_thread = threading.Thread(target=self.save_state_pickle, args=(state, new_folder_path))
             pickle_thread.start()
 
+            metadata_thread = threading.Thread(target=self.save_metadata, args=(state, new_folder_path))
+            metadata_thread.start()
+
             if save_as_json:
                 json_thread = threading.Thread(target=self.save_state_as_json, args=(state, new_folder_path))
                 json_thread.start()
 
             pickle_thread.join()
+            metadata_thread.join()
+
             if save_as_json:
                 json_thread.join()
+            
         except Exception as e:
             print(f"Error saving pipeline state: {str(e)}")
 
@@ -244,6 +251,18 @@ class Pipeline:
             print(f"Pipeline state saved successfully to {new_file_path}")
         except Exception as e:
             print(f"Error saving pipeline state as pickle: {str(e)}")
+
+    def save_metadata(self, state: PipelineState, folder_path: str):
+        num_objects = len(state.images)
+        metadata = f"Number of objects in PipelineState: {num_objects}"
+
+        def markdown_to_plain_text(markdown_text):
+            html = markdown.markdown(markdown_text)
+            return bleach.clean(html, tags=[], strip=True)
+
+        with open(os.path.join(folder_path, "metadata.md"), 'w') as f:
+            f.write(markdown_to_plain_text(metadata))
+
 
     def save_state_as_json(self, state: PipelineState, folder_path: str = "pipeline_state"):
         try:
