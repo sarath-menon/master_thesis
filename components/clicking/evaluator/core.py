@@ -8,6 +8,11 @@ from evaluate import load
 from collections import Counter
 from typing import List, Dict, Literal
 from clicking.common.data_structures import ClickingImage
+import wandb
+import mlflow
+import pandas as pd
+
+PROJECT_NAME = "clicking"
 
 class ChoiceResult(BaseModel):
     value: Dict[str, List[str]]
@@ -120,20 +125,35 @@ def evaluate_validity_results(ground_truth_file: str, predictions_file: str):
 def save_image_descriptions(clicking_images: List[ClickingImage], output_folder: str):
     descriptions = []
     for image in clicking_images:
-        image_data = {
-            "id": image.id,
-            "objects": [
-                {
-                    "name": obj.name,
-                    "description": obj.description
-                } for obj in image.predicted_objects
-            ]
-        }
-        descriptions.append(image_data)
+        for obj in image.predicted_objects:
+            descriptions.append({
+                "image_id": image.id,
+                "object_id": str(obj.id),
+                "name": obj.name,
+                "category": obj.category.value,
+                "description": obj.description
+            })
     
     output_file = os.path.join(output_folder, 'image_descriptions.json')
     with open(output_file, 'w') as f:
         json.dump(descriptions, f, indent=2)
+
+    # Convert descriptions to a pandas DataFrame
+    descriptions_df = pd.DataFrame(descriptions)
     
-    print(f"Image descriptions saved to {output_file}")
+    # # Log data to W&B as a table
+    # wandb.init(project=PROJECT_NAME)
+    # table = wandb.Table(dataframe=descriptions_df)
+    # wandb.log({"image_descriptions": table})
+
+   
+    # # Log data to MLflow
+    # remote_server_uri = "http://127.0.0.1:8084"  # set to your server URI
+    # mlflow.set_tracking_uri(remote_server_uri)
+    # mlflow.set_experiment("/my-experiment")
+
+    # with mlflow.start_run():
+    #     mlflow.log_table(descriptions_df, "./selva.json")
+
+    # print(f"Image descriptions saved to {output_file}")
 
