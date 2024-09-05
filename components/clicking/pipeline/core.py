@@ -20,7 +20,7 @@ class PipelineState:
     images: List[ClickingImage] = field(default_factory=list)
 
 class Pipeline:
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any], cache_folder= "./cache"):
         self.steps: List[Tuple[str, Callable]] = []
         self.config = config
         self.cache_dir = config['pipeline']['cache_dir']
@@ -185,21 +185,32 @@ class Pipeline:
         self.steps[step_index] = (step_name, new_func)
         print(f"Step '{step_name}' has been replaced successfully.")
 
-    def save_state(self, state: PipelineState, file_path: str):
+    def save_state(self, state: PipelineState, file_name: str = "pipeline_state"):
         try:
-            with open(file_path, 'wb') as f:
+            from datetime import datetime
+            current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+            new_file_path = os.path.join(self.cache_dir, f"{file_name}_{current_time}.pkl")
+            
+            with open(new_file_path, 'wb') as f:
                 pickle.dump(state, f)
-            print(f"Pipeline state saved successfully to {file_path}")
+            print(f"Pipeline state saved successfully to {new_file_path}")
         except Exception as e:
             print(f"Error saving pipeline state: {str(e)}")
 
-   
-
-    def load_state(self, file_path: str) -> PipelineState:
+    def load_state(self, file_path: str = None) -> PipelineState:
         try:
+            if file_path is None:
+                files = [f for f in os.listdir(self.cache_dir) if f.startswith("pipeline_state_") and f.endswith(".pkl")]
+                if not files:
+                    raise FileNotFoundError("No pipeline state files found in cache directory.")
+                latest_file = max(files, key=lambda f: os.path.getctime(os.path.join(self.cache_dir, f)))
+                file_path = os.path.join(self.cache_dir, latest_file)
+            
             with open(file_path, 'rb') as f:
                 state = pickle.load(f)
-            print(f"Pipeline state loaded successfully from {file_path}")
+
+            creation_time = datetime.fromtimestamp(os.path.getctime(file_path))
+            print(f"State from {creation_time.strftime('%Y-%m-%d %H:%M:%S')} loaded successfully")
             return state
         except Exception as e:
             print(f"Error loading pipeline state: {str(e)}")
