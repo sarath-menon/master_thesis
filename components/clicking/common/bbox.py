@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Tuple, List, Union, Optional
 from dataclasses import dataclass
 from PIL import Image
+import json
 
 class BBoxMode(Enum):
     XYWH = 1
@@ -71,3 +72,14 @@ class BoundingBox:
         y2 = min(height, int(y2) + padding)
         
         return image.crop((x1, y1, x2, y2))
+
+    def to_dict(self):
+        return {
+            'bbox': self.bbox,
+            'mode': self.mode.name,
+            'object_name': self.object_name,
+            'description': self.description
+        }
+
+    def to_json(self):
+        return json.dumps(self.to_dict())

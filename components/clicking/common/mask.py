@@ -4,6 +4,7 @@ import numpy as np
 from pycocotools import mask as mask_utils
 from PIL import Image
 from dataclasses import dataclass, field
+import json
 
 class SegmentationMode(Enum):
     BINARY_MASK = 1
@@ -79,3 +80,14 @@ class SegmentationMask:
 
     def __repr__(self):
         return f"SegmentationMask(shape={self.shape}, mode={self.mode})"
+
+    def to_dict(self):
+        return {
+            'mask': self.coco_rle,
+            'mode': 'coco_rle',
+            'object_name': self.object_name,
+            'description': self.description
+        }
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
