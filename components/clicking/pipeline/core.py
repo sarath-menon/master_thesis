@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from clicking.common.data_structures import ClickingImage
 import asyncio
 import dill
+import json
 
 @dataclass
 class PipelineState:
@@ -185,35 +186,92 @@ class Pipeline:
         self.steps[step_index] = (step_name, new_func)
         print(f"Step '{step_name}' has been replaced successfully.")
 
-    def save_state(self, state: PipelineState, file_name: str = "pipeline_state"):
-        try:
-            from datetime import datetime
-            current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-            new_file_path = os.path.join(self.cache_dir, f"{file_name}_{current_time}.pkl")
-            
-            with open(new_file_path, 'wb') as f:
-                pickle.dump(state, f)
-            print(f"Pipeline state saved successfully to {new_file_path}")
-        except Exception as e:
-            print(f"Error saving pipeline state: {str(e)}")
-
     def load_state(self, file_path: str = None) -> PipelineState:
         try:
             if file_path is None:
-                files = [f for f in os.listdir(self.cache_dir) if f.startswith("pipeline_state_") and f.endswith(".pkl")]
-                if not files:
-                    raise FileNotFoundError("No pipeline state files found in cache directory.")
-                latest_file = max(files, key=lambda f: os.path.getctime(os.path.join(self.cache_dir, f)))
-                file_path = os.path.join(self.cache_dir, latest_file)
+                # Get all subdirectories in the cache directory
+                subdirs = [d for d in os.listdir(self.cache_dir) if os.path.isdir(os.path.join(self.cache_dir, d))]
+                if not subdirs:
+                    raise FileNotFoundError("No subdirectories found in cache directory.")
+                
+                # Find the latest created subdirectory
+                latest_subdir = max(subdirs, key=lambda d: os.path.getctime(os.path.join(self.cache_dir, d)))
+                latest_subdir_path = os.path.join(self.cache_dir, latest_subdir)
+                
+                # Look for pipeline_state.pkl in the latest subdirectory
+                file_path = os.path.join(latest_subdir_path, "pipeline_state.pkl")
+                if not os.path.exists(file_path):
+                    raise FileNotFoundError(f"pipeline_state.pkl not found in the latest subdirectory: {latest_subdir_path}")
             
             with open(file_path, 'rb') as f:
                 state = pickle.load(f)
 
             creation_time = datetime.fromtimestamp(os.path.getctime(file_path))
-            print(f"State from {creation_time.strftime('%Y-%m-%d %H:%M:%S')} loaded successfully")
+            print(f"State from {creation_time.strftime('%d-%m-%Y %H:%M:%S')} loaded successfully")
             return state
         except Exception as e:
             print(f"Error loading pipeline state: {str(e)}")
             return None
+
+    def save_state(self, state: PipelineState, save_as_json: bool = False):
+        try:
+            from datetime import datetime
+            current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+            new_folder_path = os.path.join(self.cache_dir, current_time)
+            os.makedirs(new_folder_path, exist_ok=True)
+            new_file_path = os.path.join(new_folder_path, "pipeline_state.pkl")
+            
+            # save state as pickle
+            with open(new_file_path, 'wb') as f:
+                pickle.dump(state, f)
+            print(f"Pipeline state saved successfully to {new_file_path}")
+
+            if save_as_json:
+                self.save_state_as_json(state)
+        except Exception as e:
+            print(f"Error saving pipeline state: {str(e)}")
+
+    def save_state_as_json(self, state: PipelineState, file_name: str = "pipeline_state"):
+        try:
+            current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+            new_file_path = os.path.join(self.cache_dir, f"{file_name}_{current_time}.json")
+            
+            def serialize_object(obj):
+                if isinstance(obj, (str, int, float, bool, type(None))):
+                    return obj
+                elif isinstance(obj, (list, tuple)):
+                    return [serialize_object(item) for item in obj]
+                elif isinstance(obj, dict):
+                    return {str(k): serialize_object(v) for k, v in obj.items()}
+                elif hasattr(obj, 'to_dict') and callable(obj.to_dict):
+                    return obj.to_dict()
+                elif hasattr(obj, '__dict__'):
+                    return serialize_object(obj.__dict__)
+                else:
+                    return str(obj)
+
+            def serialize_image(img):
+                if isinstance(img, ClickingImage):
+                    return {
+                        "image_id": img.id,
+                        "annotated_objects": serialize_object(img.annotated_objects),
+                        "predicted_objects": serialize_object(img.predicted_objects)
+                    }
+                return str(img)
+
+            json_data = json.dumps(
+                {"images": [serialize_image(img) for img in state.images]},
+                indent=2,
+                default=str
+            )
+            
+            with open(new_file_path, 'w') as f:
+                f.write(json_data)
+            
+            print(f"Pipeline state saved as JSON successfully to {new_file_path}")
+        except Exception as e:
+            print(f"Error saving pipeline state as JSON: {str(e)}")
+
+
 
 
