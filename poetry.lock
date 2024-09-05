@@ -2501,10 +2501,10 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
-    {version = ">=1.23.5", markers = "python_version >= \"3.11\" and python_version < \"3.12\""},
     {version = ">=1.21.4", markers = "python_version >= \"3.10\" and platform_system == \"Darwin\" and python_version < \"3.11\""},
     {version = ">=1.21.2", markers = "platform_system != \"Darwin\" and python_version >= \"3.10\" and python_version < \"3.11\""},
+    {version = ">=1.23.5", markers = "python_version >= \"3.11\" and python_version < \"3.12\""},
+    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
 ]
 
 [[package]]
@@ -2624,9 +2624,9 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
-    {version = ">=1.23.2", markers = "python_version == \"3.11\""},
     {version = ">=1.22.4", markers = "python_version < \"3.11\""},
+    {version = ">=1.23.2", markers = "python_version == \"3.11\""},
+    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -3091,8 +3091,8 @@ files = [
 annotated-types = ">=0.4.0"
 pydantic-core = "2.20.1"
 typing-extensions = [
-    {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
     {version = ">=4.6.1", markers = "python_version < \"3.13\""},
+    {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
 ]
 
 [package.extras]
@@ -5354,4 +5354,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10.12"
-content-hash = "232e9295422f919c46460454bc491edf2b17301d07e4c58ad08eec075949cd34"
+content-hash = "3d892d762d4d6fb4b1a4a44c1072813fcabd78a9f5559d9f27f256c97b5f2b4c"
