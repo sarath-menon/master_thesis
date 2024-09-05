@@ -16,6 +16,7 @@ import asyncio
 import json
 import markdown
 import bleach
+import wandb
 
 @dataclass
 class PipelineState:
@@ -214,10 +215,11 @@ class Pipeline:
             print(f"Error loading pipeline state: {str(e)}")
             return None
 
-    def save_state(self, state: PipelineState, save_as_json: bool = False):
+    def save_state(self, state: PipelineState, save_as_json: bool = False, log_to_wandb: bool = False):
         try:
             from datetime import datetime
             import threading
+            import wandb
 
             current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
             new_folder_path = os.path.join(self.cache_dir, current_time)
@@ -239,6 +241,11 @@ class Pipeline:
             if save_as_json:
                 json_thread.join()
             
+            if log_to_wandb:
+                run=  wandb.init(project="clicking", name=f"state_{current_time}")
+                wandb.save(os.path.join(new_folder_path, "*"))
+                wandb.finish()
+        
         except Exception as e:
             print(f"Error saving pipeline state: {str(e)}")
 
@@ -264,38 +271,41 @@ class Pipeline:
             f.write(markdown_to_plain_text(metadata))
 
 
+    def create_state_json(self, state: PipelineState):
+        def serialize_object(obj):
+            if isinstance(obj, (str, int, float, bool, type(None))):
+                return obj
+            elif isinstance(obj, (list, tuple)):
+                return [serialize_object(item) for item in obj]
+            elif isinstance(obj, dict):
+                return {str(k): serialize_object(v) for k, v in obj.items()}
+            elif hasattr(obj, 'to_dict') and callable(obj.to_dict):
+                return obj.to_dict()
+            elif hasattr(obj, '__dict__'):
+                return serialize_object(obj.__dict__)
+            else:
+                return str(obj)
+
+        def serialize_image(img):
+            if isinstance(img, ClickingImage):
+                return {
+                    "image_id": img.id,
+                    "annotated_objects": serialize_object(img.annotated_objects),
+                    "predicted_objects": serialize_object(img.predicted_objects)
+                }
+            return str(img)
+
+        json_data = json.dumps(
+            {"images": [serialize_image(img) for img in state.images]},
+            indent=2,
+            default=str
+        )
+        return json_data
+
     def save_state_as_json(self, state: PipelineState, folder_path: str = "pipeline_state"):
         try:
             new_file_path = os.path.join(folder_path, "pipeline_state.json")
-            
-            def serialize_object(obj):
-                if isinstance(obj, (str, int, float, bool, type(None))):
-                    return obj
-                elif isinstance(obj, (list, tuple)):
-                    return [serialize_object(item) for item in obj]
-                elif isinstance(obj, dict):
-                    return {str(k): serialize_object(v) for k, v in obj.items()}
-                elif hasattr(obj, 'to_dict') and callable(obj.to_dict):
-                    return obj.to_dict()
-                elif hasattr(obj, '__dict__'):
-                    return serialize_object(obj.__dict__)
-                else:
-                    return str(obj)
-
-            def serialize_image(img):
-                if isinstance(img, ClickingImage):
-                    return {
-                        "image_id": img.id,
-                        "annotated_objects": serialize_object(img.annotated_objects),
-                        "predicted_objects": serialize_object(img.predicted_objects)
-                    }
-                return str(img)
-
-            json_data = json.dumps(
-                {"images": [serialize_image(img) for img in state.images]},
-                indent=2,
-                default=str
-            )
+            json_data = self.create_state_json(state)
             
             with open(os.path.join(os.getcwd(), new_file_path), 'w+') as f:
                 f.write(json_data)
