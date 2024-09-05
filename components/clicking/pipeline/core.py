@@ -17,6 +17,8 @@ import json
 import markdown
 import bleach
 import wandb
+import yaml
+import shutil
 
 @dataclass
 class PipelineState:
@@ -227,6 +229,7 @@ class Pipeline:
             
             pickle_thread = threading.Thread(target=self.save_state_pickle, args=(state, new_folder_path))
             pickle_thread.start()
+            self.save_config_and_prompts(new_folder_path)
 
             metadata_thread = threading.Thread(target=self.save_metadata, args=(state, new_folder_path))
             metadata_thread.start()
@@ -238,6 +241,11 @@ class Pipeline:
             pickle_thread.join()
             metadata_thread.join()
 
+            config_file_path = os.path.join(new_folder_path, "config.yml")
+            with open(config_file_path, 'w') as f:
+                yaml.dump(self.config, f)
+            print(f"Config saved as YAML at {config_file_path}")
+
             if save_as_json:
                 json_thread.join()
             
@@ -248,6 +256,23 @@ class Pipeline:
         
         except Exception as e:
             print(f"Error saving pipeline state: {str(e)}")
+
+    def save_config_and_prompts(self, new_folder_path: str):
+        try:
+            config_file_path = os.path.join(new_folder_path, "config.yml")
+            with open(config_file_path, 'w') as f:
+                yaml.dump(self.config, f)
+            print(f"Config saved as YAML at {config_file_path}")
+        except Exception as e:
+            print(f"Error saving config: {str(e)}")
+
+        try:
+            prompts_src_path = os.path.join('prompts')
+            prompts_dest_path = os.path.join(new_folder_path, 'prompts')
+            shutil.copytree(prompts_src_path, prompts_dest_path)
+            print(f"Prompts folder copied to {prompts_dest_path}")
+        except Exception as e:
+            print(f"Error saving prompts: {str(e)}")
 
     def save_state_pickle(self, state: PipelineState, folder_path: str):
         try:
