@@ -36,6 +36,12 @@ class CocoDataset:
 
         return clicking_images
 
+    def get_image(self, image_id: int) -> Image:
+        image_tensor, annotations = self.coco_dataset[int(image_id)]
+        to_pil = transforms.ToPILImage()
+        image = to_pil(image_tensor)
+        return image
+
     def _create_image_objects(self, annotations) -> List[ImageObject]:
         objects = []
         for ann in annotations:
