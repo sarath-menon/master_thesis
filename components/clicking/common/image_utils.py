@@ -3,9 +3,10 @@ import io
 from PIL import Image
 from litellm import acompletion
 import asyncio
-from typing import Dict, Tuple, Type, TypeVar, Any
+from typing import Dict, Tuple, Type, TypeVar, Any, List
 import json
 from .caching import cache_result
+from litellm import batch_completion
 
 T = TypeVar('T')
 
@@ -52,3 +53,39 @@ class ImageProcessorBase:
 
     def clear_cache(self):
         self._get_image_response.clear_cache()
+
+    @cache_result(expiration_time=3000)
+    async def _get_batch_image_responses(self, images: List[Image.Image], text_prompts: List[str], messages: List[List[Dict]], output_type: Type[T]) -> List[T]:
+        base64_images = [self._pil_to_base64(img) for img in images]
+        
+        batch_messages = []
+        for base64_image, text_prompt, msg_list in zip(base64_images, text_prompts, messages):
+            msg = {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": text_prompt},
+                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{base64_image}"}}
+                ]
+            }
+            batch_messages.append(msg_list + [msg])
+
+        response_format = {"type": "json_object"}
+        responses =  batch_completion(
+            model=self.model,
+            messages=batch_messages,
+            temperature=self.temperature,
+            response_format=response_format,
+            num_retries=3,
+            timeout=60
+        )
+
+        results = []
+        for response in responses:
+            result = response["choices"][0]["message"]["content"]
+            try:
+                parsed_result = json.loads(result)
+                results.append(output_type(**parsed_result))
+            except (json.JSONDecodeError, TypeError) as e:
+                print(f"Response does not match the specified output type: {e}")
+
+        return results
