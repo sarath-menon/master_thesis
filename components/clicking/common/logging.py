@@ -34,13 +34,15 @@ def print_image_objects(image_objects: List[ClickingImage], show_image=False):
         print(table)
         print("\n")
 
-def print_object_descriptions(image_objects: List[ClickingImage], show_image=False):
+def print_object_descriptions(image_objects: List[ClickingImage], show_image=False, max_col_width=30):
     for result in image_objects:
         table = PrettyTable()
         table.field_names = ["Index", "Predicted Object", "Description"]
+        # Set the maximum width for each column
+        table.max_width = max_col_width
         
         for i, obj in enumerate(result.predicted_objects):
-            table.add_row([i, obj.name, obj.description or "No description available"])
+            table.add_row([i, f"{obj.name}\n({obj.category.value})", obj.description or "No description available"])
         
         print(f"Image ID: {result.id}")
 
@@ -53,5 +55,3 @@ def print_object_descriptions(image_objects: List[ClickingImage], show_image=Fal
         print(table)
         print("\n")
 
-def selva():
-    print("Selva")
