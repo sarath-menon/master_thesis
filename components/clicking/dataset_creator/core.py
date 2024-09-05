@@ -21,6 +21,9 @@ class CocoDataset:
         self.all_object_names = [cat['name'] for cat in self.coco_dataset.coco.cats.values()]
         print(f"Dataset size: {len(self.coco_dataset)}")
 
+    def length(self):
+        return len(self.coco_dataset)
+
     def sample_dataset(self, image_ids: List[int]) -> List[ClickingImage]:
         clicking_images = []
         to_pil = transforms.ToPILImage()
