@@ -44,7 +44,7 @@ def image_to_http_file(image):
     image_file = File(file_name="image.png", payload=image_byte_arr.getvalue(), mime_type="image/png")
     return image_file
 
-# Modify the relevant steps to use PipelineState
+# Modify the relevant steps to use PipelineState"
 
 def sample_dataset(state: PipelineState) -> PipelineState:
     state.images = coco_dataset.sample_dataset(state.images)
@@ -165,7 +165,7 @@ class SegmentationProcessor:
 with open('config.yml', 'r') as config_file:
     config = yaml.safe_load(config_file)
 
-client = Client(base_url=config['api']['local_url'])
+client = Client(base_url=config['api']['local_url'], timeout=5)
 coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
 
 prompt_refiner = PromptRefiner(prompt_path=config['prompts']['refinement_path'], config=config)
@@ -192,12 +192,13 @@ pipeline.print_pipeline()
 pipeline.static_analysis()
 
 #%% Run the entire pipeline, stopping after "Verify bboxes" step
-image_ids = [38, 31]
+# image_ids = [i for i in range(coco_dataset.length())]
+image_ids = [22, 31, 34]
 
 results = asyncio.run(pipeline.run( 
-    initial_input=image_ids,
-    start_from_step="Get Localization Results",
-    stop_after_step="Verify bboxes",
+    initial_images=image_ids, 
+    # start_from_step="Get Localization Results",
+    stop_after_step="Process Prompts",
 ))
 
 # Print and visualize results
@@ -229,10 +230,11 @@ for clicking_image in results.images:
     show_localization_predictions(clicking_image) 
     # show_segmentation_predictions(clicking_image)
 #%% print predicted and true objects
-from clicking.common.logging import print_image_objects, print_object_descriptions, selva
+from clicking.common.logging import print_image_objects, print_object_descriptions
 
 # Call the function with the results
-print_image_objects(results.images)
+# print_image_objects(results.images)
+print_object_descriptions(results.images, show_image=False, show_stats=True)
 
 #%%
 output_corrector_results =  output_corrector.verify_bboxes(results.images[0])
@@ -258,8 +260,6 @@ evaluation_results = evaluate_validity_results(ground_truth_file, predictions_fi
 
 #%%
 from clicking.evaluator.core import save_image_descriptions
-
+ 
+EVALS_PATH = "./datasets/evals/output_corrector"
 save_image_descriptions(results.images, EVALS_PATH)
-
-#%%
-
