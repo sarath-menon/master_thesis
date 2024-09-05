@@ -40,6 +40,7 @@ class ImageObject(BaseModel):
     category: Optional[ObjectCategory] = None
     bbox: Optional[BoundingBox] = None
     mask: Optional[SegmentationMask] = None
+    significance: Optional[str] = None
     validity: Validity = Field(default=Validity())
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

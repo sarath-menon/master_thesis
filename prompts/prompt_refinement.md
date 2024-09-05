@@ -46,4 +46,4 @@ Format the output as a JSON list under the key "objects", with each entry contai
 - "name": "object name in {object_name_limit} words or less",
 - "description": "details of the object including location, shape, color, and appearance",
 - "category": "category name",
-- "reasoning": "10-word explanation of its significance"
+- "significance": "10-word explanation of its significance"
