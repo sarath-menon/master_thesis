@@ -216,25 +216,38 @@ class Pipeline:
     def save_state(self, state: PipelineState, save_as_json: bool = False):
         try:
             from datetime import datetime
+            import threading
+
             current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
             new_folder_path = os.path.join(self.cache_dir, current_time)
             os.makedirs(new_folder_path, exist_ok=True)
-            new_file_path = os.path.join(new_folder_path, "pipeline_state.pkl")
             
-            # save state as pickle
-            with open(new_file_path, 'wb') as f:
-                pickle.dump(state, f)
-            print(f"Pipeline state saved successfully to {new_file_path}")
+            pickle_thread = threading.Thread(target=self.save_state_pickle, args=(state, new_folder_path))
+            pickle_thread.start()
 
             if save_as_json:
-                self.save_state_as_json(state)
+                json_thread = threading.Thread(target=self.save_state_as_json, args=(state, new_folder_path))
+                json_thread.start()
+
+            pickle_thread.join()
+            if save_as_json:
+                json_thread.join()
         except Exception as e:
             print(f"Error saving pipeline state: {str(e)}")
 
-    def save_state_as_json(self, state: PipelineState, file_name: str = "pipeline_state"):
+    def save_state_pickle(self, state: PipelineState, folder_path: str):
         try:
-            current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-            new_file_path = os.path.join(self.cache_dir, f"{file_name}_{current_time}.json")
+            new_file_path = os.path.join(folder_path, "pipeline_state.pkl")
+            
+            with open(new_file_path, 'wb') as f:
+                pickle.dump(state, f)
+            print(f"Pipeline state saved successfully to {new_file_path}")
+        except Exception as e:
+            print(f"Error saving pipeline state as pickle: {str(e)}")
+
+    def save_state_as_json(self, state: PipelineState, folder_path: str = "pipeline_state"):
+        try:
+            new_file_path = os.path.join(folder_path, "pipeline_state.json")
             
             def serialize_object(obj):
                 if isinstance(obj, (str, int, float, bool, type(None))):
@@ -265,13 +278,9 @@ class Pipeline:
                 default=str
             )
             
-            with open(new_file_path, 'w') as f:
+            with open(os.path.join(os.getcwd(), new_file_path), 'w+') as f:
                 f.write(json_data)
             
             print(f"Pipeline state saved as JSON successfully to {new_file_path}")
         except Exception as e:
             print(f"Error saving pipeline state as JSON: {str(e)}")
-
-
-
-
