@@ -34,7 +34,9 @@ def print_image_objects(image_objects: List[ClickingImage], show_image=False):
         print(table)
         print("\n")
 
-def print_object_descriptions(image_objects: List[ClickingImage], show_image=False, max_col_width=30):
+def print_object_descriptions(image_objects: List[ClickingImage], show_image=False, max_col_width=30, show_stats=False):
+    category_counts = {}
+
     for result in image_objects:
         table = PrettyTable()
         table.field_names = ["Index", "Predicted Object", "Description"]
@@ -43,15 +45,36 @@ def print_object_descriptions(image_objects: List[ClickingImage], show_image=Fal
         
         for i, obj in enumerate(result.predicted_objects):
             table.add_row([i, f"{obj.name}\n({obj.category.value})", obj.description or "No description available"])
+
+            if show_stats:
+                category = obj.category.value if obj.category else 'No Category'
+                category_counts[category] = category_counts.get(category, 0) + 1
         
         print(f"Image ID: {result.id}")
 
         # show image
         if show_image:
             plt.imshow(result.image)
-            plt.axis('off')
+            plt.axis('off')                    
 
         plt.show()
         print(table)
         print("\n")
+
+    if show_stats:   
+        plt.figure(figsize=(12, 6))
+        plt.style.use('dark_background')
+        bars = plt.bar(category_counts.keys(), category_counts.values())
+        plt.title('Histogram of Object Categories Across All Images', color='white', fontsize=16)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+
+        # Add value labels on top of each bar
+        for bar in bars:
+            height = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width()/2., height,
+                        f'{height}',
+                        ha='center', va='bottom', color='white', fontsize=12)
+
+        plt.tight_layout()
 
