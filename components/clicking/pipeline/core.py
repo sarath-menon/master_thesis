@@ -13,6 +13,7 @@ from typing import Union
 from dataclasses import dataclass, field
 from clicking.common.data_structures import ClickingImage
 import asyncio
+import dill
 
 @dataclass
 class PipelineState:
@@ -53,7 +54,8 @@ class Pipeline:
         initial_images: List[int] = None,
         initial_state: PipelineState = None,
         start_from_step: str = None,
-        stop_after_step: str = None
+        stop_after_step: str = None,
+        reset_cache: bool = False
     ) -> PipelineState:
         start_index = 0
         if start_from_step:
@@ -64,7 +66,7 @@ class Pipeline:
         if stop_after_step and self._find_step_index(stop_after_step) == -1:
             raise ValueError(f"Invalid stop_after_step: '{stop_after_step}'. Step not found in the pipeline.")
 
-        if start_index > 0:
+        if start_index > 0 and not reset_cache:
             self._load_cache()
             if start_from_step not in self.cache_data and start_from_step not in self.last_run_cache:
                 if initial_state is None and initial_images is None:
@@ -74,9 +76,9 @@ class Pipeline:
         elif initial_state is None and initial_images is None:
             raise ValueError("Either initial_state or initial_images must be provided when starting from the beginning of the pipeline.")
 
-        # Only reset cache when starting from the beginning
-        if start_index == 0:
-            self.cache_data = {}  # Reset cache for a new run from the beginning
+        # Reset cache when explicitly requested or starting from the beginning
+        if reset_cache or start_index == 0:
+            self.cache_data = {}  # Reset cache for a new run
 
         initial_input = initial_state if initial_state else PipelineState(images=initial_images)
         result = await self._run_internal(initial_input, start_index=start_index, stop_after_step=stop_after_step)
@@ -182,4 +184,25 @@ class Pipeline:
 
         self.steps[step_index] = (step_name, new_func)
         print(f"Step '{step_name}' has been replaced successfully.")
+
+    def save_state(self, state: PipelineState, file_path: str):
+        try:
+            with open(file_path, 'wb') as f:
+                pickle.dump(state, f)
+            print(f"Pipeline state saved successfully to {file_path}")
+        except Exception as e:
+            print(f"Error saving pipeline state: {str(e)}")
+
+   
+
+    def load_state(self, file_path: str) -> PipelineState:
+        try:
+            with open(file_path, 'rb') as f:
+                state = pickle.load(f)
+            print(f"Pipeline state loaded successfully from {file_path}")
+            return state
+        except Exception as e:
+            print(f"Error loading pipeline state: {str(e)}")
+            return None
+
 
