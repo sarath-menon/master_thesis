@@ -39,12 +39,12 @@ def print_object_descriptions(image_objects: List[ClickingImage], show_image=Fal
 
     for result in image_objects:
         table = PrettyTable()
-        table.field_names = ["Index", "Predicted Object", "Description"]
+        table.field_names = ["Index", "Predicted Object", "Description", "Reasoning"]
         # Set the maximum width for each column
         table.max_width = max_col_width
         
         for i, obj in enumerate(result.predicted_objects):
-            table.add_row([i, f"{obj.name}\n({obj.category.value})", obj.description or "No description available"])
+            table.add_row([i, f"{obj.name}\n({obj.category.value})", obj.description or "No description available", "No reasoning available"])
 
             if show_stats:
                 category = obj.category.value if obj.category else 'No Category'
@@ -63,18 +63,19 @@ def print_object_descriptions(image_objects: List[ClickingImage], show_image=Fal
 
     if show_stats:   
         plt.figure(figsize=(12, 6))
+        font_size = 16
         plt.style.use('dark_background')
         bars = plt.bar(category_counts.keys(), category_counts.values())
-        plt.title('Histogram of Object Categories Across All Images', color='white', fontsize=16)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        plt.title('Histogram of Object Categories Across All Images', color='white', fontsize=font_size)
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
 
         # Add value labels on top of each bar
         for bar in bars:
             height = bar.get_height()
             plt.text(bar.get_x() + bar.get_width()/2., height,
                         f'{height}',
-                        ha='center', va='bottom', color='white', fontsize=12)
+                        ha='center', va='bottom', color='white', fontsize=font_size)
 
         plt.tight_layout()
 
