@@ -1,6 +1,6 @@
 import pytest
 from clicking.dataset_creator import core
-from clicking.common.types import ClickingImage, ImageObject
+from clicking.common.data_structures import ClickingImage, ImageObject
 from clicking.common.mask import SegmentationMask
 from clicking.common.bbox import BoundingBox
 

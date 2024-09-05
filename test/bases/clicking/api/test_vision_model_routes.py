@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 from clicking.api import core
-from clicking.vision_model.types import TaskType, SetModelReq, PredictionReq, AutoAnnotationReq
+from clicking.vision_model.data_structures import TaskType, SetModelReq, PredictionReq, AutoAnnotationReq
 import io
 
 client = TestClient(core.app)

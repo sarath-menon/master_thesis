@@ -1,42 +1,67 @@
-from clicking.output_corrector import core
-from clicking.vision_model.types import LocalizationResults, SegmentationResults
-from clicking.common.bbox import BoundingBox, BBoxMode
-from clicking.common.mask import SegmentationMask, SegmentationMode
-from clicking.prompt_refinement.types import ImageWithDescriptions, SinglePromptResponse, ObjectDescription
 from PIL import Image
 import numpy as np
+import os
 
-def test_verify_bboxes():
-    # Create a mock OutputCorrector
-    output_corrector = core.OutputCorrector(prompt_path="./prompts/output_corrector.md")
+from clicking.output_corrector.core import OutputCorrector
+from clicking.pipeline.core import PipelineState
+from clicking.common.data_structures import ClickingImage,ImageObject
+
+
+def test_verify_bboxes_for_all_images():
+    IMAGES_FOLDER_PATH = "./test/assets/crops"
+    output_corrector = OutputCorrector(prompt_path="./prompts/output_corrector.md")
     
-    # Create mock data
-    processed_samples = [
-        ImageWithDescriptions(
-            image=Image.open("./assets/bus.jpg"),
-            id="test_image_1",
-            description=SinglePromptResponse(objects=[
-                ObjectDescription(name="bus", category="vehicle", description="A bus")
-            ]),
-            object_name="bus"
-        )
-    ]
+    # Load images and create ClickingImage objects
+    clicking_images = []
+    for filename in os.listdir(IMAGES_FOLDER_PATH):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            image_path = os.path.join(IMAGES_FOLDER_PATH, filename)
+            image = Image.open(image_path)
+            object_name = os.path.splitext(filename)[0]
+
+        
+            clicking_image = ClickingImage(
+                id=object_name,
+                image=image,
+                predicted_objects=[
+                    ImageObject(
+                        name=object_name,
+                    )
+                ]
+            )
+            clicking_images.append(clicking_image)
     
-    predictions = {
-        "test_image_1": [
-            BoundingBox([10, 10, 50, 50], mode=BBoxMode.XYWH, object_name="bus", description="A bus")
-        ]
-    }
+    # Create a PipelineState object
+    state = PipelineState(images=clicking_images)
     
-    localization_results = LocalizationResults(
-        processed_samples=processed_samples,
-        predictions=predictions
-    )
+    # Verify bboxes for all images
+    results = []
+    for clicking_image in state.images:
+        verified_image = output_corrector.verify_bboxes(clicking_image)
+        for obj in verified_image.predicted_objects:
+            result = {
+                'image_id': clicking_image.id,
+                'object_name': obj.name,
+                'judgement': obj.validity.is_valid,
+                'reasoning': obj.validity.reason
+            }
+            results.append(result)
     
-    # Call the method
-    result = output_corrector.verify_bboxes(localization_results)
+    # Print results
+    for result in results:
+        print(f"Image: {result['image_id']}")
+        print(f"Object: {result['object_name']}")
+        print(f"Valid: {result['judgement']}")
+        print(f"Reason: {result['reasoning']}")
+        print()
     
-    # Assert the result
-    assert isinstance(result, LocalizationResults)
-    assert len(result.predictions["test_image_1"]) == 1
-    assert result.predictions["test_image_1"][0].object_name == "bus"
+    # Assertions
+    assert len(results) == len(clicking_images), "Number of results should match number of images"
+    for result in results:
+        assert 'image_id' in result
+        assert 'object_name' in result
+        assert 'judgement' in result
+        assert 'reasoning' in result
+
+# Run the test
+test_verify_bboxes_for_all_images()
