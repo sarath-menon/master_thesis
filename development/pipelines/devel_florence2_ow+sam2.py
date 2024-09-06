@@ -31,19 +31,10 @@ from io import BytesIO
 import json
 import nest_asyncio
 from clicking.pipeline.core import PipelineState
-from fastapi import File, UploadFile
-
+from clicking.image_processor.localization import Localization
+from clicking.image_processor.segmentation import Segmentation
 
 #%%
-from clicking_client.types import File
-
-def image_to_http_file(image):
-    # Convert PIL Image to bytes and create a File object
-    image_byte_arr = BytesIO()
-    image.save(image_byte_arr, format='PNG')
-    image_file = File(file_name="image.png", payload=image_byte_arr.getvalue(), mime_type="image/png")
-    return image_file
-
 def process_prompts(state: PipelineState) -> PipelineState:
     state.images = prompt_refiner.process_prompts(state.images)
     return state
@@ -67,115 +58,63 @@ def verify_bboxes(state: PipelineState) -> PipelineState:
     for result in results:
         table.add_row([result['object_name'], result['judgement'], result['reasoning']])
     
-    print(table)
     return state
 
-class LocalizationProcessor:
-    def __init__(self, client: Client, config: Dict):
-        self.client = client
-        self.config = config
-        self.set_localization_model()
+def filter_by_object_category(state: PipelineState, category: ObjectCategory) -> PipelineState:
+    for clicking_image in state.images:
+        clicking_image.predicted_objects = [
+            obj for obj in clicking_image.predicted_objects
+            if obj.category == category
+        ]
+    return state
+import random
 
-    def set_localization_model(self):
-        try:
-            set_model.sync(client=self.client, body=SetModelReq(
-                name=self.config['models']['localization']['name'],
-                variant=self.config['models']['localization']['variant'],
-                task=TaskType[self.config['models']['localization']['task']]
-            ))
-        except Exception as e:
-            print(f"Error setting localization model: {str(e)}")
-
-    def get_localization_results(self, state: PipelineState) -> PipelineState:
-        
-        for clicking_image in state.images:
-            image_file = image_to_http_file(clicking_image.image)
-            
-            for obj in clicking_image.predicted_objects:
-                request = BodyGetPrediction(image=image_file)
-                try:
-                    response = get_prediction.sync(
-                        client=self.client,
-                        body=request,
-                        task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
-                        input_text=obj.description
-                    )
-
-                    if len(response.prediction.bboxes) > 1:
-                        print(f"Multiple bounding boxes found for {obj.name}")
-                        obj.bbox = BoundingBox(bbox=response.prediction.bboxes[0], mode=BBoxMode.XYWH)
-                    elif len(response.prediction.bboxes) == 1:
-                        obj.bbox = BoundingBox(bbox=response.prediction.bboxes[0], mode=BBoxMode.XYWH)
-                    else:
-                        print(f"No bounding box found for {obj.name}")
-
-                except Exception as e:
-                    print(f"Error getting prediction for image {clicking_image.id}, object {obj.name}: {str(e)}")
-        
-        return state
-
-class SegmentationProcessor:
-    def __init__(self, client: Client, config: Dict):
-        self.client = client
-        self.config = config
-        self.set_segmentation_model()
-
-    def set_segmentation_model(self):
-        try:
-            set_model.sync(client=self.client, body=SetModelReq(
-                name=self.config['models']['segmentation']['name'],
-                variant=self.config['models']['segmentation']['variant'],
-                task=TaskType[self.config['models']['segmentation']['task']]
-            ))
-        except Exception as e:
-            print(f"Error setting segmentation model: {str(e)}")
-
-    def get_segmentation_results(self, state: PipelineState) -> PipelineState:
-        
-        for clicking_image in state.images:
-            image_file = image_to_http_file(clicking_image.image)
-            
-            for obj in clicking_image.predicted_objects:
-                request = BodyGetPrediction(image=image_file)
-                try:
-                    response = get_prediction.sync(
-                        client=self.client,
-                        body=request,
-                        task=TaskType.SEGMENTATION_WITH_BBOX,
-                        input_boxes=json.dumps(obj.bbox.get(mode=BBoxMode.XYWH))
-                    )
-                    
-                    if response.prediction.masks:
-                        obj.mask = SegmentationMask(coco_rle=response.prediction.masks[0], mode=SegmentationMode.COCO_RLE)
-                    else:
-                        print(f"No segmentation mask found for {obj.name}")
-                except Exception as e:
-                    print(f"Error processing segmentation for image {clicking_image.id}, object {obj.name}: {str(e)}")
-        
-        return state
+def filter_images(state: PipelineState, image_ids: List[int] = None, sample_size: int = None) -> PipelineState:
+    if image_ids is not None and sample_size is not None:
+        raise ValueError("Cannot specify both image_ids and sample_size. Choose one filtering method.")
+    
+    # convert image_ids to list of strings
+    if image_ids is not None:
+        image_ids = [str(id) for id in image_ids]
+    
+    if image_ids is not None:
+        filtered_images = [
+            img for img in state.images
+            if img.id in image_ids
+        ]
+    elif sample_size is not None:
+        if sample_size > len(state.images):
+            raise ValueError(f"Sample size {sample_size} is larger than the number of available images {len(state.images)}")
+        filtered_images = random.sample(state.images, sample_size)
+    else:
+        return state  # Return original state if no filtering is specified
+    
+    return PipelineState(images=filtered_images)
 
 #%%
 # Load the configuration file
 with open('config.yml', 'r') as config_file:
     config = yaml.safe_load(config_file)
 
-client = Client(base_url=config['api']['cloud_url'], timeout=50)
-coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
+client = Client(base_url=config['api']['local_url'], timeout=50)
 
 prompt_refiner = PromptRefiner(prompt_path=config['prompts']['refinement_path'], config=config)
-localization_processor = LocalizationProcessor(client, config=config)
-segmentation_processor = SegmentationProcessor(client, config=config)
+localization_processor = Localization(client, config=config)
+segmentation_processor = Segmentation(client, config=config)
 output_corrector = OutputCorrector(prompt_path=config['prompts']['output_corrector_path'])
-
 
 #%%
 from clicking.common.logging import print_object_descriptions
 nest_asyncio.apply()
 
 # sample images
-image_ids = [22, 31, 42]
-clicking_images = coco_dataset.sample_dataset(image_ids)
+coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
 
+image_ids = [22, 31, 42]
+clicking_images = coco_dataset.sample_dataset()
+
+
+#%%
 pipeline = Pipeline(config=config)
 
 pipeline.add_step("Process Prompts", process_prompts)
@@ -183,57 +122,32 @@ pipeline.add_step("Get Localization Results", localization_processor.get_localiz
 pipeline.add_step("Verify bboxes", verify_bboxes)
 pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
 
-# Print the pipeline structure
 pipeline.print_pipeline()
-
-# Perform static analysis before running the pipeline
 pipeline.static_analysis()
-
 #%% Run the entire pipeline, stopping after "Verify bboxes" step
-# image_ids = [i for i in range(coco_dataset.length())]
-image_ids = [22, 31, 42]
+from clicking.common.logging import print_object_descriptions
+
+loaded_state = pipeline.load_state()
+print("loaded_state", len(loaded_state.images))
+# loaded_state = filter_images(loaded_state, image_ids=[0,12,37])
+loaded_state = filter_images(loaded_state, sample_size=3)
+print("loaded_state", len(loaded_state.images))
+loaded_state = filter_by_object_category(loaded_state, ObjectCategory.GAME_ASSET)
+
+print_object_descriptions(loaded_state.images, show_image=True, show_stats=False)
+#%%
 
 results = asyncio.run(pipeline.run( 
-    # initial_images=image_ids, 
-    initial_state=loaded_state1,
+    # initial_images=clicking_images, 
+    initial_state=loaded_state,
     start_from_step="Get Localization Results",
     stop_after_step="Get Localization Results",
 ))
 
-# Print and visualize results
-# print_object_descriptions(results.images)
-
-#%%
-
-# for result in results.images:
-#     print(result.predicted_objects[0].validity)
-
-for clicking_image in results.images:
-    show_localization_predictions(clicking_image)
-
-#%%
-
-# # replace pipeline step
-# pipeline.replace_step("Verify bboxes", verify_bboxes)
-    
-# # Or provide an initial state if needed
-# initial_state = PipelineState(images=[22, 31, 34])
-# initial_state.processed_prompts = pipeline.get_step_result("Process Prompts").processed_prompts
-
-# result = asyncio.run(pipeline.run_from_step("Get Localization Results", initial_state))
-
-#%%
-
-# Visualize results
+#%% Visualize results
 for clicking_image in results.images:
     show_localization_predictions(clicking_image) 
     # show_segmentation_predictions(clicking_image)
-#%% print predicted and true objects
-from clicking.common.logging import print_image_objects, print_object_descriptions
-
-# Call the function with the results
-# print_image_objects(results.images)
-print_object_descriptions(results.images, show_image=True, show_stats=True)
 
 #%%
 output_corrector_results =  output_corrector.verify_bboxes(results.images[0])
@@ -272,11 +186,11 @@ results = load_pipeline_results("./datasets/evals/output_corrector/image_descrip
 import pickle
 
 # Example usage:
-loaded_state1 = pipeline.load_state()
+loaded_state = pipeline.load_state()
 #%%
 
  # Example usage:
-pipeline.save_state(loaded_state, save_as_json=True, log_to_wandb=False)
+pipeline.save_state(results, save_as_json=True, log_to_wandb=False)
 #%%
 pipeline.save_state_as_json(loaded_state)
 
