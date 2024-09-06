@@ -173,15 +173,33 @@ from clicking.prompt_refinement.core import PromptMode
 from clicking.image_processor.localization import InputMode
 from clicking.vision_model.data_structures import TaskType
 
-def load_pipeline_mode_sequences(config):
+def load_pipeline_mode_sequences(config, sequence_name=None):
     sequences = config.get('pipeline_mode_sequences', {})
+    
+    def verify_enum(enum_class, value, field_name):
+        if not hasattr(enum_class, value):
+            raise ValueError(f"Invalid {field_name}: {value} is not a valid {enum_class.__name__}")
+        return getattr(enum_class, value)
+
+    if sequence_name:
+        if sequence_name not in sequences:
+            raise ValueError(f"Sequence '{sequence_name}' not found in config")
+        seq = sequences[sequence_name]
+        return [{
+            "name": sequence_name,
+            "prompt_modes": verify_enum(PromptMode, seq['prompt_mode'], "prompt_mode"),
+            "localization_input_modes": verify_enum(InputMode, seq['localization_input_mode'], "localization_input_mode"),
+            "localization_modes": verify_enum(TaskType, seq['localization_mode'], "localization_mode"),
+            "segmentation_modes": verify_enum(TaskType, seq['segmentation_mode'], "segmentation_mode")
+        }]
+    
     return [
         {
             "name": name,
-            "prompt_modes": getattr(PromptMode, seq['prompt_mode']),
-            "localization_input_modes": getattr(InputMode, seq['localization_input_mode']),
-            "localization_modes": getattr(TaskType, seq['localization_mode']),
-            "segmentation_modes": getattr(TaskType, seq['segmentation_mode'])
+            "prompt_modes": verify_enum(PromptMode, seq['prompt_mode'], "prompt_mode"),
+            "localization_input_modes": verify_enum(InputMode, seq['localization_input_mode'], "localization_input_mode"),
+            "localization_modes": verify_enum(TaskType, seq['localization_mode'], "localization_mode"),
+            "segmentation_modes": verify_enum(TaskType, seq['segmentation_mode'], "segmentation_mode")
         }
         for name, seq in sequences.items()
     ]
@@ -208,20 +226,19 @@ class PipelineModes:
         print(table)
 
 
-def run_pipeline_for_all_modes(pipeline: Pipeline, initial_state: PipelineState, pipeline_modes: PipelineModes) -> List[Dict]:
+def run_pipeline_for_all_modes(initial_state: PipelineState, pipeline_modes: PipelineModes) -> List[Dict]:
     results = []
 
     for i, combination in enumerate(pipeline_modes.get_mode_combinations()):
         print(f"Running combination {i + 1}/{len(pipeline_modes.get_mode_combinations())}")
         
-        current_modes = combination
         pipeline = Pipeline(config=config)
         
-        pipeline.add_step("Process Prompts", lambda state: prompt_refiner.process_prompts(state.images, mode=current_modes["prompt_modes"]))
+        pipeline.add_step("Process Prompts", lambda state: prompt_refiner.process_prompts(state.images, mode=combination["prompt_modes"]))
         pipeline.add_step("Get Localization Results", lambda state: localization_processor.get_localization_results(
-            state, mode=current_modes["localization_modes"], input_mode=current_modes["localization_input_modes"]
+            state, mode=combination["localization_modes"], input_mode=combination["localization_input_modes"]
         ))
-        pipeline.add_step("Get Segmentation Results", lambda state: segmentation_processor.get_segmentation_results(state, mode=current_modes["segmentation_modes"]))
+        pipeline.add_step("Get Segmentation Results", lambda state: segmentation_processor.get_segmentation_results(state, mode=combination["segmentation_modes"]))
 
         pipeline_modes.print_mode_sequences()
 
@@ -231,7 +248,7 @@ def run_pipeline_for_all_modes(pipeline: Pipeline, initial_state: PipelineState,
             stop_after_step="Get Localization Results",
         ))
 
-        results.append({"combination": i, **current_modes, "pipeline_result": pipeline_result})
+        results.append({"combination": i, **combination, "pipeline_result": pipeline_result})
 
     return results
 
@@ -251,7 +268,7 @@ loaded_state = pipeline.load_state()
 loaded_state = loaded_state.filter_by_id(image_ids=[0, 12, 37])
 loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
 
-all_results = run_pipeline_for_all_modes(pipeline, loaded_state, pipeline_modes)
+all_results = run_pipeline_for_all_modes(loaded_state, pipeline_modes)
 
 # Print a summary of the results
 summary_table = PrettyTable()
@@ -271,4 +288,57 @@ for result in all_results:
 
 print(summary_table)
 # %%
+from clicking.vision_model.data_structures import PromptMode, InputMode, TaskType
 
+enums_dict = {
+    "prompt_mode": PromptMode,
+    "localization_input_mode": InputMode,
+    "localization_mode": TaskType,
+    "segmentation_mode": TaskType
+}
+
+def generate_config_schema(enums_dict):
+    schema = {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+            "pipeline_mode_sequences": {
+                "type": "object",
+                "patternProperties": {
+                    "^[a-zA-Z0-9_]+$": {
+                        "type": "object",
+                        "properties": {},
+                        "required": []
+                    }
+                },
+                "additionalProperties": False
+            }
+        }
+    }
+
+    properties = schema["properties"]["pipeline_mode_sequences"]["patternProperties"]["^[a-zA-Z0-9_]+$"]["properties"]
+    required = schema["properties"]["pipeline_mode_sequences"]["patternProperties"]["^[a-zA-Z0-9_]+$"]["required"]
+
+    for field_name, enum_class in enums_dict.items():
+        properties[field_name] = {
+            "type": "string",
+            "enum": [e.name for e in enum_class]
+        }
+        required.append(field_name)
+
+    # Special case for segmentation_mode
+    properties["segmentation_mode"]["enum"] = ["SEGMENTATION_WITH_BBOX"]
+
+    return schema
+
+# Generate and save the config schema
+import json
+
+config_schema = generate_config_schema(enums_dict)
+with open('config_schema.json', 'w') as f:
+    json.dump(config_schema, f, indent=2)
+
+print("Config schema generated and saved to 'config_schema.json'")
+
+# Generate the config schema
+generate_config_schema(enums_dict)
