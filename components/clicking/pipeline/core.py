@@ -78,6 +78,10 @@ class Pipeline:
                     raise ValueError(f"No cached state found for step '{start_from_step}' and no initial input provided. Please provide an initial state or images, or run from the beginning.")
             else:
                 initial_state = self.cache_data.get(start_from_step) or self.last_run_cache.get(start_from_step)
+                # Clear the state for all steps after start_from_step
+                for step_name, _ in self.steps[start_index + 1:]:
+                    self.cache_data.pop(step_name, None)
+                    self.last_run_cache.pop(step_name, None)
         elif initial_state is None and initial_images is None:
             raise ValueError("Either initial_state or initial_images must be provided when starting from the beginning of the pipeline.")
 
@@ -85,18 +89,25 @@ class Pipeline:
         if reset_cache or start_index == 0:
             self.cache_data = {}  # Reset cache for a new run
 
-        initial_input = initial_state if initial_state else PipelineState(images=initial_images)
-        result = await self._run_internal(initial_input, start_index=start_index, stop_after_step=stop_after_step)
-        
-        # Store the cache from this run
-        self.last_run_cache = self.cache_data.copy()
-        
-        return result
+        try:
+            initial_input = initial_state if initial_state else PipelineState(images=initial_images)
+            result = await asyncio.shield(self._run_internal(initial_input, start_index=start_index, stop_after_step=stop_after_step))
+            
+            # Store the cache from this run
+            self.last_run_cache = self.cache_data.copy()
+            
+            return result
+        except asyncio.CancelledError:
+            print("Pipeline execution was cancelled.")
+            raise
 
     async def _run_internal(self, initial_input: Union[List[ClickingImage], PipelineState], start_index: int = 0, stop_after_step: str = None) -> PipelineState:
         state = initial_input if isinstance(initial_input, PipelineState) else PipelineState(images=initial_input)
         
         for i, (step_name, step_func) in enumerate(self.steps[start_index:], start=start_index):
+            if asyncio.current_task().cancelled():
+                raise asyncio.CancelledError()
+
             if step_name in self.cache_data:
                 print(f"Using cached input for step: {step_name}")
                 state = self.cache_data[step_name]
@@ -104,7 +115,11 @@ class Pipeline:
                 print(f"Using last run cached input for step: {step_name}")
                 state = self.last_run_cache[step_name]
             
-            state = await asyncio.to_thread(step_func, state)
+            try:
+                state = await asyncio.wait_for(asyncio.to_thread(step_func, state), timeout=None)
+            except asyncio.CancelledError:
+                print(f"Step '{step_name}' was cancelled.")
+                raise
             
             if i < len(self.steps) - 1:
                 self.cache_data[self.steps[i+1][0]] = state
