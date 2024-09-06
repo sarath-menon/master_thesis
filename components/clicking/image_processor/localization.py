@@ -1,4 +1,3 @@
-
 from typing import Dict
 from clicking_client import Client
 from clicking_client.models import SetModelReq, BodyGetPrediction
@@ -8,6 +7,13 @@ from clicking.pipeline.core import PipelineState
 from .utils import image_to_http_file
 from clicking.vision_model.data_structures import TaskType
 from clicking.common.bbox import BoundingBox, BBoxMode
+from enum import Enum
+from typing import Callable
+
+class InputMode(Enum):
+    OBJ_NAME = lambda obj: obj.name
+    OBJ_DESCRIPTION = lambda obj: obj.description
+    
 
 class Localization:
     def __init__(self, client: Client, config: Dict):
@@ -26,21 +32,23 @@ class Localization:
         except Exception as e:
             print(f"Error setting localization model: {str(e)}")
 
-    def get_localization_results(self, state: PipelineState) -> PipelineState:
-
-        print("state.images", state)
+    def get_localization_results(self, state: PipelineState, mode: TaskType = TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB, input_mode: InputMode = InputMode.OBJ_DESCRIPTION) -> PipelineState:
         
         for clicking_image in state.images:
             image_file = image_to_http_file(clicking_image.image)
             
             for obj in clicking_image.predicted_objects:
                 request = BodyGetPrediction(image=image_file)
+                
+                # Use the lambda function associated with the input_mode
+                input_text = input_mode(obj)
+
                 try:
                     response = get_prediction.sync(
                         client=self.client,
                         body=request,
-                        task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
-                        input_text=obj.description,
+                        task=mode,
+                        input_text=input_text,
                         reset_cache=True
                     )
 
