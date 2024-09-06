@@ -13,7 +13,9 @@ models:
   localization:
     name: 'florence2'
     variant: 'florence-2-base'
-    task: 'LOCALIZATION_WITH_TEXT_OPEN_VOCAB'
+    tasks:
+      - 'LOCALIZATION_WITH_TEXT_OPEN_VOCAB'
+      - 'LOCALIZATION_WITH_TEXT_GROUNDED'
   segmentation:
     name: 'sam2'
     variant: 'sam2_hiera_tiny'
@@ -38,3 +40,17 @@ pipeline:
 # Visualization settings
 visualization:
   figsize: [5, 5]
+
+# Pipeline mode sequences
+pipeline_mode_sequences:
+  object_detection_text_grounded:
+    prompt_mode: IMAGE_TO_OBJECTS_LIST
+    localization_input_mode: OBJ_DESCRIPTION1
+    localization_mode: LOCALIZATION_WITH_TEXT_GROUNDED
+    segmentation_mode: SEGMENTATION_WITH_BBOX
+  object_detection_open_vocab:
+    prompt_mode: IMAGE_TO_OBJECTS_LIST
+    localization_input_mode: OBJ_DESCRIPTION
+    localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
+    segmentation_mode: SEGMENTATION_WITH_BBOX
+  # Add more sequences as needed
