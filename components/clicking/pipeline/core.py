@@ -163,69 +163,18 @@ class Pipeline:
                 return i
         return -1
 
-    def static_analysis(self):
-        if not self.steps:
-            raise ValueError("Pipeline has no steps.")
-        
-        for i in range(len(self.steps) - 1):
-            current_step = self.steps[i]
-            next_step = self.steps[i + 1]
-            
-            current_return_type = inspect.signature(current_step[1]).return_annotation
-            next_param_type = list(inspect.signature(next_step[1]).parameters.values())[0].annotation
-            
-            if current_return_type != Any and next_param_type != Any:
-                if not issubclass(current_return_type, next_param_type):
-                    raise TypeError(f"Output type of {current_step[0]} ({current_return_type}) "
-                                    f"is not compatible with input type of {next_step[0]} ({next_param_type})")
-        
-        print("Static analysis complete. All types are compatible.")
-
     def print_pipeline(self):
-        headers = ["Step", "Function Name", "Input Type"]
+        headers = ["No.", "Step Name"]
         table_data = []
         
         for i, (step_name, func) in enumerate(self.steps, 1):
-            input_type = list(inspect.signature(func).parameters.values())[0].annotation.__name__
-            table_data.append([f"{i}. {step_name}", func.__name__, input_type])
+            table_data.append([i, f"{step_name}"])
         
         print("Pipeline Steps:")
         print(tabulate(table_data, headers=headers, tablefmt="grid"))
 
     def add_step(self, step_name: str, func: Callable):
-        if self.steps and not self._are_types_compatible(self.steps[-1][1], func):
-            last_step_func = self.steps[-1][1]
-            last_step_output_type = inspect.signature(last_step_func).return_annotation.__name__
-            next_step_input_type = list(inspect.signature(func).parameters.values())[0].annotation.__name__
-
-            raise TypeError(f"Output type of {last_step_func.__name__} ({last_step_output_type}) is not compatible with input type of {func.__name__} ({next_step_input_type})")
         self.steps.append((step_name, func))
-
-    def _are_types_compatible(self, prev_func: Callable, next_func: Callable) -> bool:
-        prev_return_type = inspect.signature(prev_func).return_annotation
-        next_param_type = list(inspect.signature(next_func).parameters.values())[0].annotation
-        
-        if prev_return_type == Any or next_param_type == Any:
-            return True
-        
-        return issubclass(prev_return_type, next_param_type)
-
-    def replace_step(self, step_name: str, new_func: Callable):
-        step_index = self._find_step_index(step_name)
-        if step_index == -1:
-            raise ValueError(f"Step '{step_name}' not found in the pipeline.")
-
-        prev_step = self.steps[step_index - 1][1] if step_index > 0 else None
-        next_step = self.steps[step_index + 1][1] if step_index < len(self.steps) - 1 else None
-
-        if prev_step and not self._are_types_compatible(prev_step, new_func):
-            raise TypeError(f"Output type of previous step is not compatible with input type of new function.")
-        
-        if next_step and not self._are_types_compatible(new_func, next_step):
-            raise TypeError(f"Output type of new function is not compatible with input type of next step.")
-
-        self.steps[step_index] = (step_name, new_func)
-        print(f"Step '{step_name}' has been replaced successfully.")
 
     def load_state(self, file_path: str = None) -> PipelineState:
         try:
