@@ -175,77 +175,25 @@ from clicking.vision_model.data_structures import TaskType
 from clicking.pipeline.core import Pipeline, PipelineState
 import asyncio
 
-@dataclass
-class PipelineModes:
-    modes: Dict[str, List[Any]] = field(default_factory=lambda: {
-        "prompt_modes": [PromptMode.IMAGE_TO_OBJECTS_LIST],
-        "localization_input_modes": [InputMode.OBJ_DESCRIPTION],
-        "localization_modes": [TaskType.LOCALIZATION_WITH_TEXT_GROUNDED, TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB],
-        "segmentation_modes": [TaskType.SEGMENTATION_WITH_BBOX]
-    })
+# @dataclass
+# class PipelineModes:
+#     modes: Dict[str, List[Any]] = field(default_factory=lambda: {
+#         "prompt_modes": [PromptMode.IMAGE_TO_OBJECTS_LIST],
+#         "localization_input_modes": [InputMode.OBJ_DESCRIPTION],
+#         "localization_modes": [TaskType.LOCALIZATION_WITH_TEXT_GROUNDED, TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB],
+#         "segmentation_modes": [TaskType.SEGMENTATION_WITH_BBOX]
+#     })
 
-    def get_mode_combinations(self):
-        return list(product(*self.modes.values()))
+#     def get_mode_combinations(self):
+#         return list(product(*self.modes.values()))
 
-    def print_mode_sequences(self):
-        table = PrettyTable(["Index"] + list(self.modes.keys()))
-        for i, combination in enumerate(self.get_mode_combinations()):
-            table.add_row([i] + list(combination))
-        print(table)
-
-def run_pipeline_for_all_modes(pipeline: Pipeline, initial_state: PipelineState) -> List[Dict]:
-    pipeline_modes = PipelineModes()
-    results = []
-
-    for i, combination in enumerate(pipeline_modes.get_mode_combinations()):
-        print(f"Running combination {i + 1}/{len(pipeline_modes.get_mode_combinations())}")
-        
-        current_modes = dict(zip(pipeline_modes.modes.keys(), combination))
-        pipeline = Pipeline(config=config)
-        
-        pipeline.add_step("Process Prompts", lambda state: prompt_refiner.process_prompts(state.images, mode=current_modes["prompt_modes"]))
-        pipeline.add_step("Get Localization Results", lambda state: localization_processor.get_localization_results(
-            state, mode=current_modes["localization_modes"], input_mode=current_modes["localization_input_modes"]
-        ))
-        pipeline.add_step("Get Segmentation Results", lambda state: segmentation_processor.get_segmentation_results(state, mode=current_modes["segmentation_modes"]))
-
-        pipeline_modes.print_mode_sequences()
-
-        pipeline_result = asyncio.run(pipeline.run(
-            initial_state=initial_state,
-            start_from_step="Get Localization Results",
-            stop_after_step="Get Localization Results",
-        ))
-
-        results.append({"combination": i, **current_modes, "pipeline_result": pipeline_result})
-
-    return results
+#     def print_mode_sequences(self):
+#         table = PrettyTable(["Index"] + list(self.modes.keys()))
+#         for i, combination in enumerate(self.get_mode_combinations()):
+#             table.add_row([i] + list(xcombination))
+#         print(table)
 
 
-
-#%% Run the pipeline for all mode combinations
-import nest_asyncio
-nest_asyncio.apply()
-
-loaded_state = pipeline.load_state()
-loaded_state = loaded_state.filter_by_id(image_ids=[0, 12, 37])
-loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
-
-all_results = run_pipeline_for_all_modes(pipeline, loaded_state)
-
-# Print a summary of the results
-summary_table = PrettyTable()
-summary_table.field_names = ["Combination"] + list(PipelineModes().modes.keys()) + ["Num Images", "Num Objects"]
-
-for result in all_results:
-    summary_table.add_row([
-        result["combination"],
-        *[result[mode] for mode in PipelineModes().modes.keys()],
-        len(result["pipeline_result"].images),
-        sum(len(img.predicted_objects) for img in result["pipeline_result"].images)
-    ])
-
-print(summary_table)
 # %%
 from dataclasses import dataclass, field
 from typing import Dict, List, Any
@@ -307,10 +255,67 @@ class PipelineModes:
             table.add_row([i] + list(combination.values()))
         print(table)
 
-# Usage example:
-# Load the configuration file
+
+def run_pipeline_for_all_modes(pipeline: Pipeline, initial_state: PipelineState, pipeline_modes: PipelineModes) -> List[Dict]:
+    results = []
+
+    for i, combination in enumerate(pipeline_modes.get_mode_combinations()):
+        print(f"Running combination {i + 1}/{len(pipeline_modes.get_mode_combinations())}")
+        
+        current_modes = combination
+        pipeline = Pipeline(config=config)
+        
+        pipeline.add_step("Process Prompts", lambda state: prompt_refiner.process_prompts(state.images, mode=current_modes["prompt_modes"]))
+        pipeline.add_step("Get Localization Results", lambda state: localization_processor.get_localization_results(
+            state, mode=current_modes["localization_modes"], input_mode=current_modes["localization_input_modes"]
+        ))
+        pipeline.add_step("Get Segmentation Results", lambda state: segmentation_processor.get_segmentation_results(state, mode=current_modes["segmentation_modes"]))
+
+        pipeline_modes.print_mode_sequences()
+
+        pipeline_result = asyncio.run(pipeline.run(
+            initial_state=initial_state,
+            start_from_step="Get Localization Results",
+            stop_after_step="Get Localization Results",
+        ))
+
+        results.append({"combination": i, **current_modes, "pipeline_result": pipeline_result})
+
+    return results
+
+#%% Usage example:
+
+import nest_asyncio
+nest_asyncio.apply()
+
+
 with open('config.yml', 'r') as config_file:
     config = yaml.safe_load(config_file)
 pipeline_modes = PipelineModes.from_config(config)
 pipeline_modes.print_mode_sequences()
+
+loaded_state = pipeline.load_state()
+loaded_state = loaded_state.filter_by_id(image_ids=[0, 12, 37])
+loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
+
+all_results = run_pipeline_for_all_modes(pipeline, loaded_state, pipeline_modes)
+
+# Print a summary of the results
+summary_table = PrettyTable()
+summary_table.field_names = ["Combination", "Name", "Prompt Mode", "Localization Input Mode", "Localization Mode", "Segmentation Mode", "Num Images", "Num Objects"]
+
+for result in all_results:
+    summary_table.add_row([
+        result["combination"],
+        result["name"],
+        result["prompt_modes"],
+        result["localization_input_modes"],
+        result["localization_modes"],
+        result["segmentation_modes"],
+        len(result["pipeline_result"].images),
+        sum(len(img.predicted_objects) for img in result["pipeline_result"].images)
+    ])
+
+print(summary_table)
 # %%
+
