@@ -9,7 +9,6 @@ from collections import Counter
 from typing import List, Dict, Literal
 from clicking.common.data_structures import ClickingImage
 import wandb
-import mlflow
 import pandas as pd
 
 PROJECT_NAME = "clicking"
@@ -122,7 +121,7 @@ def evaluate_validity_results(ground_truth_file: str, predictions_file: str):
     print(f"Correct predictions: {results['correct_predictions']} / {results['total_predictions']} ({results['accuracy']:.2%})")
     return results
 
-def save_image_descriptions(clicking_images: List[ClickingImage], output_folder: str):
+def save_image_descriptions(clicking_images: List[ClickingImage], output_folder: str, prompt_path: str):
     descriptions = []
     for image in clicking_images:
         for obj in image.predicted_objects:
@@ -140,11 +139,31 @@ def save_image_descriptions(clicking_images: List[ClickingImage], output_folder:
 
     # Convert descriptions to a pandas DataFrame
     descriptions_df = pd.DataFrame(descriptions)
+
+    # # Log DataFrame to file as a markdown table
+    # output_markdown_file = os.path.join(output_folder, 'image_descriptions.md')
+    # with open(output_markdown_file, 'w') as f:
+    #     f.write(descriptions_df.to_markdown(index=False))
     
+    # print(f"Image descriptions saved as markdown table to {output_markdown_file}")
+
     # # Log data to W&B as a table
-    # wandb.init(project=PROJECT_NAME)
+    # run = wandb.init(project=PROJECT_NAME)
+
     # table = wandb.Table(dataframe=descriptions_df)
     # wandb.log({"image_descriptions": table})
+    
+    # # save content of the prompt to wandb
+    # with open(prompt_path, 'r') as f:
+    #     prompt_content = f.read()
+    # wandb.log({"prompt": prompt_content})
+    # run.notes = prompt_content
+
+    # artifact = wandb.Artifact(name = "example_artifact", type = "dataset")
+    # artifact.add_file(local_path=prompt_path, name="prompt")
+    # run.log_artifact(artifact)
+
+    # run.finish()
 
    
     # # Log data to MLflow
@@ -156,4 +175,3 @@ def save_image_descriptions(clicking_images: List[ClickingImage], output_folder:
     #     mlflow.log_table(descriptions_df, "./selva.json")
 
     # print(f"Image descriptions saved to {output_file}")
-

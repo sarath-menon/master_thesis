@@ -21,7 +21,7 @@ def cache_result(expiration_time: int = 300):
             result = await func(*args, **kwargs)
 
             cache[cache_key] = (result, time.time())
-            print("Caching new result")
+            # print("Caching new result")
 
             return result
 
