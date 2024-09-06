@@ -44,12 +44,6 @@ def image_to_http_file(image):
     image_file = File(file_name="image.png", payload=image_byte_arr.getvalue(), mime_type="image/png")
     return image_file
 
-# Modify the relevant steps to use PipelineState"
-
-def sample_dataset(state: PipelineState) -> PipelineState:
-    state.images = coco_dataset.sample_dataset(state.images)
-    return state
-
 def process_prompts(state: PipelineState) -> PipelineState:
     state.images = prompt_refiner.process_prompts(state.images)
     return state
@@ -165,7 +159,7 @@ class SegmentationProcessor:
 with open('config.yml', 'r') as config_file:
     config = yaml.safe_load(config_file)
 
-client = Client(base_url=config['api']['local_url'], timeout=5)
+client = Client(base_url=config['api']['cloud_url'], timeout=50)
 coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
 
 prompt_refiner = PromptRefiner(prompt_path=config['prompts']['refinement_path'], config=config)
@@ -173,13 +167,17 @@ localization_processor = LocalizationProcessor(client, config=config)
 segmentation_processor = SegmentationProcessor(client, config=config)
 output_corrector = OutputCorrector(prompt_path=config['prompts']['output_corrector_path'])
 
+
 #%%
 from clicking.common.logging import print_object_descriptions
 nest_asyncio.apply()
 
+# sample images
+image_ids = [22, 31, 42]
+clicking_images = coco_dataset.sample_dataset(image_ids)
+
 pipeline = Pipeline(config=config)
 
-pipeline.add_step("Sample Dataset", sample_dataset)
 pipeline.add_step("Process Prompts", process_prompts)
 pipeline.add_step("Get Localization Results", localization_processor.get_localization_results)
 pipeline.add_step("Verify bboxes", verify_bboxes)
@@ -193,12 +191,13 @@ pipeline.static_analysis()
 
 #%% Run the entire pipeline, stopping after "Verify bboxes" step
 # image_ids = [i for i in range(coco_dataset.length())]
-image_ids = [22, 31, 34]
+image_ids = [22, 31, 42]
 
 results = asyncio.run(pipeline.run( 
-    initial_images=image_ids, 
-    # start_from_step="Get Localization Results",
-    stop_after_step="Process Prompts",
+    # initial_images=image_ids, 
+    initial_state=loaded_state1,
+    start_from_step="Get Localization Results",
+    stop_after_step="Get Localization Results",
 ))
 
 # Print and visualize results
@@ -206,11 +205,11 @@ results = asyncio.run(pipeline.run(
 
 #%%
 
-for result in results.images:
-    print(result.predicted_objects[0].validity)
+# for result in results.images:
+#     print(result.predicted_objects[0].validity)
 
-# for clicking_image in results.images:
-#     show_localization_predictions(clicking_image)
+for clicking_image in results.images:
+    show_localization_predictions(clicking_image)
 
 #%%
 
@@ -234,7 +233,7 @@ from clicking.common.logging import print_image_objects, print_object_descriptio
 
 # Call the function with the results
 # print_image_objects(results.images)
-print_object_descriptions(results.images, show_image=False, show_stats=True)
+print_object_descriptions(results.images, show_image=True, show_stats=True)
 
 #%%
 output_corrector_results =  output_corrector.verify_bboxes(results.images[0])
@@ -262,4 +261,28 @@ evaluation_results = evaluate_validity_results(ground_truth_file, predictions_fi
 from clicking.evaluator.core import save_image_descriptions
  
 EVALS_PATH = "./datasets/evals/output_corrector"
-save_image_descriptions(results.images, EVALS_PATH)
+save_image_descriptions(results.images, EVALS_PATH, prompt_path=config['prompts']['refinement_path'])
+
+# %%
+from clicking.evaluator.core import load_pipeline_results
+
+results = load_pipeline_results("./datasets/evals/output_corrector/image_descriptions.json", coco_dataset)
+
+#%%
+import pickle
+
+# Example usage:
+loaded_state1 = pipeline.load_state()
+#%%
+
+ # Example usage:
+pipeline.save_state(loaded_state, save_as_json=True, log_to_wandb=False)
+#%%
+pipeline.save_state_as_json(loaded_state)
+
+#%%
+
+selv = pipeline.create_state_json(loaded_state)
+import pandas as pd
+
+#%%

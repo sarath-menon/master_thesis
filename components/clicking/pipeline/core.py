@@ -56,7 +56,7 @@ class Pipeline:
 
     async def run(
         self,
-        initial_images: List[int] = None,
+        initial_images: List[ClickingImage] = None,
         initial_state: PipelineState = None,
         start_from_step: str = None,
         stop_after_step: str = None,
@@ -93,7 +93,7 @@ class Pipeline:
         
         return result
 
-    async def _run_internal(self, initial_input: Union[List[int], PipelineState], start_index: int = 0, stop_after_step: str = None) -> PipelineState:
+    async def _run_internal(self, initial_input: Union[List[ClickingImage], PipelineState], start_index: int = 0, stop_after_step: str = None) -> PipelineState:
         state = initial_input if isinstance(initial_input, PipelineState) else PipelineState(images=initial_input)
         
         for i, (step_name, step_func) in enumerate(self.steps[start_index:], start=start_index):
