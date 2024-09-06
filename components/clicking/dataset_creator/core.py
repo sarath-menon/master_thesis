@@ -24,9 +24,20 @@ class CocoDataset:
     def length(self):
         return len(self.coco_dataset)
 
-    def sample_dataset(self, image_ids: List[int]) -> List[ClickingImage]:
+    def sample_dataset(self, image_ids: List[int] = None, num_samples: int = None) -> List[ClickingImage]:
+        if image_ids is not None and num_samples is not None:
+            raise ValueError("Only one of image_ids or num_samples should be provided, not both.")
+
         clicking_images = []
         to_pil = transforms.ToPILImage()
+        
+        if image_ids is None:
+            if num_samples is None:
+                # Return the entire dataset
+                image_ids = range(len(self.coco_dataset))
+            else:
+                # Sample random images
+                image_ids = np.random.choice(len(self.coco_dataset), size=num_samples, replace=False)
         
         for index in image_ids:
             image_tensor, annotations = self.coco_dataset[int(index)]
