@@ -44,7 +44,7 @@ def print_object_descriptions(image_objects: List[ClickingImage], show_image=Fal
         table.max_width = max_col_width
         
         for i, obj in enumerate(result.predicted_objects):
-            table.add_row([i, f"{obj.name}\n({obj.category.value})", obj.description or "No description available", "No reasoning available"])
+            table.add_row([i, f"{obj.name}\n({obj.category.value})", obj.description or "No description available", obj.significance or "No reasoning available"])
 
             if show_stats:
                 category = obj.category.value if obj.category else 'No Category'
