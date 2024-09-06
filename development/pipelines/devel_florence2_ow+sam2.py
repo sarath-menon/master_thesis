@@ -35,9 +35,6 @@ from clicking.image_processor.localization import Localization
 from clicking.image_processor.segmentation import Segmentation
 
 #%%
-def process_prompts(state: PipelineState) -> PipelineState:
-    state.images = prompt_refiner.process_prompts(state.images)
-    return state
 
 from prettytable import PrettyTable
 
@@ -59,38 +56,6 @@ def verify_bboxes(state: PipelineState) -> PipelineState:
         table.add_row([result['object_name'], result['judgement'], result['reasoning']])
     
     return state
-
-def filter_by_object_category(state: PipelineState, category: ObjectCategory) -> PipelineState:
-    for clicking_image in state.images:
-        clicking_image.predicted_objects = [
-            obj for obj in clicking_image.predicted_objects
-            if obj.category == category
-        ]
-    return state
-import random
-
-def filter_images(state: PipelineState, image_ids: List[int] = None, sample_size: int = None) -> PipelineState:
-    if image_ids is not None and sample_size is not None:
-        raise ValueError("Cannot specify both image_ids and sample_size. Choose one filtering method.")
-    
-    # convert image_ids to list of strings
-    if image_ids is not None:
-        image_ids = [str(id) for id in image_ids]
-    
-    if image_ids is not None:
-        filtered_images = [
-            img for img in state.images
-            if img.id in image_ids
-        ]
-    elif sample_size is not None:
-        if sample_size > len(state.images):
-            raise ValueError(f"Sample size {sample_size} is larger than the number of available images {len(state.images)}")
-        filtered_images = random.sample(state.images, sample_size)
-    else:
-        return state  # Return original state if no filtering is specified
-    
-    return PipelineState(images=filtered_images)
-
 #%%
 # Load the configuration file
 with open('config.yml', 'r') as config_file:
@@ -113,30 +78,30 @@ coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['
 image_ids = [22, 31, 42]
 clicking_images = coco_dataset.sample_dataset()
 
-
 #%%
+from clicking.prompt_refinement.core import PromptMode
+
 pipeline = Pipeline(config=config)
 
-pipeline.add_step("Process Prompts", process_prompts)
-pipeline.add_step("Get Localization Results", localization_processor.get_localization_results)
+pipeline.add_step("Process Prompts",
+    lambda state: prompt_refiner.process_prompts(state.images, 
+    mode=PromptMode.OBJECTS_LIST_TO_DESCRIPTIONS)
+)
+pipeline.add_step("Get Localization Results", 
+    lambda state: localization_processor.get_localization_results(state, mode=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB)
+)
 pipeline.add_step("Verify bboxes", verify_bboxes)
 pipeline.add_step("Get Segmentation Results", segmentation_processor.get_segmentation_results)
 
 pipeline.print_pipeline()
-pipeline.static_analysis()
 #%% Run the entire pipeline, stopping after "Verify bboxes" step
 from clicking.common.logging import print_object_descriptions
 
 loaded_state = pipeline.load_state()
-print("loaded_state", len(loaded_state.images))
-# loaded_state = filter_images(loaded_state, image_ids=[0,12,37])
-loaded_state = filter_images(loaded_state, sample_size=3)
-print("loaded_state", len(loaded_state.images))
-loaded_state = filter_by_object_category(loaded_state, ObjectCategory.GAME_ASSET)
-
+loaded_state = loaded_state.filter_by_id(image_ids=[0,12,37])
+loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
 print_object_descriptions(loaded_state.images, show_image=True, show_stats=False)
 #%%
-
 results = asyncio.run(pipeline.run( 
     # initial_images=clicking_images, 
     initial_state=loaded_state,
@@ -200,3 +165,121 @@ selv = pipeline.create_state_json(loaded_state)
 import pandas as pd
 
 #%%
+from dataclasses import dataclass, field
+from typing import List, Dict, Any, Tuple
+from itertools import product
+from prettytable import PrettyTable
+from clicking.prompt_refinement.core import PromptMode
+from clicking.image_processor.localization import InputMode
+from clicking.vision_model.data_structures import TaskType
+from clicking.pipeline.core import Pipeline, PipelineState
+import asyncio
+
+@dataclass
+class PipelineModes:
+    modes: Dict[str, List[Any]] = field(default_factory=lambda: {
+        "prompt_modes": [
+            PromptMode.IMAGE_TO_OBJECTS_LIST
+        ],
+        "localization_input_modes": [
+            # InputMode.OBJ_NAME,
+            InputMode.OBJ_DESCRIPTION
+        ],
+        "localization_modes": [
+            TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB,
+            # TaskType.LOCALIZATION_WITH_TEXT_GROUNDED
+        ],
+        "segmentation_modes": [
+            TaskType.SEGMENTATION_WITH_BBOX
+        ]
+    })
+
+    def get_mode_combinations(self):
+        return list(product(*self.modes.values()))
+
+    def print_mode_sequences(self) -> None:
+        mode_combinations = self.get_mode_combinations()
+        if not mode_combinations:
+            print("No mode combinations available.")
+            return
+
+        table = PrettyTable()
+        field_names = ["Index"] + list(self.modes.keys())
+        table.field_names = field_names
+
+        for i, combination in enumerate(mode_combinations):
+            table.add_row([i] + list(combination))
+
+        print(table)
+
+def run_pipeline_for_all_modes(pipeline: Pipeline, initial_state: PipelineState) -> List[Dict]:
+    pipeline_modes = PipelineModes()
+    mode_combinations = pipeline_modes.get_mode_combinations()
+    results = []
+
+    for i, combination in enumerate(mode_combinations):
+        print(f"Running combination {i + 1}/{len(mode_combinations)}")
+        
+        # Create a dictionary of current modes
+        current_modes = dict(zip(pipeline_modes.modes.keys(), combination))
+
+        pipeline = Pipeline(config=config)
+        
+        # Update pipeline steps with current modes
+        pipeline.add_step("Process Prompts", 
+            lambda state: prompt_refiner.process_prompts(state.images, mode=current_modes["prompt_modes"])
+        )
+        pipeline.add_step("Get Localization Results", 
+            lambda state: localization_processor.get_localization_results(
+                state, 
+                mode=current_modes["localization_modes"], 
+                input_mode=current_modes["localization_input_modes"]
+            )
+        )
+        pipeline.add_step("Get Segmentation Results", 
+            lambda state: segmentation_processor.get_segmentation_results(state, mode=current_modes["segmentation_modes"])
+        )
+
+        pipeline_modes.print_mode_sequences()
+
+        # Run the pipeline
+        pipeline_result = asyncio.run(pipeline.run(
+            initial_state=initial_state,
+            start_from_step="Get Localization Results",
+            stop_after_step="Get Localization Results",
+        ))
+
+        # Collect results
+        results.append({
+            "combination": i,
+            **current_modes,
+            "pipeline_result": pipeline_result
+        })
+
+    return results
+
+
+#%% Run the pipeline for all mode combinations
+import nest_asyncio
+nest_asyncio.apply()
+
+loaded_state = pipeline.load_state()
+loaded_state = loaded_state.filter_by_id(image_ids=[0, 12, 37])
+loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
+
+all_results = run_pipeline_for_all_modes(pipeline, loaded_state)
+
+# Print a summary of the results
+summary_table = PrettyTable()
+summary_table.field_names = ["Combination"] + list(PipelineModes().modes.keys()) + ["Num Images", "Num Objects"]
+
+for result in all_results:
+    summary_table.add_row([
+        result["combination"],
+        *[result[mode] for mode in PipelineModes().modes.keys()],
+        len(result["pipeline_result"].images),
+        sum(len(img.predicted_objects) for img in result["pipeline_result"].images)
+    ])
+
+print(summary_table)
+# %%
