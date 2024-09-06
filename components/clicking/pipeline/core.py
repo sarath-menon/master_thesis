@@ -46,7 +46,6 @@ class PipelineState:
         
         return self
 
-
 class Pipeline:
     def __init__(self, config: Dict[str, Any], cache_folder= "./cache"):
         self.steps: List[Tuple[str, Callable]] = []
