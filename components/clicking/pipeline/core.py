@@ -5,13 +5,12 @@ from PIL import Image
 
 from typing import Type
 from tabulate import tabulate
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 import os
 import pickle
-from typing import Union
-from dataclasses import dataclass, field
-from clicking.common.data_structures import ClickingImage
+from typing import Union, Optional
+from clicking.common.data_structures import ClickingImage, ObjectCategory
 import asyncio
 import json
 import markdown
@@ -19,10 +18,34 @@ import bleach
 import wandb
 import yaml
 import shutil
+import random
 
 @dataclass
 class PipelineState:
     images: List[ClickingImage] = field(default_factory=list)
+
+    def filter_by_object_category(self, category: ObjectCategory):
+        for clicking_image in self.images:
+            clicking_image.predicted_objects = [
+                obj for obj in clicking_image.predicted_objects
+                if obj.category == category
+            ]
+        return self
+
+    def filter_by_id(self, image_ids: Optional[List[int]] = None, sample_size: Optional[int] = None):
+        if image_ids is not None and sample_size is not None:
+            raise ValueError("Cannot specify both image_ids and sample_size. Choose one filtering method.")
+        
+        if image_ids is not None:
+            image_ids = [str(id) for id in image_ids]
+            self.images = [img for img in self.images if img.id in image_ids]
+        elif sample_size is not None:
+            if sample_size > len(self.images):
+                raise ValueError(f"Sample size {sample_size} is larger than the number of available images {len(self.images)}")
+            self.images = random.sample(self.images, sample_size)
+        
+        return self
+
 
 class Pipeline:
     def __init__(self, config: Dict[str, Any], cache_folder= "./cache"):
