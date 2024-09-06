@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 from clicking_client import Client
 from clicking_client.models import SetModelReq, BodyGetPrediction
 from clicking_client.api.default import set_model, get_prediction
@@ -19,16 +19,22 @@ class Localization:
     def __init__(self, client: Client, config: Dict):
         self.client = client
         self.config = config
+        self.tasks = self.load_tasks()
         self.set_localization_model()
+
+    def load_tasks(self) -> List[TaskType]:
+        task_strings = self.config['models']['localization']['tasks']
+        return [TaskType[task] for task in task_strings]
 
     def set_localization_model(self):
         try:
-            response= set_model.sync(client=self.client, body=SetModelReq(
-                name=self.config['models']['localization']['name'],
-                variant=self.config['models']['localization']['variant'],
-                task=TaskType[self.config['models']['localization']['task']]
-            ))
-            print(response)
+            for task in self.tasks:
+                response = set_model.sync(client=self.client, body=SetModelReq(
+                    name=self.config['models']['localization']['name'],
+                    variant=self.config['models']['localization']['variant'],
+                    task=task
+                ))
+                print(f"Set model for task {task}: {response}")
         except Exception as e:
             print(f"Error setting localization model: {str(e)}")
 
