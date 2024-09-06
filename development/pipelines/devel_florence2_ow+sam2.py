@@ -164,36 +164,6 @@ pipeline.save_state_as_json(loaded_state)
 selv = pipeline.create_state_json(loaded_state)
 import pandas as pd
 
-#%%
-from dataclasses import dataclass, field
-from typing import Dict, List, Any
-from itertools import product
-from prettytable import PrettyTable
-from clicking.prompt_refinement.core import PromptMode
-from clicking.image_processor.localization import InputMode
-from clicking.vision_model.data_structures import TaskType
-from clicking.pipeline.core import Pipeline, PipelineState
-import asyncio
-
-# @dataclass
-# class PipelineModes:
-#     modes: Dict[str, List[Any]] = field(default_factory=lambda: {
-#         "prompt_modes": [PromptMode.IMAGE_TO_OBJECTS_LIST],
-#         "localization_input_modes": [InputMode.OBJ_DESCRIPTION],
-#         "localization_modes": [TaskType.LOCALIZATION_WITH_TEXT_GROUNDED, TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB],
-#         "segmentation_modes": [TaskType.SEGMENTATION_WITH_BBOX]
-#     })
-
-#     def get_mode_combinations(self):
-#         return list(product(*self.modes.values()))
-
-#     def print_mode_sequences(self):
-#         table = PrettyTable(["Index"] + list(self.modes.keys()))
-#         for i, combination in enumerate(self.get_mode_combinations()):
-#             table.add_row([i] + list(xcombination))
-#         print(table)
-
-
 # %%
 from dataclasses import dataclass, field
 from typing import Dict, List, Any
@@ -203,33 +173,15 @@ from clicking.prompt_refinement.core import PromptMode
 from clicking.image_processor.localization import InputMode
 from clicking.vision_model.data_structures import TaskType
 
-def load_pipeline_mode_sequences(config, sequence_name=None):
+def load_pipeline_mode_sequences(config):
     sequences = config.get('pipeline_mode_sequences', {})
-    
-    def verify_enum(enum_class, value, field_name):
-        if not hasattr(enum_class, value):
-            raise ValueError(f"Invalid {field_name}: {value} is not a valid {enum_class.__name__}")
-        return getattr(enum_class, value)
-
-    if sequence_name:
-        if sequence_name not in sequences:
-            raise ValueError(f"Sequence '{sequence_name}' not found in config")
-        seq = sequences[sequence_name]
-        return [{
-            "name": sequence_name,
-            "prompt_modes": verify_enum(PromptMode, seq['prompt_mode'], "prompt_mode"),
-            "localization_input_modes": verify_enum(InputMode, seq['localization_input_mode'], "localization_input_mode"),
-            "localization_modes": verify_enum(TaskType, seq['localization_mode'], "localization_mode"),
-            "segmentation_modes": verify_enum(TaskType, seq['segmentation_mode'], "segmentation_mode")
-        }]
-    
     return [
         {
             "name": name,
-            "prompt_modes": verify_enum(PromptMode, seq['prompt_mode'], "prompt_mode"),
-            "localization_input_modes": verify_enum(InputMode, seq['localization_input_mode'], "localization_input_mode"),
-            "localization_modes": verify_enum(TaskType, seq['localization_mode'], "localization_mode"),
-            "segmentation_modes": verify_enum(TaskType, seq['segmentation_mode'], "segmentation_mode")
+            "prompt_modes": getattr(PromptMode, seq['prompt_mode']),
+            "localization_input_modes": getattr(InputMode, seq['localization_input_mode']),
+            "localization_modes": getattr(TaskType, seq['localization_mode']),
+            "segmentation_modes": getattr(TaskType, seq['segmentation_mode'])
         }
         for name, seq in sequences.items()
     ]
@@ -288,11 +240,12 @@ def run_pipeline_for_all_modes(pipeline: Pipeline, initial_state: PipelineState,
 import nest_asyncio
 nest_asyncio.apply()
 
-
 with open('config.yml', 'r') as config_file:
     config = yaml.safe_load(config_file)
 pipeline_modes = PipelineModes.from_config(config)
 pipeline_modes.print_mode_sequences()
+
+#%%
 
 loaded_state = pipeline.load_state()
 loaded_state = loaded_state.filter_by_id(image_ids=[0, 12, 37])
