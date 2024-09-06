@@ -83,7 +83,7 @@ def show_clickpoint_predictions(clicking_image: ClickingImage, textbox_color='re
     plt.tight_layout()
     plt.show()
 
-def show_localization_predictions(clicking_image: ClickingImage, object_names_to_show=None):
+def show_localization_predictions(clicking_image: ClickingImage, object_names_to_show=None, show_descriptions=True):
     fig, ax = plt.subplots()
     ax.imshow(clicking_image.image)
 
@@ -116,8 +116,9 @@ def show_localization_predictions(clicking_image: ClickingImage, object_names_to
     ax.axis('off')
     plt.show()
 
-    print_object_descriptions([clicking_image])
-    print("\n")
+    if show_descriptions:
+        print_object_descriptions([clicking_image], show_image=False)
+        print("\n") 
 
 def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow', mask_alpha=0.7, label_offset_y=60, object_names_to_show=None):
     fig, ax = plt.subplots(figsize=(10, 10))

@@ -10,7 +10,7 @@ class PromptMode(Enum):
 
 class ProcessedPrompts(NamedTuple):
     samples: List[ClickingImage]
-
+ 
 class TemplateValues(TypedDict, total=False):
     input_description: str
     word_limit: str

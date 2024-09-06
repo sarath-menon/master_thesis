@@ -1,0 +1,66 @@
+[
+  {
+    "id": 55722,
+    "annotations": [
+      {
+        "id": 10103,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["partially visible"] },
+            "id": "KH9iq3c6Pq",
+            "from_name": "Visibility",
+            "to_name": "image",
+            "type": "choices",
+            "origin": "manual"
+          },
+          {
+            "value": { "choices": ["correct"] },
+            "id": "FheZkgjp26",
+            "from_name": "Labelling",
+            "to_name": "image",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2024-09-03T18:01:44.839635Z",
+        "updated_at": "2024-09-03T18:09:31.579597Z",
+        "draft_created_at": null,
+        "lead_time": 260.55199999999996,
+        "prediction": {},
+        "result_count": 0,
+        "unique_id": "148e1fb3-ef77-42c2-9105-08b27e52fe9c",
+        "import_id": null,
+        "last_action": null,
+        "task": 55722,
+        "project": 5,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "image": "/data/local-files/?d=evals/crops/Cardboard%20boxes.png"
+    },
+    "meta": {
+      "image_id": "38"
+    },
+    "created_at": "2024-09-03T17:57:03.059156Z",
+    "updated_at": "2024-09-03T18:09:31.598169Z",
+    "inner_id": 2,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 5,
+    "updated_by": 1,
+    "comment_authors": []
+  }
+]

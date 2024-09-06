@@ -1,0 +1,98 @@
+[
+  {
+    "image_id": "38",
+    "object_name": "Television",
+    "is_valid": true,
+    "reason": "The object is a television and it is fully visible in the image."
+  },
+  {
+    "image_id": "38",
+    "object_name": "Mannequin with Dress",
+    "is_valid": true,
+    "reason": "The image shows a mannequin with a dress, and it is fully visible."
+  },
+  {
+    "image_id": "38",
+    "object_name": "Sewing Machine",
+    "is_valid": false,
+    "reason": "The sewing machine is partially visible on the table behind the couch."
+  },
+  {
+    "image_id": "38",
+    "object_name": "Bookshelf with Books",
+    "is_valid": true,
+    "reason": "The bookshelf with books is fully visible and matches the label accurately."
+  },
+  {
+    "image_id": "38",
+    "object_name": "Terrarium",
+    "is_valid": true,
+    "reason": "The object is a terrarium and is fully visible on the shelf."
+  },
+  {
+    "image_id": "38",
+    "object_name": "Spray Bottle",
+    "is_valid": true,
+    "reason": "The spray bottle is fully visible on the shelf."
+  },
+  {
+    "image_id": "38",
+    "object_name": "Television Remote",
+    "is_valid": true,
+    "reason": "The object matches a television remote and is fully visible on the table."
+  },
+  {
+    "image_id": "38",
+    "object_name": "Open Book",
+    "is_valid": true,
+    "reason": "The open book is fully visible on the table."
+  },
+  {
+    "image_id": "38",
+    "object_name": "Game Console Controllers",
+    "is_valid": true,
+    "reason": "Game console controllers are on the shelf and fully visible."
+  },
+  {
+    "image_id": "38",
+    "object_name": "Cardboard Boxes",
+    "is_valid": true,
+    "reason": "The image shows multiple cardboard boxes, all of which are fully visible."
+  },
+  {
+    "image_id": "38",
+    "object_name": "Poster on Wall",
+    "is_valid": true,
+    "reason": "The poster is on the wall and fully visible in the image."
+  },
+  {
+    "image_id": "38",
+    "object_name": "Books on Coffee Table",
+    "is_valid": true,
+    "reason": "Books are on the coffee table and fully visible."
+  },
+  {
+    "image_id": "38",
+    "object_name": "Scissors",
+    "is_valid": true,
+    "reason": "The object is a pair of scissors and is fully visible on the table."
+  },
+  {
+    "image_id": "31",
+    "object_name": "Floating Magic Book",
+    "is_valid": true,
+    "reason": "The object is a floating book with magical elements and is fully visible in the image."
+  },
+  {
+    "image_id": "31",
+    "object_name": "Circular Platform",
+    "is_valid": false,
+    "reason": "The object is a circular platform but only part of it is visible."
+  },
+  {
+    "image_id": "31",
+    "object_name": "Mysterious Cave Wall",
+    "is_valid": false,
+    "reason": "The image shows a book, not a cave wall. The background is partially visible."
+  }
+]
