@@ -56,44 +56,23 @@ class OutputCorrector(ImageProcessorBase):
     async def verify_bboxes_async(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode, batch_size: int = 20, **kwargs) -> PipelineState:
         import matplotlib.pyplot as plt
         objects = state.get_all_predicted_objects()
-
-        batch_results = []
         batch_delay = 10  # Delay between batches in seconds
 
-         # process images
-        processed_images = []
+        # Process images and prepare prompts
+        processed_images, prompts, messages = [], [], []
         for obj_dict in objects.values():
-            image_id = obj_dict.image_id
-            clicking_img = state.get_image_by_id(image_id)
-
+            clicking_img = state.get_image_by_id(obj_dict.image_id)
             if obj_dict.object.bbox is None:
-                print(f"Warning: Skipping object {obj_dict.object.name} since it has no bbox.")
-                processed_images.append(None)
+                print(f"Warning: Skipping object {obj_dict.object.name} due to missing bbox.")
                 continue
 
-            processed_image = bbox_verification_mode.value.handler(clicking_img.image, obj_dict.object)
-            processed_images.append(processed_image)
-
-        # create prompts
-        # prepare prompts
-        template_values = [self._get_template_values(bbox_verification_mode.value, obj.object) for obj in objects.values()]
-        prompts = [self.prompt_manager.get_prompt(type='user', prompt_key=bbox_verification_mode.value.name, template_values=tv) for tv in template_values]
-        messages = [self.messages.copy() for _ in objects] 
+            processed_images.append(bbox_verification_mode.value.handler(clicking_img.image, obj_dict.object))
+            template_values = self._get_template_values(bbox_verification_mode.value, obj_dict.object)
+            prompts.append(self.prompt_manager.get_prompt(type='user', prompt_key=bbox_verification_mode.value.name, template_values=template_values))
+            messages.append(self.messages.copy())
 
         total_batches = (len(processed_images) + batch_size - 1) // batch_size
-
         batch_results = []
-
-        # Remove entries with None in processed_images
-        valid_indices = [i for i, img in enumerate(processed_images) if img is not None]
-        processed_images = [processed_images[i] for i in valid_indices]
-        prompts = [prompts[i] for i in valid_indices]
-        messages = [messages[i] for i in valid_indices]
-        template_values = [template_values[i] for i in valid_indices]
-
-        # Update total_batches based on the new length of processed_images
-        total_batches = (len(processed_images) + batch_size - 1) // batch_size
-
 
         async for batch_start in tqdm  (range(0, len(processed_images), batch_size), total=total_batches, desc="Processing images"):
             batch_end = min(batch_start + batch_size, len(objects))
@@ -116,8 +95,16 @@ class OutputCorrector(ImageProcessorBase):
 
         for response in batch_results:
             print(response)
+            image_id = objects[response.object_id].image_id
+
+            # get the obj
+     
             if response.judgement == "false" or response.visibility != "fully visible":
                 is_valid = False
+
+            # = Validity(is_valid=response.judgement == "true" and response.visibility == "fully visible")
+
+
         # for image, result in zip(state.images, batch_results):
         #     image.predicted_objects = [obj for obj in result.objects]
 
