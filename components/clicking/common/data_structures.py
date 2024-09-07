@@ -52,7 +52,12 @@ class ClickingImage(BaseModel):
     predicted_objects: List[ImageObject] = Field(default_factory=list)
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-
 class ModuleMode(NamedTuple):
     name: str
     handler: Callable[[object], str]
+
+class ObjectImageDict(BaseModel):
+    image_id: str
+    object: ImageObject
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
