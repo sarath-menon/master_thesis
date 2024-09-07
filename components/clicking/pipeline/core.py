@@ -85,6 +85,9 @@ class PipelineModeSequence:
         for name, seq in sequences.items():
             mode_values = {}
             for mode_name, enum_class in pipeline_modes.modes.items():
+                if mode_name not in seq:
+                    raise ValueError(f"Warning: {mode_name} not found in config for sequence {name}. Using default value.")
+
                 mode_values[mode_name] = enum_class[seq[mode_name]]
             modes.append(PipelineMode(name=name, modes=mode_values))
         return cls(modes=modes)
