@@ -97,7 +97,8 @@ def show_localization_predictions(clicking_image: ClickingImage, object_names_to
             print(f"Object {obj.name} has no bounding box")
             continue
 
-        if object_names_to_show and obj.name not in object_names_to_show:
+        if object_names_to_show is not None and obj.name not in object_names_to_show:
+            print(f"Object {obj.name} not in object_names_to_show")
             continue
 
         x, y, w, h = obj.bbox.get(mode=BBoxMode.XYWH)
