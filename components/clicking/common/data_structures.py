@@ -55,4 +55,4 @@ class ClickingImage(BaseModel):
 
 class ModuleMode(NamedTuple):
     name: str
-    get_input: Callable[[object], str]
+    handler: Callable[[object], str]

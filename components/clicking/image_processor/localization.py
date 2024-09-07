@@ -48,7 +48,7 @@ class Localization:
                 request = BodyGetPrediction(image=image_file)
                 
                 # Use the lambda function associated with the input_mode
-                input_text = localization_input_mode.value.get_input(obj)
+                input_text = localization_input_mode.value.handler(obj)
                 print(f"Input text: {input_text}")
 
                 # clear any existing bbox
