@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Callable
 from typing import TypedDict, List, Optional, NamedTuple
 from PIL import Image
 from pydantic import BaseModel, Field, field_validator
@@ -53,3 +53,6 @@ class ClickingImage(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
+class ModuleMode(NamedTuple):
+    name: str
+    get_input: Callable[[object], str]
