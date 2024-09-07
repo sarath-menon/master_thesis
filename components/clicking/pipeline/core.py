@@ -394,23 +394,11 @@ class Pipeline:
             # Set the modified steps to the new pipeline instance
             temp_pipeline.steps = temp_steps
 
-            print("initial state")
-            for image in initial_state_copy.images:
-                for obj in image.predicted_objects:
-                    print(obj.name, obj.bbox)
-
-            print("running pipeline")
             result = await temp_pipeline.run(
                 initial_state=initial_state_copy,
                 start_from_step=start_from_step,
                 stop_after_step=stop_after_step,
             )
-
-            print("final result")
-            for image in result.images:
-                for obj in image.predicted_objects:
-                    print(obj.name, obj.bbox)
-
 
             single_run = PipelineSingleRun(
                 combination=i,
