@@ -10,7 +10,7 @@ from datetime import datetime
 import os
 import pickle
 from typing import Union, Optional
-from clicking.common.data_structures import ClickingImage, ObjectCategory
+from clicking.common.data_structures import *
 import asyncio
 import json
 import markdown
@@ -25,7 +25,7 @@ from prettytable import PrettyTable
 import asyncio
 from tqdm import tqdm
 import copy
-
+from clicking.common.data_structures import ImageObject
 T = TypeVar('T')
 
 class PipelineModes:
@@ -48,7 +48,13 @@ class PipelineState:
             ]
         return self
 
-    def filter_by_id(self, image_ids: Optional[List[int]] = None, sample_size: Optional[int] = None):
+    def get_image_by_id(self, image_id: str) -> ClickingImage:
+        for image in self.images:
+            if image.id == image_id:
+                return image
+        raise ValueError(f"Image with id {image_id} not found")
+
+    def filter_by_ids(self, image_ids: Optional[List[int]] = None, sample_size: Optional[int] = None):
         if image_ids is not None and sample_size is not None:
             raise ValueError("Cannot specify both image_ids and sample_size. Choose one filtering method.")
         
@@ -61,7 +67,14 @@ class PipelineState:
             self.images = random.sample(self.images, sample_size)
         
         return self
+
     
+    def get_all_predicted_objects(self) -> dict[str, ObjectImageDict]:
+        all_objects = {}
+        for image in self.images:
+            for obj in image.predicted_objects:
+                all_objects[str(obj.id)] = ObjectImageDict(image_id=str(image.id), object=obj)
+        return all_objects
 
 @dataclass
 class PipelineStep(Generic[T]):
