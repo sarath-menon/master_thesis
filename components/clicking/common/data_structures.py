@@ -24,9 +24,9 @@ class ObjectCategory(str, Enum):
 
 # Add this new dictionary for category colors
 CATEGORY_COLOR_MAP = {
-    ObjectCategory.GAME_ASSET: (1, 0, 0),        # Red
-    ObjectCategory.INFORMATION_DISPLAY: (0, 1, 0),  # Green
-    ObjectCategory.NPC: (0, 0, 1)                # Blue
+    ObjectCategory.GAME_ASSET: 'yellow',       
+    ObjectCategory.INFORMATION_DISPLAY: 'green',  
+    ObjectCategory.NPC: 'blue',                
 }
 
 class Validity(BaseModel):

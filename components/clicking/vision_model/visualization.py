@@ -33,12 +33,12 @@ def overlay_bounding_box(image, bbox: BoundingBox, color='red', thickness=14, pa
 
 def get_color(index, total):
     color_dict = {
-        0: (1, 0, 0),    # Red
-        1: (0, 1, 0),    # Green
-        2: (0, 0, 1),    # Blue
-        3: (1, 1, 0),    # Yellow
-        4: (1, 0, 1),    # Magenta
-        5: (0, 1, 1),    # Cyan
+        0: 'red',    
+        1: 'green',   
+        2: 'blue',    
+        3: 'yellow',    # Yellow
+        4: 'magenta',
+        5: 'cyan',
     }
     color_index = index % len(color_dict)
     return color_dict[color_index]
@@ -83,14 +83,12 @@ def show_clickpoint_predictions(clicking_image: ClickingImage, textbox_color='re
     plt.tight_layout()
     plt.show()
 
-def show_localization_predictions(clicking_image: ClickingImage, object_names_to_show=None, show_descriptions=True):
+def show_localization_predictions(clicking_image: ClickingImage, object_names_to_show=None, show_descriptions=True, label_alpha=0.7, label_y_offset = 30):
     fig, ax = plt.subplots()
     ax.imshow(clicking_image.image)
 
     object_names = set(obj.name for obj in clicking_image.predicted_objects)
     object_ids = {name: i for i, name in enumerate(object_names)}
-
-    label_y_offset = 0
 
     for i, obj in enumerate(clicking_image.predicted_objects):
         if obj.bbox is None:
@@ -103,16 +101,15 @@ def show_localization_predictions(clicking_image: ClickingImage, object_names_to
 
         x, y, w, h = obj.bbox.get(mode=BBoxMode.XYWH)
 
-        bg_color = CATEGORY_COLOR_MAP.get(obj.category, (0.5, 0.5, 0.5))  # Default to gray if category not found
-        
-        rect = patches.Rectangle((x, y), w, h, linewidth=1, edgecolor=bg_color, facecolor='none')
+        #default to gray if category is not found
+        bbox_color = CATEGORY_COLOR_MAP.get(obj.category, 'gray') 
+        bg_color = 'red'
+
+        rect = patches.Rectangle((x, y), w, h, linewidth=2, edgecolor=bbox_color, facecolor='none')
         ax.add_patch(rect)
 
         object_id = object_ids[obj.name]
-        plt.text(x , y + label_y_offset, str(object_id), color='white', fontsize=8, bbox=dict(facecolor=bg_color, alpha=0.4))
-
-        label_y_offset += 0 
-
+        plt.text(x , y - label_y_offset, f"{object_id}:{obj.name}", color='white', fontsize=8, bbox=dict(facecolor=bg_color, alpha=label_alpha))
 
     ax.axis('off')
     plt.show()
