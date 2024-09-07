@@ -240,7 +240,7 @@ def run_pipeline_for_all_modes(
     initial_state: PipelineState, 
     pipeline_modes: PipelineModes, 
     config: Dict,
-    pipeline_structure: List[Dict[str, Any]]
+    pipeline_structure: List[PipelineStep]
 ) -> List[Dict]:
     results = []
 
@@ -251,16 +251,19 @@ def run_pipeline_for_all_modes(
         
         for step in pipeline_structure:
             pipeline.add_step(
-                step['name'],
-                lambda state, step=step, mode=mode: step['function'](
-                    state, **{k: mode.modes[k] for k in step['mode_keys']}
+                PipelineStep(
+                    name=step.name,
+                    function=lambda state, step=step, mode=mode: step.function(
+                        state, **{k: mode.modes[k] for k in step.mode_keys}
+                    ),
+                    mode_keys=step.mode_keys
                 )
             )
 
         pipeline_result = asyncio.run(pipeline.run(
             initial_state=initial_state,
-            start_from_step=pipeline_structure[1]['name'],
-            stop_after_step=pipeline_structure[1]['name'],
+            start_from_step=pipeline_structure[1].name,
+            stop_after_step=pipeline_structure[1].name,
         ))
 
         results.append({"combination": i, **mode.modes, "pipeline_result": pipeline_result})
@@ -295,22 +298,24 @@ modes_dict = {
     "segmentation_mode": TaskType
 }
 
-pipeline_structure = [
-    {
-        "name": "Process Prompts",
-        "function": prompt_refiner.process_prompts,
-        "mode_keys": ["prompt_mode"]
-    },
-    {
-        "name": "Get Localization Results",
-        "function": localization_processor.get_localization_results,
-        "mode_keys": ["localization_mode", "localization_input_mode"]
-    },
-    {
-        "name": "Get Segmentation Results",
-        "function": segmentation_processor.get_segmentation_results,
-        "mode_keys": ["segmentation_mode"]
-    }
+from components.clicking.pipeline.core import PipelineStep, PipelineState
+
+pipeline_structure: List[PipelineStep] = [
+    PipelineStep(
+        name="Process Prompts",
+        function=prompt_refiner.process_prompts,
+        mode_keys=["prompt_mode"]
+    ),
+    PipelineStep(
+        name="Get Localization Results",
+        function=localization_processor.get_localization_results,
+        mode_keys=["localization_mode", "localization_input_mode"]
+    ),
+    PipelineStep(
+        name="Get Segmentation Results",
+        function=segmentation_processor.get_segmentation_results,
+        mode_keys=["segmentation_mode"]
+    )
 ]
 
 #%% The rest of the code remains the same

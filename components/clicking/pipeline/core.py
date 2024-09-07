@@ -1,4 +1,4 @@
-from typing import Callable, List, Any, Dict, Tuple, TypedDict, get_origin, get_args
+from typing import Callable, List, Any, Dict, Tuple, TypedDict, get_origin, get_args, TypeVar, Generic
 import inspect
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -19,6 +19,9 @@ import wandb
 import yaml
 import shutil
 import random
+
+T = TypeVar('T')
+
 
 @dataclass
 class PipelineState:
@@ -46,9 +49,16 @@ class PipelineState:
         
         return self
 
+@dataclass
+class PipelineStep(Generic[T]):
+    name: str
+    function: Callable[[PipelineState, T], PipelineState]
+    mode_keys: List[str]
+
+
 class Pipeline:
     def __init__(self, config: Dict[str, Any], cache_folder= "./cache"):
-        self.steps: List[Tuple[str, Callable]] = []
+        self.steps: List[PipelineStep] = []
         self.config = config
         self.cache_dir = config['pipeline']['cache_dir']
         os.makedirs(self.cache_dir, exist_ok=True)
@@ -101,9 +111,9 @@ class Pipeline:
             else:
                 initial_state = self.cache_data.get(start_from_step) or self.last_run_cache.get(start_from_step)
                 # Clear the state for all steps after start_from_step
-                for step_name, _ in self.steps[start_index + 1:]:
-                    self.cache_data.pop(step_name, None)
-                    self.last_run_cache.pop(step_name, None)
+                for step in self.steps[start_index + 1:]:
+                    self.cache_data.pop(step.name, None)
+                    self.last_run_cache.pop(step.name, None)
         elif initial_state is None and initial_images is None:
             raise ValueError("Either initial_state or initial_images must be provided when starting from the beginning of the pipeline.")
 
@@ -126,29 +136,29 @@ class Pipeline:
     async def _run_internal(self, initial_input: Union[List[ClickingImage], PipelineState], start_index: int = 0, stop_after_step: str = None) -> PipelineState:
         state = initial_input if isinstance(initial_input, PipelineState) else PipelineState(images=initial_input)
         
-        for i, (step_name, step_func) in enumerate(self.steps[start_index:], start=start_index):
+        for i, step in enumerate(self.steps[start_index:], start=start_index):
             if asyncio.current_task().cancelled():
                 raise asyncio.CancelledError()
 
-            if step_name in self.cache_data:
-                print(f"Using cached input for step: {step_name}")
-                state = self.cache_data[step_name]
-            elif step_name in self.last_run_cache:
-                print(f"Using last run cached input for step: {step_name}")
-                state = self.last_run_cache[step_name]
+            if step.name in self.cache_data:
+                print(f"Using cached input for step: {step.name}")
+                state = self.cache_data[step.name]
+            elif step.name in self.last_run_cache:
+                print(f"Using last run cached input for step: {step.name}")
+                state = self.last_run_cache[step.name]
             
             try:
-                state = await asyncio.wait_for(asyncio.to_thread(step_func, state), timeout=None)
+                state = await asyncio.wait_for(asyncio.to_thread(step.function, state), timeout=None)
             except asyncio.CancelledError:
-                print(f"Step '{step_name}' was cancelled.")
+                print(f"Step '{step.name}' was cancelled.")
                 raise
             
             if i < len(self.steps) - 1:
-                self.cache_data[self.steps[i+1][0]] = state
+                self.cache_data[self.steps[i+1].name] = state
                 self._save_cache()
             
-            if stop_after_step and step_name == stop_after_step:
-                print(f"Stopping execution after step: {step_name}")
+            if stop_after_step and step.name == stop_after_step:
+                print(f"Stopping execution after step: {step.name}")
                 break
         
         return state
@@ -158,23 +168,23 @@ class Pipeline:
         return self.cache_data.get(step_name)
 
     def _find_step_index(self, step_name: str) -> int:
-        for i, (name, _) in enumerate(self.steps):
-            if name == step_name:
+        for i, step in enumerate(self.steps):
+            if step.name == step_name:
                 return i
         return -1
 
     def print_pipeline(self):
-        headers = ["No.", "Step Name"]
+        headers = ["No.", "Step Name", "Mode Keys"]
         table_data = []
         
-        for i, (step_name, func) in enumerate(self.steps, 1):
-            table_data.append([i, f"{step_name}"])
+        for i, step in enumerate(self.steps, 1):
+            table_data.append([i, step.name, ", ".join(step.mode_keys)])
         
         print("Pipeline Steps:")
         print(tabulate(table_data, headers=headers, tablefmt="grid"))
 
-    def add_step(self, step_name: str, func: Callable):
-        self.steps.append((step_name, func))
+    def add_step(self, step: PipelineStep):
+        self.steps.append(step)
 
     def load_state(self, file_path: str = None) -> PipelineState:
         try:
