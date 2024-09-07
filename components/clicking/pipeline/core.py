@@ -19,6 +19,10 @@ import wandb
 import yaml
 import shutil
 import random
+from typing import Dict, List, Any, Type
+from dataclasses import dataclass, field
+from prettytable import PrettyTable
+import asyncio
 
 T = TypeVar('T')
 
@@ -55,6 +59,58 @@ class PipelineStep(Generic[T]):
     function: Callable[[PipelineState, T], PipelineState]
     mode_keys: List[str]
 
+@dataclass
+class PipelineMode:
+    name: str
+    modes: Dict[str, Any]
+
+class PipelineModeSequence:
+    def __init__(self, modes=None):
+        self.modes = modes if modes is not None else []
+
+    @classmethod
+    def from_config(cls, config: Dict, modes_dict: Dict[str, Type]):
+        sequences = config.get('pipeline_mode_sequences', {})
+        modes = []
+        for name, seq in sequences.items():
+            mode_values = {}
+            for mode_name, enum_class in modes_dict.items():
+                mode_values[mode_name] = enum_class[seq[mode_name]]
+            modes.append(PipelineMode(name=name, modes=mode_values))
+        return cls(modes=modes)
+
+    def print_mode_sequences(self):
+        if not self.modes:
+            print("No mode sequences found.")
+            return
+
+        headers = ["Index", "Name"] + list(self.modes[0].modes.keys())
+        table = PrettyTable(headers)
+        for i, mode in enumerate(self.modes):
+            row = [i, mode.name] + list(mode.modes.values())
+            table.add_row(row)
+        print(table)
+
+    @classmethod
+    def generate_config_schema(cls, modes_dict: Dict[str, Type]):
+        schema = {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "properties": {
+                "pipeline_mode_sequences": {
+                    "type": "object",
+                    "patternProperties": {
+                        "^[a-zA-Z0-9_]+$": {
+                            "type": "object",
+                            "properties": {field: {"type": "string", "enum": [e.name for e in enum_class]} for field, enum_class in modes_dict.items()},
+                            "required": list(modes_dict.keys())
+                        }
+                    },
+                    "additionalProperties": False
+                }
+            }
+        }
+        return schema
 
 class Pipeline:
     def __init__(self, config: Dict[str, Any], cache_folder= "./cache"):
@@ -334,3 +390,63 @@ class Pipeline:
             print(f"Pipeline state saved as JSON successfully to {new_file_path}")
         except Exception as e:
             print(f"Error saving pipeline state as JSON: {str(e)}")
+
+    async def run_for_all_modes(
+        self,
+        initial_state: PipelineState,
+        pipeline_modes: PipelineModeSequence,
+        start_from_step: str = None,
+        stop_after_step: str = None
+    ) -> List[Dict]:
+        results = []
+
+        for i, mode in enumerate(pipeline_modes.modes):
+            print(f"Running combination {i + 1}/{len(pipeline_modes.modes)}")
+            
+            # Create a copy of the steps to avoid modifying the original pipeline
+            temp_steps = [PipelineStep(step.name, step.function, step.mode_keys) for step in self.steps]
+            
+            # Apply mode-specific configurations
+            for step in temp_steps:
+                step_modes = {k: mode.modes[k] for k in step.mode_keys if k in mode.modes}
+                original_function = step.function
+                step.function = lambda state, orig_func=original_function, modes=step_modes: orig_func(state, **modes)
+
+            # Create a temporary pipeline with the modified steps
+            temp_pipeline = Pipeline(self.config)
+            temp_pipeline.steps = temp_steps
+
+            pipeline_result = await temp_pipeline.run(
+                initial_state=initial_state,
+                start_from_step=start_from_step,
+                stop_after_step=stop_after_step,
+            )
+
+            results.append({
+                "combination": i,
+                "name": mode.name,
+                "modes": mode.modes,
+                "pipeline_result": pipeline_result
+            })
+
+        return results
+
+    def print_mode_results_summary(self, results: List[Dict]):
+        if not results:
+            print("No results to summarize.")
+            return
+
+        headers = ["Combination", "Name"] + list(results[0]["modes"].keys()) + ["Num Images", "Num Objects"]
+        summary_table = PrettyTable(headers)
+
+        for result in results:
+            row = [
+                result["combination"],
+                result["name"],
+                *[result["modes"][key] for key in headers[2:-2]],
+                len(result["pipeline_result"].images),
+                sum(len(img.predicted_objects) for img in result["pipeline_result"].images)
+            ]
+            summary_table.add_row(row)
+
+        print(summary_table)
