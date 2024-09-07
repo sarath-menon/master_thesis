@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 from typing import List, Dict, Tuple, Any
-from clicking.pipeline.core import Pipeline, PipelineState, PipelineStep, PipelineMode, PipelineModeSequence
+from clicking.pipeline.core import Pipeline, PipelineState, PipelineStep, PipelineMode, PipelineModeSequence, PipelineModes
 from clicking.dataset_creator.core import CocoDataset
 from clicking.prompt_refinement.core import PromptRefiner, PromptMode
 from clicking.vision_model.data_structures import TaskType
@@ -78,13 +78,13 @@ image_ids = [22, 31, 42]
 clicking_images = coco_dataset.sample_dataset()
 
 #%%
-# Define the modes dictionary
-modes_dict = {
+# Define the pipeline modes
+pipeline_modes = PipelineModes({
     "prompt_mode": PromptMode,
     "localization_input_mode": InputMode,
     "localization_mode": TaskType,
     "segmentation_mode": TaskType
-}
+})
 
 # Create pipeline steps
 pipeline_steps = [
@@ -116,8 +116,8 @@ for step in pipeline_steps:
     pipeline.add_step(step)
 
 # Create pipeline modes
-pipeline_modes = PipelineModeSequence.from_config(config, modes_dict)
-pipeline_modes.print_mode_sequences()
+pipeline_mode_sequence = PipelineModeSequence.from_config(config, pipeline_modes)
+pipeline_mode_sequence.print_mode_sequences()
 
 # Load initial state
 loaded_state = pipeline.load_state()
@@ -127,7 +127,7 @@ loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
 # Run pipeline for all modes
 all_results = asyncio.run(pipeline.run_for_all_modes(
     initial_state=loaded_state,
-    pipeline_modes=pipeline_modes,
+    pipeline_modes=pipeline_mode_sequence,
     start_from_step="Get Localization Results",
     stop_after_step="Get Localization Results"
 ))
@@ -136,7 +136,7 @@ all_results = asyncio.run(pipeline.run_for_all_modes(
 pipeline.print_mode_results_summary(all_results)
 
 # Generate and save the config schema
-config_schema = PipelineModeSequence.generate_config_schema(modes_dict)
+config_schema = PipelineModeSequence.generate_config_schema(pipeline_modes)
 with open('config_schema.json', 'w') as f:
     json.dump(config_schema, f, indent=2)
 

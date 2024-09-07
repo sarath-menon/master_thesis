@@ -26,6 +26,12 @@ import asyncio
 
 T = TypeVar('T')
 
+class PipelineModes:
+    def __init__(self, modes: Dict[str, Type]):
+        self.modes = modes
+
+    def __getattr__(self, name):
+        return self.modes[name]
 
 @dataclass
 class PipelineState:
@@ -69,12 +75,12 @@ class PipelineModeSequence:
         self.modes = modes if modes is not None else []
 
     @classmethod
-    def from_config(cls, config: Dict, modes_dict: Dict[str, Type]):
+    def from_config(cls, config: Dict, pipeline_modes: PipelineModes):
         sequences = config.get('pipeline_mode_sequences', {})
         modes = []
         for name, seq in sequences.items():
             mode_values = {}
-            for mode_name, enum_class in modes_dict.items():
+            for mode_name, enum_class in pipeline_modes.modes.items():
                 mode_values[mode_name] = enum_class[seq[mode_name]]
             modes.append(PipelineMode(name=name, modes=mode_values))
         return cls(modes=modes)
@@ -92,7 +98,7 @@ class PipelineModeSequence:
         print(table)
 
     @classmethod
-    def generate_config_schema(cls, modes_dict: Dict[str, Type]):
+    def generate_config_schema(cls, pipeline_modes: PipelineModes):
         schema = {
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
@@ -102,8 +108,8 @@ class PipelineModeSequence:
                     "patternProperties": {
                         "^[a-zA-Z0-9_]+$": {
                             "type": "object",
-                            "properties": {field: {"type": "string", "enum": [e.name for e in enum_class]} for field, enum_class in modes_dict.items()},
-                            "required": list(modes_dict.keys())
+                            "properties": {field: {"type": "string", "enum": [e.name for e in enum_class]} for field, enum_class in pipeline_modes.modes.items()},
+                            "required": list(pipeline_modes.modes.keys())
                         }
                     },
                     "additionalProperties": False
