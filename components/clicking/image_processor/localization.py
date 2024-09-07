@@ -36,7 +36,7 @@ class Localization:
         except Exception as e:
             print(f"Error setting localization model: {str(e)}")
 
-    def get_localization_results(self, state: PipelineState, mode: TaskType = TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB, input_mode: InputMode = InputMode.OBJ_DESCRIPTION) -> PipelineState:
+    def get_localization_results(self, state: PipelineState, localization_mode: TaskType = TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB, localization_input_mode: InputMode = InputMode.OBJ_DESCRIPTION) -> PipelineState:
         
         for clicking_image in state.images:
             image_file = image_to_http_file(clicking_image.image)
@@ -45,13 +45,13 @@ class Localization:
                 request = BodyGetPrediction(image=image_file)
                 
                 # Use the lambda function associated with the input_mode
-                input_text = input_mode.value.get_input(obj)
+                input_text = localization_input_mode.value.get_input(obj)
 
                 try:
                     response = get_prediction.sync(
                         client=self.client,
                         body=request,
-                        task=mode,
+                        task=localization_mode,
                         input_text=input_text,
                         reset_cache=True
                     )

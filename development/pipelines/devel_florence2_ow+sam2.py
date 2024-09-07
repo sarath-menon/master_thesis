@@ -165,139 +165,7 @@ selv = pipeline.create_state_json(loaded_state)
 import pandas as pd
 
 # %%
-from dataclasses import dataclass, field
-from typing import Dict, List, Any
-from itertools import product
-from prettytable import PrettyTable
-from clicking.prompt_refinement.core import PromptMode
-from clicking.image_processor.localization import InputMode
-from clicking.vision_model.data_structures import TaskType
-
-def load_pipeline_mode_sequences(config, sequence_name=None):
-    sequences = config.get('pipeline_mode_sequences', {})
-    
-    def verify_enum(enum_class, value, field_name):
-        if not hasattr(enum_class, value):
-            raise ValueError(f"Invalid {field_name}: {value} is not a valid {enum_class.__name__}")
-        return getattr(enum_class, value)
-
-    if sequence_name:
-        if sequence_name not in sequences:
-            raise ValueError(f"Sequence '{sequence_name}' not found in config")
-        seq = sequences[sequence_name]
-        return [{
-            "name": sequence_name,
-            "prompt_modes": verify_enum(PromptMode, seq['prompt_mode'], "prompt_mode"),
-            "localization_input_modes": verify_enum(InputMode, seq['localization_input_mode'], "localization_input_mode"),
-            "localization_modes": verify_enum(TaskType, seq['localization_mode'], "localization_mode"),
-            "segmentation_modes": verify_enum(TaskType, seq['segmentation_mode'], "segmentation_mode")
-        }]
-    
-    return [
-        {
-            "name": name,
-            "prompt_modes": verify_enum(PromptMode, seq['prompt_mode'], "prompt_mode"),
-            "localization_input_modes": verify_enum(InputMode, seq['localization_input_mode'], "localization_input_mode"),
-            "localization_modes": verify_enum(TaskType, seq['localization_mode'], "localization_mode"),
-            "segmentation_modes": verify_enum(TaskType, seq['segmentation_mode'], "segmentation_mode")
-        }
-        for name, seq in sequences.items()
-    ]
-
-@dataclass
-class PipelineModes:
-    modes: List[Dict[str, Any]] = field(default_factory=list)
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(modes=load_pipeline_mode_sequences(config))
-
-    def get_mode_combinations(self):
-        return self.modes
-
-    def print_mode_sequences(self):
-        if not self.modes:
-            print("No mode sequences found.")
-            return
-
-        table = PrettyTable(["Index"] + list(self.modes[0].keys()))
-        for i, combination in enumerate(self.modes):
-            table.add_row([i] + list(combination.values()))
-        print(table)
-
-
-def run_pipeline_for_all_modes(initial_state: PipelineState, pipeline_modes: PipelineModes) -> List[Dict]:
-    results = []
-
-    for i, combination in enumerate(pipeline_modes.get_mode_combinations()):
-        print(f"Running combination {i + 1}/{len(pipeline_modes.get_mode_combinations())}")
-        
-        pipeline = Pipeline(config=config)
-        
-        pipeline.add_step("Process Prompts", lambda state: prompt_refiner.process_prompts(state.images, mode=combination["prompt_modes"]))
-        pipeline.add_step("Get Localization Results", lambda state: localization_processor.get_localization_results(
-            state, mode=combination["localization_modes"], input_mode=combination["localization_input_modes"]
-        ))
-        pipeline.add_step("Get Segmentation Results", lambda state: segmentation_processor.get_segmentation_results(state, mode=combination["segmentation_modes"]))
-
-        pipeline_modes.print_mode_sequences()
-
-        pipeline_result = asyncio.run(pipeline.run(
-            initial_state=initial_state,
-            start_from_step="Get Localization Results",
-            stop_after_step="Get Localization Results",
-        ))
-
-        results.append({"combination": i, **combination, "pipeline_result": pipeline_result})
-
-    return results
-
-#%% Usage example:
-
-import nest_asyncio
-nest_asyncio.apply()
-
-with open('config.yml', 'r') as config_file:
-    config = yaml.safe_load(config_file)
-pipeline_modes = PipelineModes.from_config(config)
-pipeline_modes.print_mode_sequences()
-
-#%%
-
-loaded_state = pipeline.load_state()
-loaded_state = loaded_state.filter_by_id(image_ids=[0, 12, 37])
-loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
-
-all_results = run_pipeline_for_all_modes(loaded_state, pipeline_modes)
-
-# Print a summary of the results
-summary_table = PrettyTable()
-summary_table.field_names = ["Combination", "Name", "Prompt Mode", "Localization Input Mode", "Localization Mode", "Segmentation Mode", "Num Images", "Num Objects"]
-
-for result in all_results:
-    summary_table.add_row([
-        result["combination"],
-        result["name"],
-        result["prompt_modes"],
-        result["localization_input_modes"],
-        result["localization_modes"],
-        result["segmentation_modes"],
-        len(result["pipeline_result"].images),
-        sum(len(img.predicted_objects) for img in result["pipeline_result"].images)
-    ])
-
-print(summary_table)
-# %%
-from clicking.vision_model.data_structures import PromptMode, InputMode, TaskType
-
-enums_dict = {
-    "prompt_mode": PromptMode,
-    "localization_input_mode": InputMode,
-    "localization_mode": TaskType,
-    "segmentation_mode": TaskType
-}
-
-def generate_config_schema(enums_dict):
+def generate_config_schema(modes_dict: Dict):
     schema = {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
@@ -307,8 +175,8 @@ def generate_config_schema(enums_dict):
                 "patternProperties": {
                     "^[a-zA-Z0-9_]+$": {
                         "type": "object",
-                        "properties": {},
-                        "required": []
+                        "properties": {field: {"type": "string", "enum": [e.name for e in enum_class]} for field, enum_class in modes_dict.items()},
+                        "required": list(modes_dict.keys())
                     }
                 },
                 "additionalProperties": False
@@ -316,29 +184,143 @@ def generate_config_schema(enums_dict):
         }
     }
 
-    properties = schema["properties"]["pipeline_mode_sequences"]["patternProperties"]["^[a-zA-Z0-9_]+$"]["properties"]
-    required = schema["properties"]["pipeline_mode_sequences"]["patternProperties"]["^[a-zA-Z0-9_]+$"]["required"]
-
-    for field_name, enum_class in enums_dict.items():
-        properties[field_name] = {
-            "type": "string",
-            "enum": [e.name for e in enum_class]
-        }
-        required.append(field_name)
-
-    # Special case for segmentation_mode
-    properties["segmentation_mode"]["enum"] = ["SEGMENTATION_WITH_BBOX"]
+    schema["properties"]["pipeline_mode_sequences"]["patternProperties"]["^[a-zA-Z0-9_]+$"]["properties"]["segmentation_mode"]["enum"] = ["SEGMENTATION_WITH_BBOX"]
 
     return schema
-
+    
 # Generate and save the config schema
-import json
-
-config_schema = generate_config_schema(enums_dict)
+config_schema = generate_config_schema(modes_dict)
 with open('config_schema.json', 'w') as f:
     json.dump(config_schema, f, indent=2)
 
 print("Config schema generated and saved to 'config_schema.json'")
 
-# Generate the config schema
-generate_config_schema(enums_dict)
+#%%
+
+from dataclasses import dataclass, field
+from typing import Dict, List, Any, Type
+from prettytable import PrettyTable
+import asyncio
+from clicking.pipeline.core import Pipeline, PipelineState
+from clicking.image_processor.localization import Localization, InputMode
+
+@dataclass
+class PipelineMode:
+    name: str
+    modes: Dict[str, Any]
+
+@dataclass
+class PipelineModes:
+    modes: List[PipelineMode] = field(default_factory=list)
+
+    @classmethod
+    def from_config(cls, config: Dict, modes_dict: Dict[str, Type]):
+        sequences = config.get('pipeline_mode_sequences', {})
+        modes = []
+        for name, seq in sequences.items():
+            mode_values = {}
+            for mode_name, enum_class in modes_dict.items():
+                mode_values[mode_name] = enum_class[seq[mode_name]]
+            modes.append(PipelineMode(name=name, modes=mode_values))
+        return cls(modes=modes)
+
+    def print_mode_sequences(self):
+        if not self.modes:
+            print("No mode sequences found.")
+            return
+
+        headers = ["Index", "Name"] + list(self.modes[0].modes.keys())
+        table = PrettyTable(headers)
+        for i, mode in enumerate(self.modes):
+            row = [i, mode.name] + list(mode.modes.values())
+            table.add_row(row)
+        print(table)
+
+def run_pipeline_for_all_modes(
+    initial_state: PipelineState, 
+    pipeline_modes: PipelineModes, 
+    config: Dict,
+    pipeline_structure: List[Dict[str, Any]]
+) -> List[Dict]:
+    results = []
+
+    for i, mode in enumerate(pipeline_modes.modes):
+        print(f"Running combination {i + 1}/{len(pipeline_modes.modes)}")
+        
+        pipeline = Pipeline(config=config)
+        
+        for step in pipeline_structure:
+            pipeline.add_step(
+                step['name'],
+                lambda state, step=step, mode=mode: step['function'](
+                    state, **{k: mode.modes[k] for k in step['mode_keys']}
+                )
+            )
+
+        pipeline_result = asyncio.run(pipeline.run(
+            initial_state=initial_state,
+            start_from_step=pipeline_structure[1]['name'],
+            stop_after_step=pipeline_structure[1]['name'],
+        ))
+
+        results.append({"combination": i, **mode.modes, "pipeline_result": pipeline_result})
+
+    return results
+
+def print_summary(results: List[Dict]):
+    if not results:
+        print("No results to summarize.")
+        return
+
+    headers = ["Combination", "Name"] + list(results[0].keys())[2:-1] + ["Num Images", "Num Objects"]
+    summary_table = PrettyTable(headers)
+
+    for result in results:
+        row = [
+            result["combination"],
+            result.get("name", "N/A"),
+            *[result[key] for key in headers[2:-2]],
+            len(result["pipeline_result"].images),
+            sum(len(img.predicted_objects) for img in result["pipeline_result"].images)
+        ]
+        summary_table.add_row(row)
+
+    print(summary_table)
+
+# Usage example:
+modes_dict = {
+    "prompt_mode": PromptMode,
+    "localization_input_mode": InputMode,
+    "localization_mode": TaskType,
+    "segmentation_mode": TaskType
+}
+
+pipeline_structure = [
+    {
+        "name": "Process Prompts",
+        "function": prompt_refiner.process_prompts,
+        "mode_keys": ["prompt_mode"]
+    },
+    {
+        "name": "Get Localization Results",
+        "function": localization_processor.get_localization_results,
+        "mode_keys": ["localization_mode", "localization_input_mode"]
+    },
+    {
+        "name": "Get Segmentation Results",
+        "function": segmentation_processor.get_segmentation_results,
+        "mode_keys": ["segmentation_mode"]
+    }
+]
+
+#%% The rest of the code remains the same
+pipeline_modes = PipelineModes.from_config(config, modes_dict)
+pipeline_modes.print_mode_sequences()
+
+loaded_state = pipeline.load_state()
+loaded_state = loaded_state.filter_by_id(image_ids=[0, 12, 37])
+loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
+
+all_results = run_pipeline_for_all_modes(loaded_state, pipeline_modes, config, pipeline_structure)
+print_summary(all_results)
+# %%
