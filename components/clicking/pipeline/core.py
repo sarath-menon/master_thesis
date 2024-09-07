@@ -23,6 +23,8 @@ from typing import Dict, List, Any, Type
 from dataclasses import dataclass, field
 from prettytable import PrettyTable
 import asyncio
+from tqdm import tqdm
+import copy
 
 T = TypeVar('T')
 
@@ -140,37 +142,13 @@ class Pipeline:
         self.config = config
         self.cache_dir = config['pipeline']['cache_dir']
         os.makedirs(self.cache_dir, exist_ok=True)
-        self.cache_filename = self._generate_cache_filename()
-        self.cache_data: Dict[str, Any] = {}
-        self.last_run_cache: Dict[str, Any] = {}
-
-    def _generate_cache_filename(self):
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        return os.path.join(self.cache_dir, f"pipeline_cache_{timestamp}.pkl")
-
-    def _save_cache(self):
-        with open(self.cache_filename, 'wb') as f:
-            pickle.dump(self.cache_data, f)
-
-    def _load_cache(self):
-        if not os.path.exists(self.cache_filename):
-            return
-
-        try:
-            with open(self.cache_filename, 'rb') as f:
-                self.cache_data = pickle.load(f)
-        except (EOFError, pickle.UnpicklingError):
-            print(f"Warning: Cache file is corrupted. Ignoring cache.")
-            os.remove(self.cache_filename)
-            self.cache_data = {}
 
     async def run(
         self,
         initial_images: List[ClickingImage] = None,
         initial_state: PipelineState = None,
         start_from_step: str = None,
-        stop_after_step: str = None,
-        reset_cache: bool = False
+        stop_after_step: str = None
     ) -> PipelineState:
         start_index = 0
         if start_from_step:
@@ -181,30 +159,12 @@ class Pipeline:
         if stop_after_step and self._find_step_index(stop_after_step) == -1:
             raise ValueError(f"Invalid stop_after_step: '{stop_after_step}'. Step not found in the pipeline.")
 
-        if start_index > 0 and not reset_cache:
-            self._load_cache()
-            if start_from_step not in self.cache_data and start_from_step not in self.last_run_cache:
-                if initial_state is None and initial_images is None:
-                    raise ValueError(f"No cached state found for step '{start_from_step}' and no initial input provided. Please provide an initial state or images, or run from the beginning.")
-            else:
-                initial_state = self.cache_data.get(start_from_step) or self.last_run_cache.get(start_from_step)
-                # Clear the state for all steps after start_from_step
-                for step in self.steps[start_index + 1:]:
-                    self.cache_data.pop(step.name, None)
-                    self.last_run_cache.pop(step.name, None)
-        elif initial_state is None and initial_images is None:
-            raise ValueError("Either initial_state or initial_images must be provided when starting from the beginning of the pipeline.")
-
-        # Reset cache when explicitly requested or starting from the beginning
-        if reset_cache or start_index == 0:
-            self.cache_data = {}  # Reset cache for a new run
+        if initial_state is None and initial_images is None:
+            raise ValueError("Either initial_state or initial_images must be provided.")
 
         try:
             initial_input = initial_state if initial_state else PipelineState(images=initial_images)
             result = await asyncio.shield(self._run_internal(initial_input, start_index=start_index, stop_after_step=stop_after_step))
-            
-            # Store the cache from this run
-            self.last_run_cache = self.cache_data.copy()
             
             return result
         except asyncio.CancelledError:
@@ -218,22 +178,11 @@ class Pipeline:
             if asyncio.current_task().cancelled():
                 raise asyncio.CancelledError()
 
-            if step.name in self.cache_data:
-                print(f"Using cached input for step: {step.name}")
-                state = self.cache_data[step.name]
-            elif step.name in self.last_run_cache:
-                print(f"Using last run cached input for step: {step.name}")
-                state = self.last_run_cache[step.name]
-            
             try:
                 state = await asyncio.wait_for(asyncio.to_thread(step.function, state), timeout=None)
             except asyncio.CancelledError:
                 print(f"Step '{step.name}' was cancelled.")
                 raise
-            
-            if i < len(self.steps) - 1:
-                self.cache_data[self.steps[i+1].name] = state
-                self._save_cache()
             
             if stop_after_step and step.name == stop_after_step:
                 print(f"Stopping execution after step: {step.name}")
@@ -241,9 +190,6 @@ class Pipeline:
         
         return state
 
-    def get_step_result(self, step_name: str) -> Any:
-        self._load_cache()
-        return self.cache_data.get(step_name)
 
     def _find_step_index(self, step_name: str) -> int:
         for i, step in enumerate(self.steps):
@@ -423,35 +369,56 @@ class Pipeline:
     ) -> PipelineRunResults:
         results = {}
 
-        for i, mode in enumerate(pipeline_modes.modes):
-            print(f"Running combination {i + 1}/{len(pipeline_modes.modes)}")
+        
+
+        for i, mode in enumerate(tqdm(pipeline_modes.modes, desc="Running combinations")):
+            print(f"Running mode: {mode.name}")
             
-            # Create a copy of the steps to avoid modifying the original pipeline
+            # Create a deep copy of the initial state for each run
+            initial_state_copy = copy.deepcopy(initial_state)
+            
+            # Create a new Pipeline instance for each mode
+            temp_pipeline = Pipeline(self.config)
+            
+            # Create a copy of the steps
             temp_steps = [PipelineStep(step.name, step.function, step.mode_keys) for step in self.steps]
             
             # Apply mode-specific configurations
             for step in temp_steps:
                 step_modes = {k: mode.modes[k] for k in step.mode_keys if k in mode.modes}
                 original_function = step.function
-                step.function = lambda state, orig_func=original_function, modes=step_modes: orig_func(state, **modes)
+                def create_step_function(orig_func, modes):
+                    return lambda state: orig_func(state, **modes)
+                step.function = create_step_function(original_function, step_modes)
 
-            # Create a temporary pipeline with the modified steps
-            temp_pipeline = Pipeline(self.config)
+            # Set the modified steps to the new pipeline instance
             temp_pipeline.steps = temp_steps
 
+            print("initial state")
+            for image in initial_state_copy.images:
+                for obj in image.predicted_objects:
+                    print(obj.name, obj.bbox)
+
+            print("running pipeline")
             result = await temp_pipeline.run(
-                initial_state=initial_state,
+                initial_state=initial_state_copy,
                 start_from_step=start_from_step,
                 stop_after_step=stop_after_step,
             )
 
-            result = PipelineSingleRun(
+            print("final result")
+            for image in result.images:
+                for obj in image.predicted_objects:
+                    print(obj.name, obj.bbox)
+
+
+            single_run = PipelineSingleRun(
                 combination=i,
                 name=mode.name,
                 modes=mode.modes,
                 result=result
             )
-            results[mode.name] = result
+            results[mode.name] = single_run
 
         return PipelineRunResults(results)
 
