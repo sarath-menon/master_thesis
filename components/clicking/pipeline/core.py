@@ -33,6 +33,7 @@ class PipelineModes:
     def __getattr__(self, name):
         return self.modes[name]
 
+
 @dataclass
 class PipelineState:
     images: List[ClickingImage] = field(default_factory=list)
@@ -58,6 +59,7 @@ class PipelineState:
             self.images = random.sample(self.images, sample_size)
         
         return self
+    
 
 @dataclass
 class PipelineStep(Generic[T]):
@@ -118,6 +120,20 @@ class PipelineModeSequence:
         }
         return schema
 
+@dataclass
+class PipelineSingleRun:
+    combination: int
+    name: str
+    modes: Dict[str, Any]
+    result: PipelineState
+
+@dataclass
+class PipelineRunResults:
+    results: Dict[str, PipelineSingleRun]
+
+    def get_run_by_mode_name(self, mode_name: str) -> Optional[PipelineSingleRun]:
+        return self.results.get(mode_name).result
+    
 class Pipeline:
     def __init__(self, config: Dict[str, Any], cache_folder= "./cache"):
         self.steps: List[PipelineStep] = []
@@ -397,14 +413,15 @@ class Pipeline:
         except Exception as e:
             print(f"Error saving pipeline state as JSON: {str(e)}")
 
+
     async def run_for_all_modes(
         self,
         initial_state: PipelineState,
         pipeline_modes: PipelineModeSequence,
-        start_from_step: str = None,
-        stop_after_step: str = None
-    ) -> List[Dict]:
-        results = []
+        start_from_step: Optional[str] = None,
+        stop_after_step: Optional[str] = None
+    ) -> PipelineRunResults:
+        results = {}
 
         for i, mode in enumerate(pipeline_modes.modes):
             print(f"Running combination {i + 1}/{len(pipeline_modes.modes)}")
@@ -422,36 +439,38 @@ class Pipeline:
             temp_pipeline = Pipeline(self.config)
             temp_pipeline.steps = temp_steps
 
-            pipeline_result = await temp_pipeline.run(
+            result = await temp_pipeline.run(
                 initial_state=initial_state,
                 start_from_step=start_from_step,
                 stop_after_step=stop_after_step,
             )
 
-            results.append({
-                "combination": i,
-                "name": mode.name,
-                "modes": mode.modes,
-                "pipeline_result": pipeline_result
-            })
+            result = PipelineSingleRun(
+                combination=i,
+                name=mode.name,
+                modes=mode.modes,
+                result=result
+            )
+            results[mode.name] = result
 
-        return results
+        return PipelineRunResults(results)
 
-    def print_mode_results_summary(self, results: List[Dict]):
-        if not results:
+    def print_mode_results_summary(self, results: PipelineRunResults):
+        if not results.results:
             print("No results to summarize.")
             return
 
-        headers = ["Combination", "Name"] + list(results[0]["modes"].keys()) + ["Num Images", "Num Objects"]
+        first_result = next(iter(results.results.values()))
+        headers = ["Combination", "Name"] + list(first_result.modes.keys()) + ["Num Images", "Num Objects"]
         summary_table = PrettyTable(headers)
 
-        for result in results:
+        for result in results.results.values():
             row = [
-                result["combination"],
-                result["name"],
-                *[result["modes"][key] for key in headers[2:-2]],
-                len(result["pipeline_result"].images),
-                sum(len(img.predicted_objects) for img in result["pipeline_result"].images)
+                result.combination,
+                result.name,
+                *[result.modes[key] for key in headers[2:-2]],
+                len(result.result.images),
+                sum(len(img.predicted_objects) for img in result.result.images)
             ]
             summary_table.add_row(row)
 

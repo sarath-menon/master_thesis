@@ -76,12 +76,11 @@ coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['
 
 image_ids = [22, 31, 42]
 clicking_images = coco_dataset.sample_dataset()
-
 #%%
 # Define the pipeline modes
 pipeline_modes = PipelineModes({
     "prompt_mode": PromptMode,
-    "localization_input_mode": InputMode,
+    "localization_input_mode": InputMode, 
     "localization_mode": TaskType,
     "segmentation_mode": TaskType
 })
@@ -119,6 +118,7 @@ for step in pipeline_steps:
 pipeline_mode_sequence = PipelineModeSequence.from_config(config, pipeline_modes)
 pipeline_mode_sequence.print_mode_sequences()
 
+#%%
 # Load initial state
 loaded_state = pipeline.load_state()
 loaded_state = loaded_state.filter_by_id(image_ids=[0, 12, 37])
@@ -134,8 +134,10 @@ all_results = asyncio.run(pipeline.run_for_all_modes(
 
 # Print summary of results
 pipeline.print_mode_results_summary(all_results)
+#%%
+all_results.get_run_by_mode_name("object_detection_text_grounded")
 
-# Generate and save the config schema
+#%% Generate and save the config schema
 config_schema = PipelineModeSequence.generate_config_schema(pipeline_modes)
 with open('config_schema.json', 'w') as f:
     json.dump(config_schema, f, indent=2)
