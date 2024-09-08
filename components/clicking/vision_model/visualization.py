@@ -31,7 +31,7 @@ def overlay_bounding_box(image, bbox: BoundingBox, color='red', thickness=14, pa
     draw.rectangle((x1, y1, x2, y2), outline=color, width=thickness)
     return image
 
-def get_color(index, total):
+def get_color(index):
     color_dict = {
         0: 'red',    
         1: 'green',   
@@ -58,11 +58,15 @@ def show_clickpoint_predictions(clicking_image: ClickingImage, textbox_color='re
             continue
 
         m = mask_utils.decode(obj.mask.get(SegmentationMode.COCO_RLE))
-        color_mask = get_color(i, total_objects)
 
-        color_overlay = np.zeros((*image_array.shape[:2], 4))
-        color_overlay[m == 1] = [*color_mask, mask_alpha] 
-        color_overlay[m == 0] = [0, 0, 0, 0]  
+        color_mask = get_color(i)
+        # Convert color_mask to RGB values
+        rgb_color = plt.cm.colors.to_rgb(color_mask)
+        
+        color_overlay = np.zeros((*np.array(clicking_image.image).shape[:2], 4), dtype=np.float32)
+        m_expanded = np.expand_dims(m, axis=-1)
+        color_overlay[m_expanded[:, :, 0] == 1] = [*rgb_color, mask_alpha]
+
         ax.imshow(color_overlay)
 
         contours, _ = cv2.findContours(m.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -118,11 +122,9 @@ def show_localization_predictions(clicking_image: ClickingImage, object_names_to
         print_object_descriptions([clicking_image], show_image=False)
         print("\n") 
 
-def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow', mask_alpha=0.7, label_offset_y=60, object_names_to_show=None):
+def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='red', text_color='white', text_size=12, marker_size=100, marker_color='yellow', mask_alpha=0.7, label_offset_y=60, object_names_to_show=None,show_descriptions=False):
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.imshow(clicking_image.image)
-
-    total_objects = len(clicking_image.predicted_objects)
 
     for i, obj in enumerate(clicking_image.predicted_objects):
         if obj.mask is None:
@@ -133,14 +135,14 @@ def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='
             continue
 
         m = mask_utils.decode(obj.mask.get(SegmentationMode.COCO_RLE))
-        color_mask = get_color(i, total_objects)
 
-        color_overlay = np.zeros((*np.array(clicking_image.image).shape[:2], 4))
+        color_mask = get_color(i)
+        # Convert color_mask to RGB values
+        rgb_color = plt.cm.colors.to_rgb(color_mask)
+        
+        color_overlay = np.zeros((*np.array(clicking_image.image).shape[:2], 4), dtype=np.float32)
         m_expanded = np.expand_dims(m, axis=-1)
-        color_overlay = np.where(m_expanded, [*color_mask, mask_alpha], [0, 0, 0, 0])
-
-        if color_overlay.ndim == 4:
-            color_overlay = color_overlay.squeeze(2)
+        color_overlay[m_expanded[:, :, 0] == 1] = [*rgb_color, mask_alpha]
 
         ax.imshow(color_overlay)
 
@@ -149,6 +151,10 @@ def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='
             ax.plot(contour[:, 0, 0], contour[:, 0, 1], color='white', linewidth=2)
         
         centroid = get_mask_centroid(m)
+        if centroid is None:
+            print(f"Warning: Object '{obj.name}' has no centroid")
+            continue
+
         ax.scatter(*centroid, marker='*', color=marker_color, s=marker_size, label=obj.name)  
 
         ax.text(centroid[0], centroid[1] - label_offset_y, obj.name, 
@@ -161,12 +167,16 @@ def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='
     plt.tight_layout()
     plt.show()
 
-    print(f"Legend for Image ID: {clicking_image.id}")
-    print_object_descriptions([clicking_image])
-    print("\n")
+    if show_descriptions:
+        print(f"Legend for Image ID: {clicking_image.id}")
+        print_object_descriptions([clicking_image], show_image=False)
+        print("\n") 
 
 def get_mask_centroid(mask):
     moments = cv2.moments(mask.astype(np.uint8))
-    centroid_x = int(moments["m10"] / moments["m00"])
-    centroid_y = int(moments["m01"] / moments["m00"])
-    return centroid_x, centroid_y
+    if moments["m00"] != 0:
+        centroid_x = int(moments["m10"] / moments["m00"])
+        centroid_y = int(moments["m01"] / moments["m00"])
+        return centroid_x, centroid_y
+    else:
+        return None
