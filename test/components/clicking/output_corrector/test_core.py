@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 from clicking.output_corrector.core import OutputCorrector
-from clicking.pipeline.core import PipelineState
+from clicking.common.data_structures import PipelineState
 from clicking.common.data_structures import ClickingImage,ImageObject
 
 
@@ -42,7 +42,7 @@ def test_verify_bboxes_for_all_images():
             result = {
                 'image_id': clicking_image.id,
                 'object_name': obj.name,
-                'judgement': obj.validity.is_valid,
+                'accuracy': obj.validity.is_valid,
                 'reasoning': obj.validity.reason
             }
             results.append(result)
@@ -51,7 +51,7 @@ def test_verify_bboxes_for_all_images():
     for result in results:
         print(f"Image: {result['image_id']}")
         print(f"Object: {result['object_name']}")
-        print(f"Valid: {result['judgement']}")
+        print(f"Valid: {result['accuracy']}")
         print(f"Reason: {result['reasoning']}")
         print()
     
@@ -60,7 +60,7 @@ def test_verify_bboxes_for_all_images():
     for result in results:
         assert 'image_id' in result
         assert 'object_name' in result
-        assert 'judgement' in result
+        assert 'accuracy' in result
         assert 'reasoning' in result
 
 # Run the test
