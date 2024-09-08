@@ -157,6 +157,9 @@ class Pipeline:
 
         if initial_state is None and initial_images is None:
             raise ValueError("Either initial_state or initial_images must be provided.")
+        
+        if initial_images and start_from_step:
+            raise ValueError("start_from_step is not supported when initial_images are provided.")
 
         try:
             initial_input = initial_state if initial_state else PipelineState(images=initial_images)
