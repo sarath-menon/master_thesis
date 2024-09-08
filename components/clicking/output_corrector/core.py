@@ -22,6 +22,8 @@ from clicking.common.data_structures import ModuleMode
 from clicking.common.data_structures import PipelineState
 from clicking.common.data_structures import ObjectImageDict
 from clicking.common.data_structures import ImageObject
+import matplotlib.pyplot as plt
+
 # set API keys
 dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
@@ -54,14 +56,16 @@ class OutputCorrector(ImageProcessorBase):
         self.config = config
 
     async def verify_bboxes_async(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode, batch_size: int = 20, show_images: bool = False, **kwargs) -> PipelineState:
-        import matplotlib.pyplot as plt
+        
         objects = state.get_all_predicted_objects()
         batch_delay = 10  # Delay between batches in seconds
 
         # Process images and prepare prompts
         processed_images, prompts, messages = [], [], []
         for obj_dict in objects.values():
+
             clicking_img = state.get_image_by_id(obj_dict.image_id)
+
             if obj_dict.object.validity.status == ValidityStatus.INVALID:
                 print(f"Warning: Skipping object {obj_dict.object.name} due to invalid bbox.")
                 continue
@@ -105,7 +109,7 @@ class OutputCorrector(ImageProcessorBase):
                                     accuracy=response.accuracy,
                                     visibility=response.visibility)
         return state
-        
+
     def verify_bboxes(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode,show_images: bool = False, **kwargs) -> PipelineState:
         return asyncio.run(self.verify_bboxes_async(state, bbox_verification_mode, show_images=show_images, **kwargs))
 
