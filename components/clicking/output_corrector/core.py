@@ -53,7 +53,7 @@ class OutputCorrector(ImageProcessorBase):
 
         self.config = config
 
-    async def verify_bboxes_async(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode, batch_size: int = 20, **kwargs) -> PipelineState:
+    async def verify_bboxes_async(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode, batch_size: int = 20, show_images: bool = False, **kwargs):
         import matplotlib.pyplot as plt
         objects = state.get_all_predicted_objects()
         batch_delay = 10  # Delay between batches in seconds
@@ -74,45 +74,36 @@ class OutputCorrector(ImageProcessorBase):
         total_batches = (len(processed_images) + batch_size - 1) // batch_size
         batch_results = []
 
-        async for batch_start in tqdm  (range(0, len(processed_images), batch_size), total=total_batches, desc="Processing images"):
+        async for batch_start in tqdm(range(0, len(processed_images), batch_size), total=total_batches, desc="Processing images"):
             batch_end = min(batch_start + batch_size, len(objects))
             batch_images = processed_images[batch_start:batch_end]
             batch_prompts = prompts[batch_start:batch_end]
             batch_messages = messages[batch_start:batch_end]
 
-            # show images
-            for image,prompt in zip(batch_images,batch_prompts):
-                # print(prompt)
-                plt.imshow(image)
-                plt.axis('off')
-                plt.show()
-
             batch_response = await self._get_batch_image_responses(batch_images, batch_prompts, batch_messages, ObjectValidationResult)
             batch_results.extend(batch_response)
 
-            # Add delay between batches to respect API rate limits
-            await asyncio.sleep(batch_delay)
+             # show images
+            if show_images:
+                for image, prompt in zip(batch_images, batch_prompts):
+                    plt.imshow(image)
+                    plt.axis('off')
+                    plt.show()
+
+            # Add delay between batches to respect API rate limits, but not after the last batch
+            if batch_end < len(processed_images):
+                await asyncio.sleep(batch_delay)
 
         for response in batch_results:
-            print(response)
-            image_id = objects[response.object_id].image_id
-
-            # get the obj
-     
+            is_valid = True 
             if response.judgement == "false" or response.visibility != "fully visible":
                 is_valid = False
 
-            # = Validity(is_valid=response.judgement == "true" and response.visibility == "fully visible")
+            obj = objects[response.object_id].object
+            obj.validity = Validity(is_valid=is_valid, reason=response.reasoning)
 
-
-        # for image, result in zip(state.images, batch_results):
-        #     image.predicted_objects = [obj for obj in result.objects]
-
-        return state
-
-
-    def verify_bboxes(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode) -> PipelineState:
-        return asyncio.run(self.verify_bboxes_async(state, bbox_verification_mode))
+    def verify_bboxes(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode,show_images: bool = False, **kwargs) -> PipelineState:
+        return asyncio.run(self.verify_bboxes_async(state, bbox_verification_mode, show_images=show_images, **kwargs))
 
 
     def _get_template_values(self, mode: PromptMode, object: ImageObject, **kwargs) -> TemplateValues:
@@ -124,8 +115,6 @@ class OutputCorrector(ImageProcessorBase):
             "object_name": object.name,
             "object_id": object.id
         }
-
-
 
     def verify_masks(self, clicking_image: ClickingImage) -> ClickingImage:
         return asyncio.run(self.verify_masks_async(clicking_image))
