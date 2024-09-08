@@ -7,7 +7,7 @@ from clicking.common.mask import SegmentationMask
 from clicking.common.bbox import BoundingBox
 from pydantic import ConfigDict
 import uuid
-
+from typing import Literal
 class ObjectCategory(str, Enum):
     GAME_ASSET = "Game Asset"
     INFORMATION_DISPLAY = "Information Display"
@@ -29,8 +29,10 @@ CATEGORY_COLOR_MAP = {
     ObjectCategory.NPC: 'blue',                
 }
 
-class Validity(BaseModel):
+class ObjectValidity(BaseModel):
     is_valid: bool = Field(default=True)
+    accuracy: Literal["true", "false"] = Field(default="true")
+    visibility: Literal["fully visible", "partially visible", "hidden"] = Field(default="fully visible")
     reason: Optional[str] = None
 
 class ImageObject(BaseModel):
@@ -41,7 +43,7 @@ class ImageObject(BaseModel):
     bbox: Optional[BoundingBox] = None
     mask: Optional[SegmentationMask] = None
     significance: Optional[str] = None
-    validity: Validity = Field(default=Validity())
+    validity: ObjectValidity = Field(default=ObjectValidity())
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

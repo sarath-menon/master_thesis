@@ -16,7 +16,7 @@ from clicking.prompt_refinement.data_structures import *
 import json
 from pydantic import BaseModel, Field
 from typing import Literal
-from clicking.common.data_structures import Validity
+from clicking.common.data_structures import ObjectValidity
 from tqdm.asyncio import tqdm
 from clicking.common.data_structures import ModuleMode
 from clicking.pipeline.core import PipelineState
@@ -29,7 +29,7 @@ os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 class ObjectValidationResult(BaseModel):
     object_name: str = Field(default="")
     object_id: str = Field(default="")
-    judgement: Literal["true", "false"] = Field(default="true")
+    accuracy: Literal["true", "false"] = Field(default="true")
     visibility: Literal["fully visible", "partially visible", "hidden"] = Field(default="fully visible")
     reasoning: str
 
@@ -45,9 +45,9 @@ class BBoxVerificationMode(Enum):
     CROP = ModuleMode("bbox_crop", process_crop)
 
 class OutputCorrector(ImageProcessorBase):
-    def __init__(self, prompt_path: str, config: Dict, model: str = "gpt-4o", temperature: float = 0.0):
+    def __init__(self, config: Dict, model: str = "gpt-4o", temperature: float = 0.0):
         super().__init__(model, temperature)
-        self.PROMPT_PATH = prompt_path
+        self.PROMPT_PATH = config['prompts']['output_corrector_path']
         self.prompt_manager = PromptManager(self.PROMPT_PATH)
         self.messages = [{"role": "system", "content": self.prompt_manager.get_prompt(type='system')}]
 
@@ -96,11 +96,14 @@ class OutputCorrector(ImageProcessorBase):
 
         for response in batch_results:
             is_valid = True 
-            if response.judgement == "false" or response.visibility != "fully visible":
+            if response.accuracy == "false" or response.visibility != "fully visible":
                 is_valid = False
 
             obj = objects[response.object_id].object
-            obj.validity = Validity(is_valid=is_valid, reason=response.reasoning)
+            obj.validity = ObjectValidity(is_valid=is_valid,
+                                    reason=response.reasoning,
+                                    accuracy=response.accuracy,
+                                    visibility=response.visibility)
 
     def verify_bboxes(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode,show_images: bool = False, **kwargs) -> PipelineState:
         return asyncio.run(self.verify_bboxes_async(state, bbox_verification_mode, show_images=show_images, **kwargs))
