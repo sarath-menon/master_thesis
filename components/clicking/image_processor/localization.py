@@ -70,11 +70,12 @@ class Localization:
                     if len(response.prediction.bboxes) > 1:
                         print(f"Multiple bounding boxes found for {obj.name}: {len(response.prediction.bboxes)}. Ignoring.")
                         obj.validity = ObjectValidity(status=ValidityStatus.INVALID, reason="Multiple bounding boxes found")
-                        
+
                     elif len(response.prediction.bboxes) == 1:
                         obj.bbox = BoundingBox(bbox=response.prediction.bboxes[0], mode=BBoxMode.XYXY)
                     else:
                         print(f"No bounding box found for {obj.name}")
+                        obj.validity = ObjectValidity(status=ValidityStatus.INVALID, reason="No bounding box found")
 
                 except Exception as e:
                     print(f"Error getting prediction for image {clicking_image.id}, object {obj.name}: {str(e)}")
