@@ -53,7 +53,7 @@ class OutputCorrector(ImageProcessorBase):
 
         self.config = config
 
-    async def verify_bboxes_async(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode, batch_size: int = 20, show_images: bool = False, **kwargs):
+    async def verify_bboxes_async(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode, batch_size: int = 20, show_images: bool = False, **kwargs) -> PipelineState:
         import matplotlib.pyplot as plt
         objects = state.get_all_predicted_objects()
         batch_delay = 10  # Delay between batches in seconds
@@ -62,8 +62,8 @@ class OutputCorrector(ImageProcessorBase):
         processed_images, prompts, messages = [], [], []
         for obj_dict in objects.values():
             clicking_img = state.get_image_by_id(obj_dict.image_id)
-            if obj_dict.object.bbox is None:
-                print(f"Warning: Skipping object {obj_dict.object.name} due to missing bbox.")
+            if obj_dict.object.validity.status == ValidityStatus.INVALID:
+                print(f"Warning: Skipping object {obj_dict.object.name} due to invalid bbox.")
                 continue
 
             processed_images.append(bbox_verification_mode.value.handler(clicking_img.image, obj_dict.object))
@@ -104,7 +104,8 @@ class OutputCorrector(ImageProcessorBase):
                                     reason=response.reasoning,
                                     accuracy=response.accuracy,
                                     visibility=response.visibility)
-
+        return state
+        
     def verify_bboxes(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode,show_images: bool = False, **kwargs) -> PipelineState:
         return asyncio.run(self.verify_bboxes_async(state, bbox_verification_mode, show_images=show_images, **kwargs))
 
