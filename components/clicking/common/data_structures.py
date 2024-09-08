@@ -43,11 +43,12 @@ class ValidityStatus(Enum):
     UNKNOWN = "unknown"
     VALID = "valid"
     INVALID = "invalid"
+    
 
 class ObjectValidity(BaseModel):
     status: ValidityStatus = Field(default=ValidityStatus.UNKNOWN)
-    accuracy: Literal["true", "false"] = Field(default="true")
-    visibility: Literal["fully visible", "partially visible", "hidden"] = Field(default="fully visible")
+    accuracy: Optional[Literal["true", "false"]] = Field(default=None)
+    visibility: Optional[Literal["fully visible", "partially visible", "hidden"]] = Field(default=None)
     reason: Optional[str] = None
 
 class ImageObject(BaseModel):
