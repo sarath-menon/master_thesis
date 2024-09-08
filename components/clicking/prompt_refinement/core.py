@@ -59,7 +59,8 @@ class PromptRefiner(ImageProcessorBase):
             batch_results.extend(batch_response)
 
             # Add delay between batches to respect API rate limits
-            await asyncio.sleep(batch_delay)  # Adjust the delay as needed
+            if batch_end < len(images):
+                await asyncio.sleep(batch_delay)
 
         for clicking_image, result in zip(clicking_images, batch_results):
             clicking_image.predicted_objects = [obj for obj in result.objects]
