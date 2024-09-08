@@ -10,6 +10,7 @@ from clicking.common.mask import SegmentationMask, SegmentationMode
 import json
 from clicking.common.data_structures import ValidityStatus
 
+
 class Segmentation:
     def __init__(self, client: Client, config: Dict):
         self.client = client
@@ -33,24 +34,24 @@ class Segmentation:
         except Exception as e:
             print(f"Error setting segmentation model: {str(e)}")
 
-    def get_segmentation_results(self, state: PipelineState) -> PipelineState:
+    def get_segmentation_results(self, state: PipelineState, segmentation_mode:TaskType) -> PipelineState:
+
         for clicking_image in state.images:
             image_file = image_to_http_file(clicking_image.image)
             
             for obj in clicking_image.predicted_objects:
-
-                print(type(ValidityStatus.VALID), type(obj.validity.status))
 
                 if obj.validity.status is not ValidityStatus.VALID:
                     print(f"Skipping segmentation for {obj.name} because it is invalid or not visible: {obj.validity.status}")
                     continue
 
                 request = BodyGetPrediction(image=image_file)
+
                 try:
                     response = get_prediction.sync(
                         client=self.client,
                         body=request,
-                        task=TaskType.SEGMENTATION_WITH_BBOX,
+                        task=segmentation_mode,
                         input_boxes=json.dumps(obj.bbox.get(mode=BBoxMode.XYXY))
                     )
                     
