@@ -12,7 +12,7 @@ from enum import Enum
 def process_description(name: str):
     return name.lower() + "."
 
-class InputMode(Enum):
+class LocalizerInput(Enum):
     OBJ_NAME = ModuleMode("obj_name", lambda obj: obj.name)
     OBJ_DESCRIPTION = ModuleMode("obj_description", lambda obj: process_description(obj.name))
 
@@ -39,7 +39,7 @@ class Localization:
         except Exception as e:
             print(f"Error setting localization model: {str(e)}")
 
-    def get_localization_results(self, state: PipelineState, localization_mode: TaskType, localization_input_mode: InputMode) -> PipelineState:
+    def get_localization_results(self, state: PipelineState, localization_mode: TaskType, localization_input_mode: LocalizerInput) -> PipelineState:
         
         for clicking_image in state.images:
             image_file = image_to_http_file(clicking_image.image)
