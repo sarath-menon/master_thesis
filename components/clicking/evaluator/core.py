@@ -1,5 +1,5 @@
 from clicking.vision_model.visualization import overlay_bounding_box
-from clicking.pipeline.core import PipelineState
+from clicking.common.data_structures import PipelineState
 from typing import List, Dict
 import os
 import json
@@ -67,7 +67,7 @@ def save_validity_results(results: PipelineState, output_folder: str):
     with open(json_file, 'w') as f:
         json.dump(entries, f, indent=2)
     
-    print(f"Validity results saved to {output_folder}")
+    print(f"ObjectValidity results saved to {output_folder}")
     print(f"Overlay images saved in the same directory")
 
 def evaluate_validity_results(ground_truth_file: str, predictions_file: str):

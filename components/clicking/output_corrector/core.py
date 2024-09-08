@@ -19,7 +19,7 @@ from typing import Literal
 from clicking.common.data_structures import ObjectValidity
 from tqdm.asyncio import tqdm
 from clicking.common.data_structures import ModuleMode
-from clicking.pipeline.core import PipelineState
+from clicking.common.data_structures import PipelineState
 from clicking.common.data_structures import ObjectImageDict
 from clicking.common.data_structures import ImageObject
 # set API keys

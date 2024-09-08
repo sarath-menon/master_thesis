@@ -1,9 +1,10 @@
 
 from clicking.common.data_structures import ClickingImage
-
+from clicking.common.data_structures import PipelineState
 from prettytable import PrettyTable
 from typing import List 
 from matplotlib import pyplot as plt
+
 
 def print_image_objects(image_objects: List[ClickingImage], show_image=False):
     for result in image_objects:
@@ -79,3 +80,20 @@ def print_object_descriptions(image_objects: List[ClickingImage], show_image=Fal
 
         plt.tight_layout()
 
+
+def show_object_validity(result: PipelineState):
+    table = PrettyTable()
+    table.field_names = ["Object Name", "Is Valid", "Accuracy", "Visibility", "Reason"]
+    table.align = "l"  # Align all columns to the left
+    
+    for image in result.images:
+        for obj in image.predicted_objects:
+            table.add_row([
+                obj.name,
+                obj.validity.is_valid,
+                obj.validity.accuracy,
+                obj.validity.visibility,
+                obj.validity.reason
+            ])
+    
+    print(table)
