@@ -1,4 +1,3 @@
-#%%
 from clicking.common.image_utils import ImageProcessorBase
 from litellm import completion, acompletion
 import os
@@ -28,21 +27,20 @@ class PromptResponse(BaseModel):
     objects: list[ImageObject]
 
 class PromptRefiner(ImageProcessorBase):
-    def __init__(self, prompt_path: str, config: Dict, model: str = "gpt-4o", temperature: float = 0.0):
+    def __init__(self,  config: Dict, model: str = "gpt-4o", temperature: float = 0.0):
         super().__init__(model, temperature)
-        self.prompt_manager = PromptManager(prompt_path)
+        self.prompt_manager = PromptManager(config['prompts']['refinement_path'])
         self.messages = [{"role": "system", "content": self.prompt_manager.get_prompt(type='system')}]
         
         # Load configuration
         self.config = config
         
     async def process_prompts_async(self, state: PipelineState, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> PipelineState:
-        clicking_images = state.clicking_images
-        images = [ci.image for ci in clicking_images]
-        template_values = [self._get_template_values(mode, None, **kwargs) for _ in clicking_images]
+        images = [ci.image for ci in state.images]
+        template_values = [self._get_template_values(mode, None, **kwargs) for _ in state.images]
 
         prompts = [self.prompt_manager.get_prompt(type='user', prompt_key=mode.value, template_values=tv) for tv in template_values]
-        messages = [self.messages.copy() for _ in clicking_images] 
+        messages = [self.messages.copy() for _ in state.images] 
 
         batch_results = []
         batch_size = 20  # Adjust this value based on your needs and API limits
@@ -63,9 +61,9 @@ class PromptRefiner(ImageProcessorBase):
             if batch_end < len(images):
                 await asyncio.sleep(batch_delay)
 
-        for clicking_image, result in zip(clicking_images, batch_results):
+        for clicking_image, result in zip(state.images, batch_results):
             clicking_image.predicted_objects = [obj for obj in result.objects]
-        return clicking_images
+        return state
 
     async def _process_single_image(self, clicking_image: ClickingImage, mode: PromptMode, **kwargs) -> ClickingImage:
         objects = await self._process_single_prompt(clicking_image.image, mode, **kwargs)
