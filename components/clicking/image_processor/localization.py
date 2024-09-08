@@ -49,7 +49,6 @@ class Localization:
                 
                 # Use the lambda function associated with the input_mode
                 input_text = localization_input_mode.value.handler(obj)
-                print(f"Input text: {input_text}")
 
                 # clear any existing bbox
                 obj.bbox = None

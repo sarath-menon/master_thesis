@@ -90,7 +90,7 @@ def show_object_validity(result: PipelineState):
         for obj in image.predicted_objects:
             table.add_row([
                 obj.name,
-                obj.validity.is_valid,
+                obj.validity.status,
                 obj.validity.accuracy,
                 obj.validity.visibility,
                 obj.validity.reason

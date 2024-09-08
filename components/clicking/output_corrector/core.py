@@ -11,7 +11,7 @@ from clicking.prompt_manager.core import PromptManager
 import asyncio
 from clicking.common.image_utils import ImageProcessorBase
 from clicking.vision_model.visualization import overlay_bounding_box
-from clicking.common.data_structures import ClickingImage
+from clicking.common.data_structures import ClickingImage, ValidityStatus
 from clicking.prompt_refinement.data_structures import *
 import json
 from pydantic import BaseModel, Field
@@ -95,12 +95,12 @@ class OutputCorrector(ImageProcessorBase):
                 await asyncio.sleep(batch_delay)
 
         for response in batch_results:
-            is_valid = True 
+            status = ValidityStatus.VALID
             if response.accuracy == "false" or response.visibility != "fully visible":
-                is_valid = False
+                status = ValidityStatus.INVALID
 
             obj = objects[response.object_id].object
-            obj.validity = ObjectValidity(is_valid=is_valid,
+            obj.validity = ObjectValidity(status=status,
                                     reason=response.reasoning,
                                     accuracy=response.accuracy,
                                     visibility=response.visibility)

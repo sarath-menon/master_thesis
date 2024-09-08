@@ -32,8 +32,18 @@ CATEGORY_COLOR_MAP = {
     ObjectCategory.NPC: 'blue',                
 }
 
+# class Validity(BaseModel):
+#     is_valid: bool = Field(default=True)
+#     reason: Optional[str] = None
+
+
+class ValidityStatus(Enum):
+    UNKNOWN = "unknown"
+    VALID = "valid"
+    INVALID = "invalid"
+
 class ObjectValidity(BaseModel):
-    is_valid: bool = Field(default=True)
+    status: ValidityStatus = Field(default=ValidityStatus.UNKNOWN)
     accuracy: Literal["true", "false"] = Field(default="true")
     visibility: Literal["fully visible", "partially visible", "hidden"] = Field(default="fully visible")
     reason: Optional[str] = None

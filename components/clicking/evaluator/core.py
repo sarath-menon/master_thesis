@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from evaluate import load
 from collections import Counter
 from typing import List, Dict, Literal
-from clicking.common.data_structures import ClickingImage
+from clicking.common.data_structures import ClickingImage, ValidityStatus
 import wandb
 import pandas as pd
 
@@ -45,7 +45,7 @@ def save_validity_results(results: PipelineState, output_folder: str):
             filename = f"{clicking_image.id}_{obj.name}.jpg"
             overlay_image.save(os.path.join(images_folder, filename))
 
-            validity_choice = "true" if obj.validity.is_valid else "false"
+            validity_choice = "valid" if obj.validity.status == ValidityStatus.VALID else "invalid"
 
             choice_result = ChoiceResult(
                 value={"choices": [validity_choice]},
