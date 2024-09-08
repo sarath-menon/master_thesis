@@ -45,6 +45,11 @@ class Localization:
             image_file = image_to_http_file(clicking_image.image)
             
             for obj in clicking_image.predicted_objects:
+
+                if obj.validity.status is ValidityStatus.INVALID:
+                    print(f"Skipping localization for {obj.name} because it is invalid")
+                    continue
+
                 request = BodyGetPrediction(image=image_file)
                 
                 # Use the lambda function associated with the input_mode
@@ -64,7 +69,8 @@ class Localization:
 
                     if len(response.prediction.bboxes) > 1:
                         print(f"Multiple bounding boxes found for {obj.name}: {len(response.prediction.bboxes)}. Ignoring.")
-                        #obj.bbox = BoundingBox(bbox=response.prediction.bboxes[0], mode=BBoxMode.XYXY)
+                        obj.validity = ObjectValidity(status=ValidityStatus.INVALID, reason="Multiple bounding boxes found")
+                        
                     elif len(response.prediction.bboxes) == 1:
                         obj.bbox = BoundingBox(bbox=response.prediction.bboxes[0], mode=BBoxMode.XYXY)
                     else:
