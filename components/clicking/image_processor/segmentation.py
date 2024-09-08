@@ -8,6 +8,7 @@ from clicking.vision_model.data_structures import TaskType
 from clicking.common.bbox import BBoxMode
 from clicking.common.mask import SegmentationMask, SegmentationMode
 import json
+from clicking.common.data_structures import ValidityStatus
 
 class Segmentation:
     def __init__(self, client: Client, config: Dict):
@@ -37,6 +38,13 @@ class Segmentation:
             image_file = image_to_http_file(clicking_image.image)
             
             for obj in clicking_image.predicted_objects:
+
+                print(type(ValidityStatus.VALID), type(obj.validity.status))
+
+                if obj.validity.status is not ValidityStatus.VALID:
+                    print(f"Skipping segmentation for {obj.name} because it is invalid or not visible: {obj.validity.status}")
+                    continue
+
                 request = BodyGetPrediction(image=image_file)
                 try:
                     response = get_prediction.sync(
