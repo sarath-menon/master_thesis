@@ -156,6 +156,7 @@ class Pipeline:
                 raise asyncio.CancelledError()
 
             try:
+                print(f"Starting execution of step '{step.name}'")
                 state = await asyncio.wait_for(asyncio.to_thread(step.function, state), timeout=None)
             except asyncio.CancelledError:
                 print(f"Step '{step.name}' was cancelled.")
@@ -339,20 +340,23 @@ class Pipeline:
 
     async def run_for_all_modes(
         self,
-        initial_state: PipelineState,
-        pipeline_modes: PipelineModeSequence,
+        initial_state: Optional[PipelineState] = None,
+        initial_images: Optional[List[ClickingImage]] = None,
+        pipeline_modes: PipelineModeSequence = None,
         start_from_step: Optional[str] = None,
         stop_after_step: Optional[str] = None
     ) -> PipelineRunResults:
         results = {}
 
-        
+        if initial_state is None and initial_images is None:
+            raise ValueError("Either initial_state or initial_images must be provided.")
 
         for i, mode in enumerate(tqdm(pipeline_modes.modes, desc="Running combinations")):
             print(f"Running mode: {mode.name}")
             
-            # Create a deep copy of the initial state for each run
-            initial_state_copy = copy.deepcopy(initial_state)
+            # Create deep copies of the initial state or images for each run
+            initial_state_copy = copy.deepcopy(initial_state) if initial_state else None
+            initial_images_copy = copy.deepcopy(initial_images) if initial_images else None
             
             # Create a new Pipeline instance for each mode
             temp_pipeline = Pipeline(self.config)
@@ -373,6 +377,7 @@ class Pipeline:
 
             result = await temp_pipeline.run(
                 initial_state=initial_state_copy,
+                initial_images=initial_images_copy,
                 start_from_step=start_from_step,
                 stop_after_step=stop_after_step,
             )
@@ -384,6 +389,8 @@ class Pipeline:
                 result=result
             )
             results[mode.name] = single_run
+
+            print(f"Completed mode '{mode.name}'")
 
         return PipelineRunResults(results)
 
