@@ -10,6 +10,8 @@ import uuid
 from typing import Literal
 from dataclasses import dataclass, field
 import random
+import hashlib
+import pickle
 
 class ObjectCategory(str, Enum):
     GAME_ASSET = "Game Asset"
@@ -32,9 +34,9 @@ CATEGORY_COLOR_MAP = {
     ObjectCategory.NPC: 'blue',                
 }
 
-# class Validity(BaseModel):
-#     is_valid: bool = Field(default=True)
-#     reason: Optional[str] = None
+class Validity(BaseModel):
+    is_valid: bool = Field(default=True)
+    reason: Optional[str] = None
 
 
 class ValidityStatus(Enum):
@@ -81,6 +83,15 @@ class ObjectImageDict(BaseModel):
 @dataclass
 class PipelineState:
     images: List[ClickingImage] = field(default_factory=list)
+
+    def __hash__(self):
+        # Create a hash based on the content of PipelineState
+        return hash(pickle.dumps(self))
+
+    def __eq__(self, other):
+        if not isinstance(other, PipelineState):
+            return False
+        return self.images == other.images
 
     def filter_by_object_category(self, category: ObjectCategory):
         for clicking_image in self.images:

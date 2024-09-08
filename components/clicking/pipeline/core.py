@@ -26,6 +26,11 @@ import asyncio
 from tqdm import tqdm
 import copy
 from clicking.common.data_structures import PipelineState
+from functools import lru_cache
+from functools import wraps
+import hashlib
+import pickle
+
 T = TypeVar('T')
 
 class PipelineModes:
@@ -35,13 +40,27 @@ class PipelineModes:
     def __getattr__(self, name):
         return self.modes[name]
 
-
+def custom_cache(func):
+    cache = {}
+    @wraps(func)
+    def wrapper(state: PipelineState, *args, **kwargs):
+        # Create a unique key based on the function name, state hash, and arguments
+        key = hashlib.md5(pickle.dumps((func.__name__, hash(state), args, kwargs))).hexdigest()
+        if key not in cache:
+            cache[key] = func(state, *args, **kwargs)
+        return cache[key]
+    return wrapper
 
 @dataclass
 class PipelineStep(Generic[T]):
     name: str
     function: Callable[[PipelineState, T], PipelineState]
     mode_keys: List[str]
+    use_cache: bool = False
+
+    def __post_init__(self):
+        if self.use_cache:
+            self.function = custom_cache(self.function)
 
 @dataclass
 class PipelineMode:
@@ -157,7 +176,7 @@ class Pipeline:
 
             try:
                 print(f"Starting execution of step '{step.name}'")
-                state = await asyncio.wait_for(asyncio.to_thread(step.function, state), timeout=None)
+                state = await asyncio.to_thread(step.function, state)
             except asyncio.CancelledError:
                 print(f"Step '{step.name}' was cancelled.")
                 raise
@@ -176,11 +195,11 @@ class Pipeline:
         return -1
 
     def print_pipeline(self):
-        headers = ["No.", "Step Name", "Mode Keys"]
+        headers = ["No.", "Step Name", "Mode Keys", "Cached"]
         table_data = []
         
         for i, step in enumerate(self.steps, 1):
-            table_data.append([i, step.name, ", ".join(step.mode_keys)])
+            table_data.append([i, step.name, ", ".join(step.mode_keys), "Yes" if step.use_cache else "No"])
         
         print("Pipeline Steps:")
         print(tabulate(table_data, headers=headers, tablefmt="grid"))
@@ -362,7 +381,7 @@ class Pipeline:
             temp_pipeline = Pipeline(self.config)
             
             # Create a copy of the steps
-            temp_steps = [PipelineStep(step.name, step.function, step.mode_keys) for step in self.steps]
+            temp_steps = [PipelineStep(step.name, step.function, step.mode_keys, step.use_cache) for step in self.steps]
             
             # Apply mode-specific configurations
             for step in temp_steps:
@@ -371,6 +390,8 @@ class Pipeline:
                 def create_step_function(orig_func, modes):
                     return lambda state: orig_func(state, **modes)
                 step.function = create_step_function(original_function, step_modes)
+                if step.use_cache:
+                    step.function = custom_cache(step.function)
 
             # Set the modified steps to the new pipeline instance
             temp_pipeline.steps = temp_steps
