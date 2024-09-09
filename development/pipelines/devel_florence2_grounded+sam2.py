@@ -19,8 +19,6 @@ import json
 from dataclasses import dataclass, field
 from typing import List
 
-load_dotenv()
-
 @dataclass
 class PipelineState:
     images: List[ClickingImage] = field(default_factory=list)

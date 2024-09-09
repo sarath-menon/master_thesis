@@ -41,9 +41,9 @@ class SegmentationText:
             
             for obj in clicking_image.predicted_objects:
 
-                # if obj.validity.status is not ValidityStatus.VALID:
-                #     print(f"Skipping segmentation for {obj.name} because it is invalid or not visible: {obj.validity.status}")
-                #     continue
+                if obj.validity.status is ValidityStatus.INVALID:
+                    print(f"Skipping segmentation for {obj.name} because it is invalid: {obj.validity.status}")
+                    continue
 
                 request = BodyGetPrediction(image=image_file)
 
