@@ -7,7 +7,7 @@ just install_dependencies:
     apt-get install -y libgl1-mesa-glx  git-lfs 
 
 install_wheels_cpu:
-    pip install ./wheels/evf_sam2/evf_sam-1.0-py3-none-any.whl
+    pip install ./wheels/evf_sam2_cpu/evf_sam-1.0-py3-none-any.whl
     pip install ./wheels/sam2_cpu/SAM_2-1.0-py3-none-any.whl
 
 install_wheels_cuda:
