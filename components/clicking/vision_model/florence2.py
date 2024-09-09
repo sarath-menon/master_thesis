@@ -112,7 +112,6 @@ class Florence2():
         labels = []
 
         if task == TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB:
-            print(result[task_prompt], flush=True)
             bboxes = result[task_prompt]["bboxes"]
             labels = result[task_prompt]["bboxes_labels"]
         elif task == TaskType.LOCALIZATION_WITH_TEXT_GROUNDED:
@@ -120,6 +119,8 @@ class Florence2():
             labels = result[task_prompt]["labels"]
         else:
             raise ValueError(f"Invalid task type: {task}")
+
+        print(result[task_prompt], flush=True)
 
         return LocalizationResp(bboxes=bboxes, labels=labels)
 
