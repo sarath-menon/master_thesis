@@ -137,6 +137,9 @@ class EVF_SAM:
         mask = pred_mask.detach().cpu().numpy()[0]
         mask = mask > 0
 
+        print(f"Input text: {req.input_text}", flush=True)
+        print(f"Mask shape: {mask.shape}", flush=True)
+
         masks = [coco_encode_rle(mask)]
         return PredictionResp(prediction=SegmentationResp(masks=masks))
 #%%
