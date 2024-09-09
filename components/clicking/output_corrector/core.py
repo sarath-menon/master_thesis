@@ -65,12 +65,12 @@ class OutputCorrector(ImageProcessorBase):
         object_names = []
 
         for obj_dict in objects.values():
-
-            clicking_img = state.get_image_by_id(obj_dict.image_id)
-            object_names.append(obj_dict.object.name)
             if obj_dict.object.validity.status == ValidityStatus.INVALID:
                 print(f"Warning: Skipping bbox verification for object {obj_dict.object.name} due to invalid bbox.")
                 continue
+
+            clicking_img = state.get_image_by_id(obj_dict.image_id)
+            object_names.append(obj_dict.object.name)
 
             processed_images.append(bbox_verification_mode.value.handler(clicking_img.image, obj_dict.object))
             template_values = self._get_template_values(bbox_verification_mode.value, obj_dict.object)
@@ -113,7 +113,7 @@ class OutputCorrector(ImageProcessorBase):
                                     visibility=response.visibility)
         return state
 
-    def verify_bboxes(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode,show_images: bool = False, **kwargs) -> PipelineState:
+    def verify_bboxes(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode,show_images: bool = True, **kwargs) -> PipelineState:
         return asyncio.run(self.verify_bboxes_async(state, bbox_verification_mode, show_images=show_images, **kwargs))
 
 
