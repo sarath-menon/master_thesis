@@ -15,7 +15,8 @@ from evf_sam.model.evf_sam2 import EvfSam2Model
 from clicking.vision_model.data_structures import TaskType, PredictionReq, SegmentationResp, PredictionResp
 from clicking.vision_model.utils import coco_encode_rle
 from fastapi import HTTPException
-
+from PIL import Image
+import io
 #%%
 
 class EVF_SAM:
@@ -104,7 +105,7 @@ class EVF_SAM:
         return beit_preprocess(x)
 
     @torch.no_grad()
-    def predict(self, req: PredictionReq) -> PredictionResp:
+    async def predict(self, req: PredictionReq) -> PredictionResp:
         if req.task not in self.task_prompts:
             raise ValueError(f"Invalid task type: {req.task}")
         elif req.image is None:
@@ -112,7 +113,11 @@ class EVF_SAM:
         elif req.input_text is None:
             raise ValueError("Text input is required for evf_sam2")
 
-        image_np = np.array(req.image)
+         #Convert to a PIL imagex
+        image_pil = await req.image.read()
+        image_pil = Image.open(io.BytesIO(image_pil))
+
+        image_np = np.array(image_pil)
         original_size_list = [image_np.shape[:2]]
 
         image_beit = self.beit3_preprocess(image_np, 224).to(dtype=self.model.dtype, device=self.device)
