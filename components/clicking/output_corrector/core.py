@@ -37,10 +37,10 @@ class ObjectValidationResult(BaseModel):
 
 
 def process_overlay(image: Image.Image, obj: ImageObject) -> List[Image.Image]:
-    return overlay_bounding_box(image, obj.bbox)
+    return overlay_bounding_box(image, obj.bbox, padding=10)
 
 def process_crop(image: Image.Image, obj: ImageObject) -> List[Image.Image]:
-    return obj.bbox.extract_area(image, padding=0)
+    return obj.bbox.extract_area(image, padding=10)
 
 class BBoxVerificationMode(Enum):
     OVERLAY = ModuleMode("bbox_overlay", process_overlay)
@@ -84,8 +84,8 @@ class OutputCorrector(ImageProcessorBase):
             batch_prompts = prompts[batch_start:batch_end]
             batch_messages = messages[batch_start:batch_end]
 
-            batch_response = await self._get_batch_image_responses(batch_images, batch_prompts, batch_messages, ObjectValidationResult)
-            batch_results.extend(batch_response)
+            # batch_response = await self._get_batch_image_responses(batch_images, batch_prompts, batch_messages, ObjectValidationResult)
+            # batch_results.extend(batch_response)
 
              # show images
             if show_images:
