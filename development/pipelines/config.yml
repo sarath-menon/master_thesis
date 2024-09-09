@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=./generated/config_schema.json
+
 # Dataset settings
 dataset:
   images_path: './datasets/label_studio_gen/coco_dataset/images'
@@ -19,7 +21,8 @@ models:
   segmentation:
     name: 'sam2'
     variant: 'sam2_hiera_tiny'
-    task: 'SEGMENTATION_WITH_BBOX'
+    tasks: 
+      - 'SEGMENTATION_WITH_BBOX'
 
 # Prompt settings
 prompts:
@@ -43,13 +46,16 @@ visualization:
 
 # Pipeline mode sequences
 pipeline_mode_sequences:
-  object_detection_text_grounded:
-    prompt_mode: IMAGE_TO_OBJECTS_LIST
-    localization_input_mode: OBJ_DESCRIPTION
-    localization_mode: LOCALIZATION_WITH_TEXT_GROUNDED
-    segmentation_mode: SEGMENTATION_WITH_BBOX
   object_detection_open_vocab:
     prompt_mode: IMAGE_TO_OBJECTS_LIST
     localization_input_mode: OBJ_DESCRIPTION
     localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
+    bbox_verification_mode: CROP
     segmentation_mode: SEGMENTATION_WITH_BBOX
+  # object_detection_text_grounded:
+  #   prompt_mode: IMAGE_TO_OBJECTS_LIST
+  #   localization_input_mode: OBJ_NAME
+  #   localization_mode: LOCALIZATION_WITH_TEXT_GROUNDED
+  #   bbox_verification_mode: CROP
+  #   segmentation_mode: SEGMENTATION_WITH_BBOX
+ 

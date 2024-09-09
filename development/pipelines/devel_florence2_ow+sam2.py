@@ -35,7 +35,8 @@ from clicking.image_processor.segmentation import Segmentation
 
 #%%
 # Load the configuration file
-with open('config.yml', 'r') as config_file:
+CONFIG_PATH = "./development/pipelines/config.yml"
+with open(CONFIG_PATH, 'r') as config_file:
     config = yaml.safe_load(config_file)
 
 client = Client(base_url=config['api']['local_url'], timeout=50)
