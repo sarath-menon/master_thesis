@@ -62,12 +62,14 @@ class OutputCorrector(ImageProcessorBase):
 
         # Process images and prepare prompts
         processed_images, prompts, messages = [], [], []
+        object_names = []
+
         for obj_dict in objects.values():
 
             clicking_img = state.get_image_by_id(obj_dict.image_id)
-
+            object_names.append(obj_dict.object.name)
             if obj_dict.object.validity.status == ValidityStatus.INVALID:
-                print(f"Warning: Skipping object {obj_dict.object.name} due to invalid bbox.")
+                print(f"Warning: Skipping bbox verification for object {obj_dict.object.name} due to invalid bbox.")
                 continue
 
             processed_images.append(bbox_verification_mode.value.handler(clicking_img.image, obj_dict.object))
@@ -84,19 +86,20 @@ class OutputCorrector(ImageProcessorBase):
             batch_prompts = prompts[batch_start:batch_end]
             batch_messages = messages[batch_start:batch_end]
 
-            # batch_response = await self._get_batch_image_responses(batch_images, batch_prompts, batch_messages, ObjectValidationResult)
-            # batch_results.extend(batch_response)
-
-             # show images
-            if show_images:
-                for image, prompt in zip(batch_images, batch_prompts):
-                    plt.imshow(image)
-                    plt.axis('off')
-                    plt.show()
+            batch_response = await self._get_batch_image_responses(batch_images, batch_prompts, batch_messages, ObjectValidationResult)
+            batch_results.extend(batch_response)
 
             # Add delay between batches to respect API rate limits, but not after the last batch
             if batch_end < len(processed_images):
                 await asyncio.sleep(batch_delay)
+
+        # show images
+        if show_images:
+            for img, obj_name in zip(processed_images, object_names):
+                plt.imshow(img)
+                plt.title(f"Object: {obj_name}")
+                plt.axis('off')
+                plt.show()
 
         for response in batch_results:
             status = ValidityStatus.VALID
