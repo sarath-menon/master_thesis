@@ -34,13 +34,12 @@ from clicking.image_processor.localization import Localization, LocalizerInput
 from clicking.image_processor.segmentation import Segmentation
 
 #%%
-
 # Load the configuration file
 with open('config.yml', 'r') as config_file:
     config = yaml.safe_load(config_file)
 
-#%%
 client = Client(base_url=config['api']['local_url'], timeout=50)
+#%%
 
 prompt_refiner = PromptRefiner(config=config)
 localization_processor = Localization(client, config=config)
@@ -54,8 +53,6 @@ nest_asyncio.apply()
 # sample images
 coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
 
-image_ids = [22, 31, 42]
-clicking_images = coco_dataset.sample_dataset()
 #%%
 # Define the pipeline modes
 from clicking.output_corrector.core import BBoxVerificationMode  
@@ -108,10 +105,22 @@ pipeline_mode_sequence = PipelineModeSequence.from_config(config, pipeline_modes
 pipeline_mode_sequence.print_mode_sequences()
 
 #%%
+image_ids = [9,13,23]
+# clicking_images = coco_dataset.sample_dataset()
+
 # Load initial state
 loaded_state = pipeline.load_state()
-loaded_state = loaded_state.filter_by_ids(image_ids=image_ids)
+loaded_state = loaded_state.filter_by_ids(sample_size=3)
 # loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
+
+def remove_full_stops(description: str) -> str:
+    if description.endswith('.'):
+        return description[:-1]
+    return description
+
+for image in loaded_state.images:
+    for obj in image.predicted_objects:
+        obj.description = remove_full_stops(obj.description)
 
 #%%
 
@@ -120,7 +129,7 @@ all_results = asyncio.run(pipeline.run_for_all_modes(
     initial_state=loaded_state,
     pipeline_modes=pipeline_mode_sequence,
     start_from_step="Filter categories",
-    stop_after_step="Filter categories"
+    # stop_after_step="Filter categories"
 ))
 
 # Print summary of results
@@ -128,7 +137,9 @@ pipeline.print_mode_results_summary(all_results)
 
 result =  all_results.get_run_by_mode_name("object_detection_open_vocab")
 #result =  all_results.get_run_by_mode_name("object_detection_text_grounded")
-#
+#%%
+for image in result.images:
+    show_segmentation_predictions(image, show_descriptions=False)
 #%%
 from clicking.vision_model.visualization import show_localization_predictions
 
@@ -136,10 +147,6 @@ for image in result.images:
     show_localization_predictions(image, show_descriptions=False)
     for obj in image.predicted_objects:
         print(obj.name, obj.bbox)
-
-#%%
-for image in result.images:
-    show_segmentation_predictions(image, show_descriptions=False)
 # %% Generate and save the config schema
 # config_schema = PipelineModeSequence.generate_config_schema(pipeline_modes)
 # with open('config_schema.json', 'w') as f:
@@ -147,20 +154,22 @@ for image in result.images:
 
 # print("Config schema generated and saved to 'config_schema.json'")
 # import copy
-
-
 #%%
 # output_corrector = OutputCorrector(config=config)
 # output_corrector.verify_bboxes(result, bbox_verification_mode=BBoxVerificationMode.CROP, show_images=True)
 
-# from clicking.common.logging import show_object_validity
-# show_object_validity(result)
+from clicking.common.logging import show_object_validity
+show_object_validity(result)
 # #%%
 # segmentation_processor = Segmentation(client, config=config)
 # segmentation_processor.get_segmentation_results(result)
 
-pipeline.save_state(result)
+# pipeline.save_state(result)
 # %%
 from clicking.common.logging import print_object_descriptions
 
 print_object_descriptions(result.images)
+for image in result.images:
+    for obj in image.predicted_objects:
+        print(obj.name, obj.description)
+# %%
