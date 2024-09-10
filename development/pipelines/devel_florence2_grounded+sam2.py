@@ -4,7 +4,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from torchvision import transforms, datasets
 from dotenv import load_dotenv
-from clicking.vision_model.visualization import show_localization_predictions, show_segmentation_predictions
+from clicking.image_processor.visualization import show_localization_predictions, show_segmentation_predictions
 from clicking.common.data_structures import PipelineState, ClickingImage, ImageObject
 from clicking.common.bbox import BoundingBox, BBoxMode
 from clicking.common.mask import SegmentationMask, SegmentationMode
@@ -12,7 +12,7 @@ from clicking.output_corrector.core import OutputCorrector
 from clicking_client import Client
 from clicking_client.models import SetModelReq, BodyGetPrediction
 from clicking_client.api.default import set_model, get_prediction, get_models
-from clicking.vision_model.data_structures import TaskType
+from clicking.common.data_structures import TaskType
 import io
 import base64
 import json

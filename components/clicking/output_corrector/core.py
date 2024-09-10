@@ -10,7 +10,7 @@ from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.prompt_manager.core import PromptManager
 import asyncio
 from clicking.common.image_utils import ImageProcessorBase
-from clicking.vision_model.visualization import overlay_bounding_box
+from clicking.image_processor.visualization import overlay_bounding_box
 from clicking.common.data_structures import ClickingImage, ValidityStatus
 from clicking.prompt_refinement.data_structures import *
 import json

@@ -5,6 +5,7 @@ from pycocotools import mask as mask_utils
 from PIL import Image
 from dataclasses import dataclass, field
 import json
+import cv2
 
 class SegmentationMode(Enum):
     BINARY_MASK = 1
@@ -67,6 +68,16 @@ class SegmentationMask:
         cropped_image = self.crop_using_bbox(image_array, bbox=[cmin, rmin, cmax, rmax], padding=padding)
 
         return Image.fromarray(cropped_image)
+
+    def denoise_mask(self, kernel_size: int = 10, open_iterations: int = 3, close_iterations: int = 1):
+        kernel = np.ones((kernel_size, kernel_size), np.uint8)
+        mask = self.binary_mask.astype(np.uint8) * 255
+        
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=open_iterations)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=close_iterations)
+        
+        self.binary_mask = mask.astype(bool)
+        self.coco_rle = mask_utils.encode(np.asfortranarray(mask))
 
     @property
     def shape(self) -> tuple:

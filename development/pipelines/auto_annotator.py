@@ -57,7 +57,7 @@ client = Client(base_url="http://localhost:8083")
 from clicking_client.api.default import get_models
 from clicking_client.models  import SetModelReq
 from clicking_client.api.default import set_model
-from clicking.vision_model.data_structures import TaskType
+from clicking.common.data_structures import TaskType
 
 api_response = get_models.sync(client=client)
 print(api_response)

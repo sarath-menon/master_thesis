@@ -1,6 +1,6 @@
 from clicking.vision_model.florence2 import Florence2
 from clicking.vision_model.sam2 import SAM2
-# from clicking.vision_model.evf_sam2 import EVF_SAM
+from clicking.vision_model.evf_sam2 import EVF_SAM
 from pydantic import BaseModel
 from PIL import Image
 import io
@@ -12,16 +12,17 @@ from fastapi import HTTPException
 from clicking.common.bbox import BoundingBox, BBoxMode
 import numpy as np
 from enum import Enum, auto
-from clicking.vision_model.data_structures import *
+from clicking.common.data_structures import *
 
 import asyncio
+from clicking.api.exceptions import ServiceNotAvailableException, ModelNotSetException
 
 class VisionModel:
     def __init__(self):
         self._available_models = {
             'florence2': Florence2,
             'sam2': SAM2,
-            # 'evf_sam2': EVF_SAM
+            'evf_sam2': EVF_SAM
         }
         # to store task-model mappings
         self._task_models = {}  
@@ -39,9 +40,6 @@ class VisionModel:
         # check if task-model mapping exists
         model = self._get_model_for_task(task)
 
-        if model is None:
-            raise HTTPException(status_code=404, detail=f"{task.name.capitalize()} model not set")
-        
         response = GetModelResp(name=model.name, variant=model.variant)
         return response
 
@@ -78,19 +76,23 @@ class VisionModel:
             models.append(model)
         return GetModelsResp(models=models)  # Change this line
 
-    async def get_prediction(self, req: PredictionReq) -> PredictionResp:
+    async def get_prediction(self, req: PredictionReq):
         model_handle = self._get_model_for_task(req.task)
-        if model_handle is None:
-            raise HTTPException(status_code=404, detail=f"{req.task.name.capitalize()} model not set")
 
-        # Create a lock for this model if it doesn't exist
+        if model_handle is None:
+            print(f"Model not set: {model_handle}")
+            raise ModelNotSetException(f"{req.task.name.capitalize()} model not set")
+        
         if req.task not in self._model_locks:
             self._model_locks[req.task] = asyncio.Semaphore(1)
 
-        async with self._model_locks[req.task]:
-            start_time = time.time()
-            response = await model_handle.predict(req)
-            response.inference_time = time.time() - start_time
+        try:
+            async with self._model_locks[req.task]:
+                start_time = time.time()
+                response = await model_handle.predict(req)
+                response.inference_time = time.time() - start_time
+        except Exception as e:
+            raise ServiceNotAvailableException(f"Error during prediction: {str(e)}")
 
         return response
 

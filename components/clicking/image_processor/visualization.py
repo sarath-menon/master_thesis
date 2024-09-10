@@ -10,6 +10,7 @@ from typing import List
 from clicking.common.data_structures import ClickingImage, ImageObject, ObjectCategory, CATEGORY_COLOR_MAP
 from PIL import ImageDraw
 from clicking.common.logging import print_object_descriptions
+from clicking.common.data_structures import ValidityStatus
 
 # overlay bounding box in format (x, y, w, h) on a PIL image
 def overlay_bounding_box(image, bbox: BoundingBox, color='red', thickness=14, padding=0):
@@ -129,6 +130,10 @@ def show_segmentation_predictions(clicking_image: ClickingImage, textbox_color='
     for i, obj in enumerate(clicking_image.predicted_objects):
         if obj.mask is None:
             print(f"Warning: Object '{obj.name}' has no segmentation mask.")
+            continue
+
+        if obj.validity.status is ValidityStatus.INVALID:
+            print(f"Skipping segmentation for {obj.name} because it is invalid: {obj.validity.status}")
             continue
 
         if object_names_to_show and obj.name not in object_names_to_show:

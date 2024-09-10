@@ -7,8 +7,7 @@ import numpy as np
 from transformers.dynamic_module_utils import get_imports
 import torch
 from dataclasses import dataclass
-from clicking.vision_model.data_structures import TaskType
-from clicking.vision_model.data_structures import TaskType, PredictionReq, SegmentationResp, PredictionResp, LocalizationResp
+from clicking.common.data_structures import *
 import io
 #%%
 class Florence2():
@@ -120,7 +119,8 @@ class Florence2():
         else:
             raise ValueError(f"Invalid task type: {task}")
 
-        print(result[task_prompt], flush=True)
+        
+        
 
         return LocalizationResp(bboxes=bboxes, labels=labels)
 

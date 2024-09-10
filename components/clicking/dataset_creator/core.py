@@ -145,7 +145,7 @@ class CocoDataset:
 
 #%% Demo code
 if __name__ == "__main__":
-    from clicking.vision_model.visualization import show_segmentation_predictions
+    from clicking.image_processor.visualization import show_segmentation_predictions
     from clicking.common.mask import SegmentationMask, SegmentationMode
     from clicking.common.bbox import BoundingBox, BBoxMode
     from clicking.common.data_structures import ImageWithDescriptions

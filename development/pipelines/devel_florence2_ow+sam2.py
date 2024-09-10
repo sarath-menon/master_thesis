@@ -10,7 +10,6 @@ from typing import List, Dict, Tuple, Any
 from clicking.pipeline.core import Pipeline, PipelineState, PipelineStep, PipelineMode, PipelineModeSequence, PipelineModes
 from clicking.dataset_creator.core import CocoDataset
 from clicking.prompt_refinement.core import PromptRefiner, PromptMode
-from clicking.vision_model.data_structures import TaskType
 from clicking.common.bbox import BoundingBox, BBoxMode
 from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.output_corrector.core import OutputCorrector, BBoxVerificationMode
@@ -26,7 +25,7 @@ from typing import Callable, Union
 import inspect
 from dataclasses import dataclass, field
 import yaml
-from clicking.vision_model.visualization import show_localization_predictions, show_segmentation_predictions
+from clicking.image_processor.visualization import show_localization_predictions, show_segmentation_predictions
 from io import BytesIO
 import json
 import nest_asyncio
@@ -112,16 +111,16 @@ image_ids = [9,13,23]
 # Load initial state
 loaded_state = pipeline.load_state()
 loaded_state = loaded_state.filter_by_ids(sample_size=3)
-# loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
+loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
 
 def remove_full_stops(description: str) -> str:
     if description.endswith('.'):
         return description[:-1]
     return description
 
-for image in loaded_state.images:
-    for obj in image.predicted_objects:
-        obj.description = remove_full_stops(obj.description)
+# for image in loaded_state.images:
+#     for obj in image.predicted_objects:
+#         obj.description = remove_full_stops(obj.description)
 
 #%%
 
@@ -142,7 +141,7 @@ result =  all_results.get_run_by_mode_name("object_detection_open_vocab")
 for image in result.images:
     show_segmentation_predictions(image, show_descriptions=False)
 #%%
-from clicking.vision_model.visualization import show_localization_predictions
+from clicking.image_processor.visualization import show_localization_predictions
 
 for image in result.images:
     show_localization_predictions(image, show_descriptions=False)
@@ -156,14 +155,12 @@ for image in result.images:
 # print("Config schema generated and saved to 'config_schema.json'")
 # import copy
 #%%
-# output_corrector = OutputCorrector(config=config)
-# output_corrector.verify_bboxes(result, bbox_verification_mode=BBoxVerificationMode.CROP, show_images=True)
+from clicking.common.logging import print_object_descriptions
 
+print_object_descriptions(result.images)
+#%%
 from clicking.common.logging import show_object_validity
 show_object_validity(result)
-# #%%
-# segmentation_processor = Segmentation(client, config=config)
-# segmentation_processor.get_segmentation_results(result)
 
 # pipeline.save_state(result)
 # %%
@@ -173,4 +170,33 @@ print_object_descriptions(result.images)
 for image in result.images:
     for obj in image.predicted_objects:
         print(obj.name, obj.description)
+# %%
+from clicking.image_processor.segmentation_text import SegmentationText
+
+evf_sam2 = SegmentationText(client, config=config)
+
+#%%
+evf_sam2.get_segmentation_results(loaded_state, segmentation_mode=TaskType.SEGMENTATION_WITH_TEXT)
+#%%
+from clicking.common.mask import SegmentationMode
+
+for clicking_image in loaded_state.images:
+    image = clicking_image.image
+    for obj in clicking_image.predicted_objects:
+        obj.validity.status = ValidityStatus.UNKNOWN
+
+        extracted_area = obj.mask.extract_area(image)
+
+        if extracted_area.width >  image.width/2 or extracted_area.height > image.height/2:
+            obj.validity.status = ValidityStatus.INVALID
+            print(f"Invalid mask: {obj.name}")
+
+            print(f"Image size: {image.width,}")
+            print(f"Mask size: {extracted_area.size}")
+        # obj.mask.denoise_mask()
+
+
+#%%
+for clicking_image in loaded_state.images:
+    show_segmentation_predictions(clicking_image, show_descriptions=False)
 # %%

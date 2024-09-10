@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Query, File, UploadFile, Form, Path, HTTPException
+from fastapi import APIRouter, Query, File, UploadFile, Form, Path, HTTPException, Depends
+from clicking.common.data_structures import *
+from clicking.api.exceptions import ServiceNotAvailableException, ModelNotSetException
 from clicking.vision_model.core import VisionModel
-from clicking.vision_model.data_structures import *
 from PIL import Image
 import io
 import json
-from fastapi import Depends
 from typing import Dict, Tuple, Optional
 from ..cache_macro import cache_prediction
 import hashlib
@@ -46,7 +46,15 @@ async def prediction(req: PredictionReq = Depends()) -> PredictionResp:
     if req.task is None:
         raise HTTPException(status_code=400, detail="Task is required")
 
-    return await vision_model.get_prediction(req)
+    try:
+        response = await vision_model.get_prediction(req)
+        print(response)
+        return response
+    except ModelNotSetException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ServiceNotAvailableException as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 
 @vision_model_router.post("/auto_annotation", operation_id="get_auto_annotation")
 async def auto_annotation(req: AutoAnnotationReq = Depends()) -> AutoAnnotationResp:

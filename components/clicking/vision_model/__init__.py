@@ -1,3 +1,3 @@
-from clicking.vision_model import core, visualization
+from clicking.vision_model import core
 
-__all__ = ["core", "visualization"]
+__all__ = ["core"]

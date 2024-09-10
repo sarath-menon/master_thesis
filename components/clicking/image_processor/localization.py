@@ -5,7 +5,7 @@ from clicking_client.api.default import set_model, get_prediction
 from clicking.common.data_structures import *
 from clicking.common.data_structures import PipelineState
 from .utils import image_to_http_file
-from clicking.vision_model.data_structures import TaskType
+from clicking.common.data_structures import TaskType
 from clicking.common.bbox import BoundingBox, BBoxMode
 from enum import Enum
 

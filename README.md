@@ -98,12 +98,13 @@ kiota generate --language python --openapi http://localhost:8082/openapi.json -o
 
 Generate wheel
 ```  
-python setup.py sdist bdist_wheel --dist-dir ../wheels/evf_sam2
+python setup.py sdist bdist_wheel --dist-dir ../wheels/evf_sam2_cpu
 ```  
 
 Install wheel
 ```
-pip install ./wheels/evf_sam2/evf_sam-1.0-py3-none-any.whl
+pip uninstall EVF-SAM
+pip install ../wheels/evf_sam2/evf_sam-1.0-py3-none-any.whl
 ```
 
 ## SAM2
@@ -115,5 +116,5 @@ python setup.py sdist bdist_wheel --dist-dir ../wheels/sam2_cuda
 
 Install wheel
 ```
-pip install ./wheels/sam2/SAM_2-1.0-py3-none-any.whl
+pip install ../wheels/sam2/SAM_2-1.0-py3-none-any.whl
 ```

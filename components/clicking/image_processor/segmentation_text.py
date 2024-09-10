@@ -4,7 +4,7 @@ from clicking_client.models import SetModelReq, BodyGetPrediction
 from clicking_client.api.default import set_model, get_prediction
 from clicking.common.data_structures import PipelineState
 from .utils import image_to_http_file
-from clicking.vision_model.data_structures import TaskType
+from clicking.common.data_structures import TaskType
 from clicking.common.bbox import BBoxMode
 from clicking.common.mask import SegmentationMask, SegmentationMode
 import json
@@ -16,7 +16,7 @@ class SegmentationText:
         self.client = client
         self.config = config
         self.tasks = self.load_tasks()
-        self.set_segmentation_model()
+        # self.set_segmentation_model()
 
     def load_tasks(self) -> List[TaskType]:
         task_strings = self.config['models']['segmentation_with_text']['tasks']
@@ -54,6 +54,9 @@ class SegmentationText:
                         task=segmentation_mode,
                         input_text=obj.description
                     )
+
+                    # check if response is http error
+                    print(f"Response: {response}")
                     
                     # error handling
                     if len(response.prediction.masks) > 1:

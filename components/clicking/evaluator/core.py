@@ -1,4 +1,4 @@
-from clicking.vision_model.visualization import overlay_bounding_box
+from clicking.image_processor.visualization import overlay_bounding_box
 from clicking.common.data_structures import PipelineState
 from typing import List, Dict
 import os

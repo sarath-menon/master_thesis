@@ -6,7 +6,7 @@ from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
 from fastapi import HTTPException
-from clicking.vision_model.data_structures import *
+from clicking.common.data_structures import *
 from pycocotools import mask as mask_utils
 from typing import Dict, Any
 from clicking.vision_model.utils import coco_encode_rle

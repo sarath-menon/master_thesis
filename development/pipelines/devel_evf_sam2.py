@@ -9,7 +9,7 @@ from torchvision import transforms, datasets
 from matplotlib.path import Path
 import matplotlib.patches as patches
 import torch
-from clicking.vision_model.data_structures import SegmentationResp
+from clicking.common.data_structures import SegmentationResp
 from clicking.dataset_creator.core import CocoDataset
 from dotenv import load_dotenv
 
@@ -63,7 +63,7 @@ from clicking_client.api.default import set_model
 api_response = get_models.sync(client=client)
 print(api_response)
 #%% set model
-from clicking.vision_model.data_structures import TaskType
+from clicking.common.data_structures import TaskType
 
 request = SetModelReq(name="evf_sam2", variant="sam2", task=TaskType.SEGMENTATION_WITH_TEXT)
 set_model.sync(client=client, body=request)
@@ -73,7 +73,7 @@ set_model.sync(client=client, body=request)
 from clicking_client.api.default import get_prediction
 from clicking_client.models import BodyGetPrediction
 import io
-from clicking.vision_model.data_structures import TaskType
+from clicking.common.data_structures import TaskType
 from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.vision_model.core import show_clickpoint_predictions
 from clicking.vision_model.utils import image_to_http_file
