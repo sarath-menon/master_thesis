@@ -1,13 +1,13 @@
 from typing import Dict, List
 from clicking_client import Client
-from clicking_client.models import SetModelReq, BodyGetPrediction
+from tqdm import tqdm
 from clicking_client.api.default import set_model, get_prediction
-from clicking.common.data_structures import *
-from clicking.common.data_structures import PipelineState
 from .utils import image_to_http_file
-from clicking.common.data_structures import TaskType
+from clicking.common.data_structures import TaskType, ModuleMode, ValidityStatus, PipelineState, ObjectValidity
+from clicking_client.models import SetModelReq, BodyGetPrediction
 from clicking.common.bbox import BoundingBox, BBoxMode
 from enum import Enum
+import tqdm
 
 def process_description(description: str):
     return description
@@ -40,8 +40,8 @@ class Localization:
             print(f"Error setting localization model: {str(e)}")
 
     def get_localization_results(self, state: PipelineState, localization_mode: TaskType, localization_input_mode: LocalizerInput) -> PipelineState:
-        
-        for clicking_image in state.images:
+
+        for clicking_image in tqdm(state.images, desc="Processing images"):
             image_file = image_to_http_file(clicking_image.image)
             
             for obj in clicking_image.predicted_objects:

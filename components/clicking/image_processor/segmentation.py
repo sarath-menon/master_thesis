@@ -9,7 +9,7 @@ from clicking.common.bbox import BBoxMode
 from clicking.common.mask import SegmentationMask, SegmentationMode
 import json
 from clicking.common.data_structures import ValidityStatus
-
+from tqdm import tqdm
 
 class Segmentation:
     def __init__(self, client: Client, config: Dict):
@@ -36,14 +36,14 @@ class Segmentation:
 
     def get_segmentation_results(self, state: PipelineState, segmentation_mode:TaskType) -> PipelineState:
 
-        for clicking_image in state.images:
+        for clicking_image in tqdm(state.images, desc="Segmenting objects"):
             image_file = image_to_http_file(clicking_image.image)
             
             for obj in clicking_image.predicted_objects:
 
-                if obj.validity.status is not ValidityStatus.VALID:
-                    print(f"Skipping segmentation for {obj.name} because it is invalid or not visible: {obj.validity.status}")
-                    continue
+                # if obj.validity.status is not ValidityStatus.VALID:
+                #     print(f"Skipping segmentation for {obj.name} because it is invalid or not visible: {obj.validity.status}")
+                #     continue
 
                 request = BodyGetPrediction(image=image_file)
 
