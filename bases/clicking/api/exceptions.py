@@ -4,10 +4,12 @@ from fastapi.responses import JSONResponse
 class ServiceNotAvailableException(Exception):
     def __init__(self, msg="Service is not available", status_code=500):
         self.msg = msg
+        print(f"ServiceNotAvailableException: {msg}")
         self.status_code = status_code
 
 class ModelNotSetException(ServiceNotAvailableException):
     def __init__(self, msg="Model is not set", status_code=500):
+        print(f"ModelNotSetException: {msg}")
         super().__init__(msg, status_code)
 
 def add_exception_handlers(app: FastAPI):
