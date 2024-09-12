@@ -1,4 +1,3 @@
-#%%
 import numpy as np
 from torchvision import transforms, datasets
 from PIL import Image
@@ -143,29 +142,3 @@ class CocoDataset:
 
         return objects
 
-#%% Demo code
-if __name__ == "__main__":
-    from clicking.image_processor.visualization import show_segmentation_predictions
-    from clicking.common.mask import SegmentationMask, SegmentationMode
-    from clicking.common.bbox import BoundingBox, BBoxMode
-    from clicking.common.data_structures import ImageWithDescriptions
-    import random
-
-    data_dir = "./datasets/label_studio_gen/coco_dataset/images"
-    annFile = "./datasets/label_studio_gen/coco_dataset/result.json"
-
-    coco_dataset = CocoDataset(data_dir, annFile)
-
-    # Sample a random image
-    random_image_id = random.choice(range(len(coco_dataset.coco_dataset)))
-    
-    # Use sample_dataset to get the image
-    dataset_sample = coco_dataset.sample_dataset([random_image_id])
-    image_sample = dataset_sample.images[0]
-    image = image_sample.image
-    object_name = image_sample.object_name
-
-    # Get ground truth
-    masks, class_labels = coco_dataset.get_ground_truth(random_image_id)
-
-# %%
