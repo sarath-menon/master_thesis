@@ -2,7 +2,7 @@
 start_server PORT='8082':
     uvicorn core:app --reload --port {{PORT}} --app-dir bases/clicking/api --reload-dir bases/clicking/api
 
-just install_dependencies:
+install_dependencies:
     apt update
     apt-get install -y libgl1-mesa-glx  git-lfs 
 
@@ -11,8 +11,8 @@ install_wheels_cpu:
     pip install ./wheels/sam2_cpu/SAM_2-1.0-py3-none-any.whl
 
 install_wheels_cuda:
-    pip install ./wheels/evf_sam2/evf_sam-1.0-py3-none-any.whl
-    pip install ./wheels/sam2_cuda/SAM_2-1.0-cp311-cp311-linux_x86_64.whl
+    pip install ./wheels/evf_sam2_cuda/evf_sam-1.0-py3-none-any.whl
+    pip install ./wheels/sam2_cuda/SAM_2-1.0-py3-none-any.whl
 
 download_weights:
     git clone https://huggingface.co/YxZhang/evf-sam2 checkpoints/evf_sam2
