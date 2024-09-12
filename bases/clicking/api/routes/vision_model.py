@@ -48,7 +48,6 @@ async def prediction(req: PredictionReq = Depends()) -> PredictionResp:
 
     try:
         response = await vision_model.get_prediction(req)
-        print(response)
         return response
     except ModelNotSetException as e:
         raise HTTPException(status_code=404, detail=str(e))
