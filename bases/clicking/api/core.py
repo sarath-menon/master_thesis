@@ -3,7 +3,7 @@ from clicking.api.routes.vision_model import vision_model_router
 from clicking.api.exceptions import add_exception_handlers
 
 app = FastAPI()
-add_exception_handlers(app)
+# add_exception_handlers(app)
 
 # Root endpoint
 @app.get("/")
