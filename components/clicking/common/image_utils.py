@@ -14,7 +14,7 @@ T = TypeVar('T')
 import os
 
 class ImageProcessorBase:
-    def __init__(self, model: str = "gpt-4o", temperature: float = 0.0):
+    def __init__(self, model: str = "gpt-4o-2024-08-06", temperature: float = 0.0):
         self.model = model
         self.temperature = temperature
 
@@ -58,7 +58,7 @@ class ImageProcessorBase:
     def clear_cache(self):
         self._get_image_response.clear_cache()
 
-    @cache_result(expiration_time=3000)
+    # @cache_result(expiration_time=3000)
     async def _get_batch_image_responses(self, images: List[Image.Image], text_prompts: List[str], messages: List[List[Dict]], output_type: Type[T]) -> List[T]:
         base64_images = [self._pil_to_base64(img) for img in images]
         
