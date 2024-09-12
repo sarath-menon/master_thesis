@@ -89,8 +89,11 @@ class Florence2():
             prompt = task_prompt
         else:
             prompt = task_prompt + text_input
-        # inputs = self.processor(text=prompt, images=image, return_tensors="pt")
-        inputs = self.processor(text=prompt, images=image, return_tensors="pt").to(self.device, torch.float16)
+        
+        if self.device == 'cuda':
+            inputs = self.processor(text=prompt, images=image, return_tensors="pt").to(self.device, torch.float16)
+        else:
+            inputs = self.processor(text=prompt, images=image, return_tensors="pt")
         generated_ids = self.model.generate(
         input_ids=inputs["input_ids"].to(self.device),
         pixel_values=inputs["pixel_values"].to(self.device),
