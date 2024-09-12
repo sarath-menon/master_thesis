@@ -17,10 +17,9 @@ models:
     variant: 'florence-2-base'
     tasks:
       - 'LOCALIZATION_WITH_TEXT_OPEN_VOCAB'
-      - 'LOCALIZATION_WITH_TEXT_GROUNDED'
   segmentation:
     name: 'sam2'
-    variant: 'sam2_hiera_tiny'
+    variant: 'sam2_hiera_large'
     tasks: 
       - 'SEGMENTATION_WITH_BBOX'
   segmentation_with_text:

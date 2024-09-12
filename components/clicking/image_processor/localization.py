@@ -7,7 +7,7 @@ from clicking.common.data_structures import TaskType, ModuleMode, ValidityStatus
 from clicking_client.models import SetModelReq, BodyGetPrediction
 from clicking.common.bbox import BoundingBox, BBoxMode
 from enum import Enum
-import tqdm
+from tqdm import tqdm
 
 def process_description(description: str):
     return description

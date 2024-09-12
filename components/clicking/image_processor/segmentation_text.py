@@ -16,7 +16,7 @@ class SegmentationText:
         self.client = client
         self.config = config
         self.tasks = self.load_tasks()
-        # self.set_segmentation_model()
+        self.set_segmentation_model()
 
     def load_tasks(self) -> List[TaskType]:
         task_strings = self.config['models']['segmentation_with_text']['tasks']
@@ -54,9 +54,6 @@ class SegmentationText:
                         task=segmentation_mode,
                         input_text=obj.description
                     )
-
-                    # check if response is http error
-                    print(f"Response: {response}")
                     
                     # error handling
                     if len(response.prediction.masks) > 1:

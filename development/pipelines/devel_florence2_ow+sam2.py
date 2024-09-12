@@ -1,5 +1,4 @@
 #%%
-
 %load_ext autoreload
 %autoreload 2
 
@@ -27,11 +26,12 @@ from dataclasses import dataclass, field
 import yaml
 from clicking.image_processor.visualization import show_localization_predictions, show_segmentation_predictions
 from io import BytesIO
-import json
-import nest_asyncio
 from clicking.image_processor.localization import Localization, LocalizerInput
 from clicking.image_processor.segmentation import Segmentation
+from clicking_client.models import SetModelReq, BodyGetPrediction
 
+import nest_asyncio
+nest_asyncio.apply()
 #%%
 # Load the configuration file
 CONFIG_PATH = "./development/pipelines/config.yml"
@@ -46,11 +46,6 @@ localization_processor = Localization(client, config=config)
 segmentation_processor = Segmentation(client, config=config)
 output_corrector = OutputCorrector(config=config)
 
-#%%
-from clicking.common.logging import print_object_descriptions
-nest_asyncio.apply()
-
-# sample images
 coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
 
 #%%
@@ -105,22 +100,22 @@ pipeline_mode_sequence = PipelineModeSequence.from_config(config, pipeline_modes
 pipeline_mode_sequence.print_mode_sequences()
 
 #%%
-image_ids = [9,13,23]
+image_ids = [29,39,43]
 # clicking_images = coco_dataset.sample_dataset()
 
 # Load initial state
 loaded_state = pipeline.load_state()
 loaded_state = loaded_state.filter_by_ids(sample_size=3)
-loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
+# loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
 
 def remove_full_stops(description: str) -> str:
     if description.endswith('.'):
         return description[:-1]
     return description
 
-# for image in loaded_state.images:
-#     for obj in image.predicted_objects:
-#         obj.description = remove_full_stops(obj.description)
+for image in loaded_state.images:
+    for obj in image.predicted_objects:
+        obj.description = remove_full_stops(obj.description)
 
 #%%
 
@@ -143,7 +138,7 @@ for image in result.images:
 #%%
 from clicking.image_processor.visualization import show_localization_predictions
 
-for image in result.images:
+for image in loaded_state.images:
     show_localization_predictions(image, show_descriptions=False)
     for obj in image.predicted_objects:
         print(obj.name, obj.bbox)
@@ -194,9 +189,11 @@ for clicking_image in loaded_state.images:
             print(f"Image size: {image.width,}")
             print(f"Mask size: {extracted_area.size}")
         # obj.mask.denoise_mask()
-
-
 #%%
 for clicking_image in loaded_state.images:
     show_segmentation_predictions(clicking_image, show_descriptions=False)
+
+#%%
+pipeline.save_state(loaded_state, name="test_run_florence2_ow+sam2")
+
 # %%

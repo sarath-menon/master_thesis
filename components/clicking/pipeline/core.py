@@ -30,6 +30,8 @@ from functools import lru_cache
 from functools import wraps
 import hashlib
 import pickle
+from tqdm.asyncio import tqdm as async_tqdm
+import time
 
 T = TypeVar('T')
 
@@ -237,14 +239,17 @@ class Pipeline:
             print(f"Error loading pipeline state: {str(e)}")
             return None
 
-    def save_state(self, state: PipelineState, save_as_json: bool = False, log_to_wandb: bool = False):
+    def save_state(self, state: PipelineState, save_as_json: bool = False, log_to_wandb: bool = False, name: str = None):
         try:
             from datetime import datetime
             import threading
             import wandb
 
-            current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-            new_folder_path = os.path.join(self.cache_dir, current_time)
+            if name is None:
+                current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+                new_folder_path = os.path.join(self.cache_dir, current_time)
+            else:
+                new_folder_path = os.path.join(self.cache_dir, name)
             os.makedirs(new_folder_path, exist_ok=True)
             
             pickle_thread = threading.Thread(target=self.save_state_pickle, args=(state, new_folder_path))
@@ -373,7 +378,9 @@ class Pipeline:
         if initial_state is None and initial_images is None:
             raise ValueError("Either initial_state or initial_images must be provided.")
 
-        for i, mode in enumerate(tqdm(pipeline_modes.modes, desc="Running combinations")):
+        start_time = time.time()
+
+        for i, mode in enumerate(pipeline_modes.modes):
             print(f"Running mode: {mode.name}")
             
             # Create deep copies of the initial state or images for each run
@@ -414,7 +421,9 @@ class Pipeline:
             )
             results[mode.name] = single_run
 
-            print(f"Completed mode '{mode.name}'")
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            print(f"Completed mode '{mode.name}' in {elapsed_time:.2f} seconds")
 
         return PipelineRunResults(results)
 
