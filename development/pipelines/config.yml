@@ -27,6 +27,11 @@ models:
     variant: 'sam2'
     tasks: 
       - 'SEGMENTATION_WITH_TEXT'
+  ocr:
+    name: 'florence2'
+    variant: 'florence-2-base'
+    tasks:
+      - 'OCR'
 
 # Prompt settings
 prompts:

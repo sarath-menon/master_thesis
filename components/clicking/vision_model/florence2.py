@@ -16,7 +16,12 @@ class Florence2():
         'florence-2-large': "microsoft/Florence-2-large"
         }
 
-    task_prompts_map = {TaskType.LOCALIZATION_WITH_TEXT_GROUNDED: '<CAPTION_TO_PHRASE_GROUNDING>', TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB: '<OPEN_VOCABULARY_DETECTION>', TaskType.CAPTIONING: '<MORE_DETAILED_CAPTION>'}
+    task_prompts_map = {
+        TaskType.LOCALIZATION_WITH_TEXT_GROUNDED: '<CAPTION_TO_PHRASE_GROUNDING>', 
+        TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB: '<OPEN_VOCABULARY_DETECTION>', 
+        TaskType.CAPTIONING: '<MORE_DETAILED_CAPTION>', 
+        TaskType.OCR: '<OCR_WITH_REGION>'
+        }
 
     def __init__(self, variant='florence-2-base'):
         self.name = 'florence2'
@@ -71,12 +76,11 @@ class Florence2():
             raise ValueError(f"Invalid task type: {req.task}")
         elif req.image is None:
             raise ValueError("Image is required for any vision task")
-        elif req.input_text is None:
-            raise ValueError("Text input is required for florence2 vision tasks")
 
         # convert base64 to PIL image
         image_pil = base64_to_pil(req.image)
 
+        print(f"Running inference for task: {req.input_text}")
         response = self.run_inference(image_pil, req.task, req.input_text)
         return PredictionResp(prediction=response)
 
@@ -118,6 +122,12 @@ class Florence2():
         elif task == TaskType.LOCALIZATION_WITH_TEXT_GROUNDED:
             bboxes = result[task_prompt]["bboxes"]
             labels = result[task_prompt]["labels"]
+        elif task == TaskType.OCR:
+            print("task prompt: ", task_prompt)
+            bboxes = result[task_prompt]["quad_boxes"]
+            labels = result[task_prompt]["labels"]
+            print(f"Bboxes: {bboxes}")
+            print(f"Labels: {labels}")
         else:
             raise ValueError(f"Invalid task type: {task}")
         return LocalizationResp(bboxes=bboxes, labels=labels)

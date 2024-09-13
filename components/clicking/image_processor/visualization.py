@@ -186,7 +186,32 @@ def get_mask_centroid(mask):
     else:
         return None
 
+import random
 
+colormap = ['blue','orange','green','purple','brown','pink','gray','olive','cyan','red',
+            'lime','indigo','violet','aqua','magenta','coral','gold','tan','skyblue']
+def draw_ocr_bboxes(clicking_image: ClickingImage, prediction, scale=1):
+    image = clicking_image.image.copy()
+    draw = ImageDraw.Draw(image)
+    quad_boxes, labels = prediction.bboxes, prediction.labels
+
+    plt.figure(figsize=(12, 12))
+    plt.imshow(image)
+    plt.grid(False)
+    plt.axis('off')
+
+    for box, label in zip(quad_boxes, labels):
+        print(f"Box: {box}, Label: {label}")
+        color = random.choice(colormap)
+        new_box = (np.array(box) * scale).tolist()
+        draw.polygon(new_box, width=3, outline=color)
+        draw.text((new_box[0]+8, new_box[1]+2),
+                  f"{label}",
+                  align="left",
+                  fill=color)
+
+    plt.imshow(image)
+    plt.show()
 
 
 

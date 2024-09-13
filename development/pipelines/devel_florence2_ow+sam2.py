@@ -89,13 +89,18 @@ pipeline_mode_sequence = PipelineModeSequence.from_config(config, pipeline_modes
 pipeline_mode_sequence.print_mode_sequences()
 
 #%%
-image_ids = [29,39,43]
+image_ids = [16,39,43]
 # clicking_images = coco_dataset.sample_dataset()
 
 # Load initial state
 loaded_state = pipeline.load_state()
 loaded_state = loaded_state.filter_by_ids(image_ids)
 # loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
+
+for image in loaded_state.images:
+    plt.imshow(image.image)
+    plt.axis('off')
+    plt.show()
 
 def remove_full_stops(description: str) -> str:
     if description.endswith('.'):
@@ -195,11 +200,23 @@ for image in loaded_state.images:
         print(f"Obj {obj.name} bbox: {obj.bbox}")
 # %%
 
-# segmentation_processor = Segmentation(client, config=config)
+#segmentation_processor = Segmentation(client, config=config)
 
-segmentation_processor.get_segmentation_results(loaded_state, segmentation_mode=TaskType.SEGMENTATION_WITH_CLICKPOINT)
+segmentation_processor.get_segmentation_results(result, segmentation_mode=TaskType.SEGMENTATION_WITH_CLICKPOINT)
 for image in loaded_state.images:
     show_segmentation_predictions(image, show_descriptions=False)
     for obj in image.predicted_:
         print(f"Obj {obj.name} mask: {obj.mask}")
+# %%
+from clicking.image_processor.ocr import OCR
+
+ocr_processor = OCR(client, config=config)
+#%%
+ocr_results = ocr_processor.get_ocr_results(loaded_state)
+# %%
+from clicking.image_processor.visualization import draw_ocr_bboxes
+
+for image, ocr_result in zip(loaded_state.images, ocr_results):
+    print(ocr_result.prediction)
+    draw_ocr_bboxes(image, ocr_result.prediction)
 # %%

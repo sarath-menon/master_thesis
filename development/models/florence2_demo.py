@@ -125,11 +125,14 @@ def draw_ocr_bboxes(image, prediction):
                     align="right",
         
                     fill=color)
-    display(image)
+    plt.imshow(image)
+    plt.axis('off')
+    plt.show()
 
 
 #%% OCR
-image = Image.open(images_path + "/captain_toad/3.jpeg").convert("RGB")
+images_path = "./datasets/resized_media/gameplay_images"
+image = Image.open(images_path + "/hogwarts_legacy/6.jpg")
 
 task_prompt = '<OCR_WITH_REGION>'
 results = run_example(task_prompt)
