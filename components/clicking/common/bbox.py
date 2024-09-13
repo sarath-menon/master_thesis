@@ -40,6 +40,7 @@ class BoundingBox:
             raise ValueError("Invalid bounding box mode")
 
     def get(self, mode: BBoxMode) -> Union[Tuple[float, float, float, float], List[Tuple[float, float]]]:
+
         x1, y1, x2, y2 = self.bbox
         if mode == BBoxMode.XYWH:
             return (x1, y1, x2 - x1, y2 - y1)
@@ -60,6 +61,12 @@ class BoundingBox:
 
     def __repr__(self):
         return f"BoundingBox(xyxy={self.get(BBoxMode.XYXY)}, object_name={self.object_name}, description={self.description})"
+
+    def get_area(self) -> float:
+        x1, y1, x2, y2 = self.get(BBoxMode.XYXY)
+        width = x2 - x1
+        height = y2 - y1
+        return width * height
 
     def extract_area(self, image: Image.Image, padding: int = 0) -> Image.Image:
         x1, y1, x2, y2 = self.get(BBoxMode.XYXY)
