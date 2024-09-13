@@ -103,7 +103,7 @@ class OutputCorrector(ImageProcessorBase):
 
         for response in batch_results:
             status = ValidityStatus.VALID
-            if response.accuracy == "false" or response.visibility != "fully visible":
+            if response.accuracy == "false" or response.visibility == "hidden":
                 status = ValidityStatus.INVALID
 
             obj = objects[response.object_id].object
