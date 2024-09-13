@@ -1,55 +1,58 @@
 import numpy as np
-from torchvision import transforms, datasets
+from pycocotools.coco import COCO
 from PIL import Image
+import os
 import matplotlib.pyplot as plt
 from typing import List
 from clicking.common.data_structures import ClickingImage, ImageObject, ObjectCategory
-from pycocotools import mask as mask_utils
 from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.common.bbox import BoundingBox, BBoxMode
 import uuid
+from pycocotools import mask as mask_utils
 
 class CocoDataset:
     def __init__(self, data_dir, annFile):
         self.data_dir = data_dir
         self.annFile = annFile
-        self.transform = transforms.Compose([
-            transforms.ToTensor(),
-        ])
-        self.coco_dataset = datasets.CocoDetection(root=self.data_dir, annFile=self.annFile, transform=self.transform)
-        self.all_object_names = [cat['name'] for cat in self.coco_dataset.coco.cats.values()]
-        print(f"Dataset size: {len(self.coco_dataset)}")
+        self.coco = COCO(annFile)
+        self.all_object_names = [cat['name'] for cat in self.coco.cats.values()]
+        self.img_ids = self.coco.getImgIds()
+        print(f"Dataset size: {len(self.img_ids)}")
 
     def length(self):
-        return len(self.coco_dataset)
+        return len(self.img_ids)
 
-    def sample_dataset(self, image_ids: List[int] = None, num_samples: int = None) -> List[ClickingImage]:
+    def sample_dataset(self, image_ids=None, num_samples=None):
         if image_ids is not None and num_samples is not None:
             raise ValueError("Only one of image_ids or num_samples should be provided, not both.")
 
         clicking_images = []
-        to_pil = transforms.ToPILImage()
         
         if image_ids is None:
             if num_samples is None:
                 # Return the entire dataset
-                image_ids = range(len(self.coco_dataset))
+                image_ids = self.img_ids
             else:
                 # Sample random images
-                image_ids = np.random.choice(len(self.coco_dataset), size=num_samples, replace=False)
+                image_ids = np.random.choice(self.img_ids, size=num_samples, replace=False)
         
-        for index in image_ids:
-            image_tensor, annotations = self.coco_dataset[int(index)]
-            image = to_pil(image_tensor)
+        for img_id in image_ids:
+            img_info = self.coco.loadImgs(img_id)[0]
+            image_path = os.path.join(self.data_dir, img_info['file_name'])
+            image = Image.open(image_path)
+            
+            ann_ids = self.coco.getAnnIds(imgIds=img_id)
+            annotations = self.coco.loadAnns(ann_ids)
+            
             objects = self._create_image_objects(annotations)
-            clicking_images.append(ClickingImage(image=image, id=str(index), annotated_objects=objects))
+            clicking_images.append(ClickingImage(image=image, id=str(img_id), annotated_objects=objects))
 
         return clicking_images
 
     def get_image(self, image_id: int) -> Image:
-        image_tensor, annotations = self.coco_dataset[int(image_id)]
-        to_pil = transforms.ToPILImage()
-        image = to_pil(image_tensor)
+        img_info = self.coco.loadImgs(image_id)[0]
+        image_path = os.path.join(self.data_dir, img_info['file_name'])
+        image = Image.open(image_path)
         return image
 
     def _create_image_objects(self, annotations) -> List[ImageObject]:
@@ -61,7 +64,7 @@ class CocoDataset:
             # Convert polygon to RLE
             if isinstance(ann['segmentation'], list):
                 # Get image dimensions
-                img_info = self.coco_dataset.coco.loadImgs(ann['image_id'])[0]
+                img_info = self.coco.loadImgs(ann['image_id'])[0]
                 height, width = img_info['height'], img_info['width']
                 
                 # Convert polygon to RLE
@@ -99,9 +102,9 @@ class CocoDataset:
             plt.show()
 
     def get_ground_truth(self, image_id: int):
-        img_info = self.coco_dataset.coco.loadImgs(image_id)[0]
-        ann_ids = self.coco_dataset.coco.getAnnIds(imgIds=image_id)
-        anns = self.coco_dataset.coco.loadAnns(ann_ids)
+        img_info = self.coco.loadImgs(image_id)[0]
+        ann_ids = self.coco.getAnnIds(imgIds=image_id)
+        anns = self.coco.loadAnns(ann_ids)
 
         objects = []
 
