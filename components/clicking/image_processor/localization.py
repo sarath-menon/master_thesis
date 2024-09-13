@@ -7,10 +7,6 @@ from clicking.common.data_structures import TaskType, ModuleMode, ValidityStatus
 from clicking_client.models import SetModelReq, PredictionReq
 from clicking.common.bbox import BoundingBox, BBoxMode
 from enum import Enum
-import numpy as np
-import base64
-import io
-import time
 from clicking.vision_model.utils import pil_to_base64
 
 def process_description(description: str):
@@ -73,7 +69,7 @@ class Localization:
         total_batches = (len(batch_requests) + batch_size - 1) // batch_size
         batch_time = 0
 
-        for batch_start in tqdm(range(0, len(batch_requests), batch_size), total=total_batches, desc="Localizing images", unit="batch", unit_scale=True):
+        for batch_start in tqdm(range(0, len(batch_requests), batch_size), total=total_batches, desc="Localizing image batches", unit="batch", unit_scale=True):
             batch_end = min(batch_start + batch_size, len(batch_requests))
             requests = batch_requests[batch_start:batch_end]
             batch_response = get_batch_prediction.sync(
@@ -85,29 +81,38 @@ class Localization:
             batch_time += batch_response.inference_time
             
         print(f"Batch time: {batch_time}")
+        print(f"Responses: {len(responses)}")
+
 
         for response in responses:
             obj = state.find_object_by_id(response.id)
             if not obj:
+                print(f"Object {response.id} not found in state")
                 continue
 
             # clear any existing bbox
             obj.bbox = None
 
-            if not response.prediction or not response.prediction.bboxes:
-                print(f"No bounding box found for {obj.name}")
-                obj.validity = ObjectValidity(status=ValidityStatus.INVALID, reason="No bounding box found")
-                break
+            try:
+                if not response.prediction or not response.prediction.bboxes:
+                    print(f"No bounding box found for {obj.name}")
+                    obj.validity = ObjectValidity(status=ValidityStatus.INVALID, reason="No bounding box found")
+                    continue
 
-            if len(response.prediction.bboxes) == 1:
-                obj.bbox = BoundingBox(bbox=response.prediction.bboxes[0], mode=BBoxMode.XYXY)
-            else:
-                # If multiple bounding boxes are found, use the largest one
-                bboxes = [BoundingBox(bbox=bbox, mode=BBoxMode.XYXY) for bbox in response.prediction.bboxes]
-                obj.bbox = max(bboxes, key=lambda bbox: bbox.get_area())
-                print(f"Multiple bounding boxes found for {obj.name}: {len(response.prediction.bboxes)}. Using the largest one.")
+                if len(response.prediction.bboxes) == 1:
+                    obj.bbox = BoundingBox(bbox=response.prediction.bboxes[0], mode=BBoxMode.XYXY)
 
-            print(f"Set bbox for {obj.name}: {obj.bbox}")
-            break
-        
+                else:
+                    # If multiple bounding boxes are found, use the largest one
+                    bboxes = [BoundingBox(bbox=bbox, mode=BBoxMode.XYXY) for bbox in response.prediction.bboxes]
+                    obj.bbox = max(bboxes, key=lambda bbox: bbox.get_area())
+                    print(f"Multiple bounding boxes found for {obj.name}: {len(response.prediction.bboxes)}. Using the largest one.")
+
+
+            except Exception as e:
+                print(f"Error processing localization for object {obj.name}: {str(e)}")
+
+        for image in state.images:
+            for obj in image.predicted_objects:
+                print(obj.name, obj.bbox)
         return state

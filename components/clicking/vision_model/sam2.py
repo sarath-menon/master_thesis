@@ -12,6 +12,7 @@ from typing import Dict, Any
 from clicking.vision_model.utils import coco_encode_rle
 import io
 import json
+from .utils import base64_to_pil
 
 class SAM2:
     variant_to_id = {
@@ -90,10 +91,8 @@ class SAM2:
         
         predict_method = self.task_to_method[req.task]
         
-
         #Convert to a PIL imagex
-        image_pil = await req.image.read()
-        image_pil = Image.open(io.BytesIO(image_pil))
+        image_pil = base64_to_pil(req.image)
 
         response = await predict_method(image_pil, req)
 
