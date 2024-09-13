@@ -9,18 +9,10 @@ from typing import List, Dict, Tuple, Any
 from clicking.pipeline.core import Pipeline, PipelineState, PipelineStep, PipelineMode, PipelineModeSequence, PipelineModes
 from clicking.dataset_creator.core import CocoDataset
 from clicking.prompt_refinement.core import PromptRefiner, PromptMode
-from clicking.common.bbox import BoundingBox, BBoxMode
-from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.output_corrector.core import OutputCorrector, BBoxVerificationMode
 from clicking_client import Client
 from clicking.common.data_structures import *
-import pickle
-import os
-from datetime import datetime
 import asyncio
-from typing import Callable, Union
-import inspect
-from dataclasses import dataclass, field
 import yaml
 from clicking.image_processor.visualization import show_localization_predictions, show_segmentation_predictions
 from io import BytesIO
@@ -113,6 +105,9 @@ def remove_full_stops(description: str) -> str:
 for image in loaded_state.images:
     for obj in image.predicted_objects:
         obj.description = remove_full_stops(obj.description)
+        obj.bbox = None
+        obj.mask = None
+        obj.validity.status = ValidityStatus.UNKNOWN
 
 #%%
 all_results = asyncio.run(pipeline.run_for_all_modes(
@@ -120,7 +115,7 @@ all_results = asyncio.run(pipeline.run_for_all_modes(
     initial_state=loaded_state,
     pipeline_modes=pipeline_mode_sequence,
     start_from_step="Filter categories",
-    stop_after_step="Get Localization Results"
+    # stop_after_step="Get Localization Results"
 ))
 
 # Print summary of results
@@ -134,10 +129,10 @@ for image in result.images:
 #%%
 from clicking.image_processor.visualization import show_localization_predictions
 
-for image in loaded_state.images:
+for image in result.images:
     show_localization_predictions(image, show_descriptions=False)
-    for obj in image.predicted_objects:
-        print(obj.name, obj.bbox)
+    # for obj in image.predicted_objects:
+    #     print(obj.name, obj.bbox)
 # %% Generate and save the config schema
 # config_schema = PipelineModeSequence.generate_config_schema(pipeline_modes)
 # with open('config_schema.json', 'w') as f:
@@ -159,7 +154,7 @@ from clicking.common.logging import print_object_descriptions
 
 print_object_descriptions(result.images)
 for image in result.images:
-    for obj in image.predicted_objects:
+    for obj in image.predicted_:
         print(obj.name, obj.description)
 
 #%%
@@ -167,7 +162,7 @@ from clicking.common.mask import SegmentationMode
 
 for clicking_image in loaded_state.images:
     image = clicking_image.image
-    for obj in clicking_image.predicted_objects:
+    for obj in clicking_image.predicted_:
         obj.validity.status = ValidityStatus.UNKNOWN
 
         extracted_area = obj.mask.extract_area(image)
@@ -191,12 +186,20 @@ from clicking.common.logging import show_object_validity
 show_object_validity(result)
 
 # %%
- #localization_processor = Localization(client, config=config)
+#localization_processor = Localization(client, config=config)
 localization_processor.get_localization_results(loaded_state, localization_mode=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB, localization_input_mode=LocalizerInput.OBJ_NAME)
 # %%
 for image in loaded_state.images:
     show_localization_predictions(image, show_descriptions=False)
     for obj in image.predicted_objects:
-        # obj.bbox = None
         print(f"Obj {obj.name} bbox: {obj.bbox}")
+# %%
+
+# segmentation_processor = Segmentation(client, config=config)
+
+segmentation_processor.get_segmentation_results(loaded_state, segmentation_mode=TaskType.SEGMENTATION_WITH_CLICKPOINT)
+for image in loaded_state.images:
+    show_segmentation_predictions(image, show_descriptions=False)
+    for obj in image.predicted_:
+        print(f"Obj {obj.name} mask: {obj.mask}")
 # %%

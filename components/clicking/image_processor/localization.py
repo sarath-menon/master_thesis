@@ -111,8 +111,4 @@ class Localization:
 
             except Exception as e:
                 print(f"Error processing localization for object {obj.name}: {str(e)}")
-
-        for image in state.images:
-            for obj in image.predicted_objects:
-                print(obj.name, obj.bbox)
         return state
