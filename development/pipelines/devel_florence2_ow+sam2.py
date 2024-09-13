@@ -89,7 +89,7 @@ pipeline_mode_sequence = PipelineModeSequence.from_config(config, pipeline_modes
 pipeline_mode_sequence.print_mode_sequences()
 
 #%%
-image_ids = [16,39,43]
+image_ids = [26,24,18]
 # clicking_images = coco_dataset.sample_dataset()
 
 # Load initial state
@@ -114,8 +114,8 @@ for image in loaded_state.images:
         obj.mask = None
         obj.validity.status = ValidityStatus.UNKNOWN
 
-#%%
 all_results = asyncio.run(pipeline.run_for_all_modes(
+#%%
     #initial_images=clicking_images,
     initial_state=loaded_state,
     pipeline_modes=pipeline_mode_sequence,
@@ -214,9 +214,9 @@ ocr_processor = OCR(client, config=config)
 #%%
 ocr_results = ocr_processor.get_ocr_results(loaded_state)
 # %%
-from clicking.image_processor.visualization import draw_ocr_bboxes
+from clicking.image_processor.visualization import show_ocr_boxes
 
 for image, ocr_result in zip(loaded_state.images, ocr_results):
-    print(ocr_result.prediction)
-    draw_ocr_bboxes(image, ocr_result.prediction)
+    print(ocr_result.prediction.labels)
+    show_ocr_boxes(image, ocr_result.prediction)
 # %%
