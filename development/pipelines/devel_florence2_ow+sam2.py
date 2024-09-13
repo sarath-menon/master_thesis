@@ -13,8 +13,6 @@ from clicking.common.bbox import BoundingBox, BBoxMode
 from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.output_corrector.core import OutputCorrector, BBoxVerificationMode
 from clicking_client import Client
-from clicking_client.models import SetModelReq, BodyGetPrediction
-from clicking_client.api.default import set_model, get_prediction
 from clicking.common.data_structures import *
 import pickle
 import os
@@ -28,7 +26,6 @@ from clicking.image_processor.visualization import show_localization_predictions
 from io import BytesIO
 from clicking.image_processor.localization import Localization, LocalizerInput
 from clicking.image_processor.segmentation import Segmentation
-from clicking_client.models import SetModelReq, BodyGetPrediction
 
 import nest_asyncio
 nest_asyncio.apply()
@@ -105,7 +102,7 @@ image_ids = [29,39,43]
 
 # Load initial state
 loaded_state = pipeline.load_state()
-loaded_state = loaded_state.filter_by_ids(sample_size=3)
+loaded_state = loaded_state.filter_by_ids(image_ids)
 # loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
 
 def remove_full_stops(description: str) -> str:
@@ -118,13 +115,12 @@ for image in loaded_state.images:
         obj.description = remove_full_stops(obj.description)
 
 #%%
-
 all_results = asyncio.run(pipeline.run_for_all_modes(
     #initial_images=clicking_images,
     initial_state=loaded_state,
     pipeline_modes=pipeline_mode_sequence,
     start_from_step="Filter categories",
-    # stop_after_step="Filter categories"
+    stop_after_step="Get Localization Results"
 ))
 
 # Print summary of results
@@ -165,13 +161,7 @@ print_object_descriptions(result.images)
 for image in result.images:
     for obj in image.predicted_objects:
         print(obj.name, obj.description)
-# %%
-from clicking.image_processor.segmentation_text import SegmentationText
 
-evf_sam2 = SegmentationText(client, config=config)
-
-#%%
-evf_sam2.get_segmentation_results(loaded_state, segmentation_mode=TaskType.SEGMENTATION_WITH_TEXT)
 #%%
 from clicking.common.mask import SegmentationMode
 
@@ -194,6 +184,19 @@ for clicking_image in loaded_state.images:
     show_segmentation_predictions(clicking_image, show_descriptions=False)
 
 #%%
-pipeline.save_state(loaded_state, name="test_run_florence2_ow+sam2")
+pipeline.save_state(result, name="florence2_ow_obj_name")
 
+# %%
+from clicking.common.logging import show_object_validity
+show_object_validity(result)
+
+# %%
+ #localization_processor = Localization(client, config=config)
+localization_processor.get_localization_results(loaded_state, localization_mode=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB, localization_input_mode=LocalizerInput.OBJ_NAME)
+# %%
+for image in loaded_state.images:
+    show_localization_predictions(image, show_descriptions=False)
+    for obj in image.predicted_objects:
+        # obj.bbox = None
+        print(f"Obj {obj.name} bbox: {obj.bbox}")
 # %%

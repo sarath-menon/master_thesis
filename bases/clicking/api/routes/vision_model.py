@@ -3,12 +3,9 @@ from clicking.common.data_structures import *
 from clicking.api.exceptions import ServiceNotAvailableException, ModelNotSetException
 from clicking.vision_model.core import VisionModel
 from PIL import Image
-import io
-import json
 from typing import Dict, Tuple, Optional
 from ..cache_macro import cache_prediction
-import hashlib
-
+import time
 vision_model_router = APIRouter()
 vision_model = VisionModel()
 
@@ -26,7 +23,6 @@ async def get_models():
 
 @vision_model_router.get("/model", response_model=GetModelResp, operation_id="get_model")
 async def get_model(req: GetModelReq = None):
-    
     # Get model info using the TaskType enum
     response  = vision_model.get_model(req.task)
     return response
@@ -46,14 +42,8 @@ async def prediction(req: PredictionReq = Depends()) -> PredictionResp:
     if req.task is None:
         raise HTTPException(status_code=400, detail="Task is required")
 
-    try:
-        response = await vision_model.get_prediction(req)
-        return response
-    except ModelNotSetException as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except ServiceNotAvailableException as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
+    response = await vision_model.get_prediction(req)
+    return response
 
 @vision_model_router.post("/auto_annotation", operation_id="get_auto_annotation")
 async def auto_annotation(req: AutoAnnotationReq = Depends()) -> AutoAnnotationResp:
@@ -62,3 +52,42 @@ async def auto_annotation(req: AutoAnnotationReq = Depends()) -> AutoAnnotationR
 
     response = await vision_model.get_auto_annotation(req)
     return response
+
+@vision_model_router.post("/batch_prediction", operation_id="get_batch_prediction", response_model=BatchPredictionResp)
+@cache_prediction
+async def batch_prediction(batch_requests: BatchPredictionReq = Depends()) -> BatchPredictionResp:
+    if not batch_requests:
+        raise HTTPException(status_code=400, detail="Batch request is empty")
+
+    start_time = time.time()
+
+    responses = []
+    for req in batch_requests.requests:
+        print(f"Processing request {req.id}")
+        if req.task is None:
+            raise HTTPException(status_code=400, detail="Task is required for all requests in the batch")
+
+        response = await vision_model.get_prediction(req)
+        response.id = req.id
+        responses.append(response)
+
+    end_time = time.time()
+    total_time = end_time - start_time
+
+    return BatchPredictionResp(responses=responses, inference_time=total_time)
+
+
+
+# @vision_model_router.post("/batch_prediction", operation_id="get_batch_prediction", response_model=List[PredictionResp])
+#@cache_prediction
+# async def batch_prediction(requests: List[PredictionReq]) -> List[PredictionResp]:
+#     if not requests:
+#         raise HTTPException(status_code=400, detail="Batch request is empty")
+
+#     async def process_request(req):
+#         if req.task is None:
+#             raise HTTPException(status_code=400, detail="Task is required for all requests in the batch")
+#         return await vision_model.get_prediction(req)
+
+#     responses = await asyncio.gather(*[process_request(req) for req in requests])
+#     return responses

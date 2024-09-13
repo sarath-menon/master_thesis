@@ -1,6 +1,6 @@
 from typing import Dict, List
 from clicking_client import Client
-from clicking_client.models import SetModelReq, BodyGetPrediction
+from clicking_client.models import SetModelReq
 from clicking_client.api.default import set_model, get_prediction
 from clicking.common.data_structures import PipelineState
 from .utils import image_to_http_file
@@ -45,12 +45,12 @@ class Segmentation:
                 #     print(f"Skipping segmentation for {obj.name} because it is invalid or not visible: {obj.validity.status}")
                 #     continue
 
-                request = BodyGetPrediction(image=image_file)
+                # request = BodyGetPrediction(image=image_file)
 
                 try:
                     response = get_prediction.sync(
                         client=self.client,
-                        body=request,
+                        # body=request,
                         task=segmentation_mode,
                         input_boxes=json.dumps(obj.bbox.get(mode=BBoxMode.XYXY))
                     )

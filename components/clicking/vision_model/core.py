@@ -15,7 +15,6 @@ from enum import Enum, auto
 from clicking.common.data_structures import *
 
 import asyncio
-from clicking.api.exceptions import ServiceNotAvailableException, ModelNotSetException
 
 class VisionModel:
     def __init__(self):
@@ -81,7 +80,7 @@ class VisionModel:
 
         if model_handle is None:
             print(f"Model not set: {model_handle}")
-            raise ModelNotSetException(f"{req.task.name.capitalize()} model not set")
+            raise HTTPException(status_code=404, detail=f"{req.task.name.capitalize()} model not set")
         
         if req.task not in self._model_locks:
             self._model_locks[req.task] = asyncio.Semaphore(1)
@@ -92,7 +91,7 @@ class VisionModel:
                 response = await model_handle.predict(req)
                 response.inference_time = time.time() - start_time
         except Exception as e:
-            raise ServiceNotAvailableException(f"Error during prediction: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error during prediction: {str(e)}")
 
         return response
 

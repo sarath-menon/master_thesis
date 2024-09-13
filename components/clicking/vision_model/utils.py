@@ -6,6 +6,7 @@ from scipy.ndimage import center_of_mass
 from scipy.ndimage import distance_transform_edt
 import io
 import base64
+from PIL import Image
 
 def coco_encode_rle(mask: np.ndarray) -> Dict[str, Any]:
     binary_mask = mask.astype(bool)
@@ -24,9 +25,13 @@ def get_mask_centroid(mask):
 
     return circle_center
 
-def image_to_base64(img):
+def pil_to_base64(img):
     buffered = io.BytesIO()
     img.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 
+def base64_to_pil(base64_image):
+    image_data = base64.b64decode(base64_image)
+    image = Image.open(io.BytesIO(image_data))
+    return image

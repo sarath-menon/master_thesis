@@ -119,6 +119,13 @@ class PipelineState:
                 return image
         raise ValueError(f"Image with id {image_id} not found")
 
+    def find_object_by_id(self, object_id: str) -> Optional[ImageObject]:
+        for image in self.images:
+            obj = next((obj for obj in image.predicted_objects if str(obj.id) == object_id), None)
+            if obj:
+                return obj
+        return None
+
     def filter_by_ids(self, image_ids: Optional[List[int]] = None, sample_size: Optional[int] = None):
         if image_ids is not None and sample_size is not None:
             raise ValueError("Cannot specify both image_ids and sample_size. Choose one filtering method.")
@@ -189,8 +196,26 @@ class SegmentationResp(BaseModel):
     masks: list
     scores: Optional[list] = None
 
+# class PredictionReq(BaseModel):
+#     image: UploadFile = Field(..., description="Uploaded image file")
+#     task: TaskType
+#     input_text: Optional[str] = Field(None, description="Text input for text-based tasks")
+#     input_boxes: Optional[str] = Field(None)
+#     input_point: Optional[str] = Field(None)
+#     input_label: Optional[str] = Field(None)
+#     enable_cache: Optional[bool] = Field(True)
+#     reset_cache: Optional[bool] = Field(False)
+
+#     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+# class BatchPredictionReq(BaseModel):
+#     requests: List[PredictionReq] = Field(None, description="List of prediction requests")
+
+#     model_config = ConfigDict(arbitrary_types_allowed=True)
+
 class PredictionReq(BaseModel):
-    image: UploadFile = Field(..., description="Uploaded image file")
+    id: Optional[str] = None
+    image: str = Field(..., description="Base64 encoded image string")
     task: TaskType
     input_text: Optional[str] = Field(None, description="Text input for text-based tasks")
     input_boxes: Optional[str] = Field(None)
@@ -201,9 +226,19 @@ class PredictionReq(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+class BatchPredictionReq(BaseModel):
+    requests: List[PredictionReq] = Field(..., description="List of prediction requests")
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 class PredictionResp(BaseModel):
+    id: Optional[str] = None
     inference_time: Optional[float] = 0.0
     prediction: Union[LocalizationResp, SegmentationResp]
+
+class BatchPredictionResp(BaseModel):
+    responses: List[PredictionResp]
+    inference_time: Optional[float] = 0.0
 
 class AutoAnnotationReq(BaseModel):
     image: UploadFile = Field(..., description="Uploaded image file")

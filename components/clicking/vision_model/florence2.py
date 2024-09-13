@@ -1,5 +1,3 @@
-#%%
-
 from transformers import AutoProcessor, AutoModelForCausalLM
 from PIL import Image
 import os
@@ -9,7 +7,9 @@ import torch
 from dataclasses import dataclass
 from clicking.common.data_structures import *
 import io
-#%%
+import base64
+from .utils import base64_to_pil
+
 class Florence2():
     variant_to_id = {
         'florence-2-base': "microsoft/Florence-2-base",
@@ -74,9 +74,8 @@ class Florence2():
         elif req.input_text is None:
             raise ValueError("Text input is required for florence2 vision tasks")
 
-        #Convert to a PIL imagex
-        image_pil = await req.image.read()
-        image_pil = Image.open(io.BytesIO(image_pil))
+        # convert base64 to PIL image
+        image_pil = base64_to_pil(req.image)
 
         response = self.run_inference(image_pil, req.task, req.input_text)
         return PredictionResp(prediction=response)
@@ -121,34 +120,5 @@ class Florence2():
             labels = result[task_prompt]["labels"]
         else:
             raise ValueError(f"Invalid task type: {task}")
-
-        
-        
-
         return LocalizationResp(bboxes=bboxes, labels=labels)
 
-#%% For profiling
-
-import cProfile
-import pstats
-if __name__ == "__main__":
-    model = Florence2()
-    image = Image.open("/Users/sarathmenon/Documents/master_thesis/datasets/resized_media/gameplay_images/hogwarts_legacy/0.jpg")
-
-
-    # phrase grounded detection
-    req = PredictionReq(image=image, task=TaskType.LOCALIZATION_WITH_TEXT_GROUNDED, input_text='book')
-    results = model.predict(req)
-    print(f"Grounded detection: {results}")
-
-    # open vocabulary detection
-    req = PredictionReq(image=image, task=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB, input_text='book')
-    results = model.predict(req)
-    print(f"Open vocabulary detection: {results}")
-
-    # main()
-    # cProfile.run('main()', filename='profile_results.prof')
-    # stats = pstats.Stats('profile_results.prof')
-    # stats.sort_stats('cumulative')
-    # stats.print_stats(10)  # Print the top 10 results
-# %%

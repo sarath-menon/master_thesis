@@ -50,9 +50,15 @@ visualization:
 
 # Pipeline mode sequences
 pipeline_mode_sequences:
+  # object_detection_open_vocab:
+  #   prompt_mode: IMAGE_TO_OBJECTS_LIST
+  #   localization_input_mode: OBJ_DESCRIPTION
+  #   localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
+  #   bbox_verification_mode: CROP
+  #   segmentation_mode: SEGMENTATION_WITH_BBOX
   object_detection_open_vocab:
     prompt_mode: IMAGE_TO_OBJECTS_LIST
-    localization_input_mode: OBJ_DESCRIPTION
+    localization_input_mode: OBJ_NAME
     localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
     bbox_verification_mode: CROP
     segmentation_mode: SEGMENTATION_WITH_BBOX

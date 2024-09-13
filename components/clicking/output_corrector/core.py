@@ -65,7 +65,7 @@ class OutputCorrector(ImageProcessorBase):
         processed_images, prompts, messages = [], [], []
         object_names = []
 
-        for obj_dict in objects.values():
+        for obj_dict in async_(objects.values(), desc="Processing objects"):
             if obj_dict.object.validity.status == ValidityStatus.INVALID:
                 print(f"Warning: Skipping bbox verification for object {obj_dict.object.name} due to invalid bbox.")
                 continue
