@@ -39,9 +39,13 @@ class BoundingBox:
         else:
             raise ValueError("Invalid bounding box mode")
 
-    def get(self, mode: BBoxMode) -> Union[Tuple[float, float, float, float], List[Tuple[float, float]]]:
-
+    def get(self, mode: BBoxMode, padding: float = 0) -> Union[Tuple[float, float, float, float], List[Tuple[float, float]]]:
         x1, y1, x2, y2 = self.bbox
+        x1 -= padding
+        y1 -= padding
+        x2 += padding
+        y2 += padding
+
         if mode == BBoxMode.XYWH:
             return (x1, y1, x2 - x1, y2 - y1)
         elif mode == BBoxMode.XYXY or mode == BBoxMode.MINMAX:
