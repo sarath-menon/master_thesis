@@ -37,7 +37,7 @@ class CocoDataset:
                 image_ids = np.random.choice(self.img_ids, size=num_samples, replace=False)
         
         for img_id in image_ids:
-            img_info = self.coco.loadImgs(img_id)[0]
+            img_info = self.coco.loadImgs(int(img_id))[0]
             image_path = os.path.join(self.data_dir, img_info['file_name'])
             image = Image.open(image_path)
             
@@ -64,7 +64,7 @@ class CocoDataset:
             # Convert polygon to RLE
             if isinstance(ann['segmentation'], list):
                 # Get image dimensions
-                img_info = self.coco.loadImgs(ann['image_id'])[0]
+                img_info = self.coco.loadImgs(ann['id'])[0]
                 height, width = img_info['height'], img_info['width']
                 
                 # Convert polygon to RLE
