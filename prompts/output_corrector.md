@@ -1,7 +1,7 @@
 
 
 # System prompt
-You are a helpful assistant and in an annotating videogame images.
+You are a helpful assistant and an expert annotator of videogame images.
 
 # User prompt
 
