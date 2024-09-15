@@ -121,5 +121,5 @@ class PromptRefiner(ImageProcessorBase):
         for message in self.messages:
             print(message)
 
-    def process_prompts(self, state: PipelineState, mode: PromptMode, **kwargs) -> PipelineState:
-        return asyncio.run(self.process_prompts_async(state, mode, **kwargs))
+    def process_prompts(self, state: PipelineState, prompt_mode: PromptMode, **kwargs) -> PipelineState:
+        return asyncio.run(self.process_prompts_async(state, prompt_mode, **kwargs))
