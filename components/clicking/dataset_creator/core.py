@@ -47,6 +47,8 @@ class CocoDataset:
             objects = self._create_image_objects(annotations)
             clicking_images.append(ClickingImage(image=image, id=str(img_id), annotated_objects=objects))
 
+        print(f"Loaded {len(clicking_images)} clicking images")
+
         return clicking_images
 
     def get_image(self, image_id: int) -> Image:
@@ -64,7 +66,7 @@ class CocoDataset:
             # Convert polygon to RLE
             if isinstance(ann['segmentation'], list):
                 # Get image dimensions
-                img_info = self.coco.loadImgs(ann['id'])[0]
+                img_info = self.coco.loadImgs(ann['image_id'])[0]
                 height, width = img_info['height'], img_info['width']
                 
                 # Convert polygon to RLE
