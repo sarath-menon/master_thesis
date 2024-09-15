@@ -47,3 +47,23 @@ Format the output as a JSON list under the key "objects", with each entry contai
 - "description": "details of the object including location, shape, color, and appearance",
 - "category": "category name",
 - "significance": "10-word explanation of its significance"
+
+## IMAGE_TO_UI_ELEMENTS
+Identify all buttons in the videogame UI and provide the following details for each:
+
+1. **Button**:
+   - Action performed when clicked.
+   - Content type: name, icon, or both.
+   - Name (if available) and icon description (if applicable).
+   - Shape, color, and screen location.
+
+Include a clear and concise sample instruction for interacting with the button.
+
+Format the output as a JSON list under the key "objects". Each entry should include:
+- "name": "Name of the element if available, otherwise None",
+- "icon": "Description of the icon if applicable, otherwise None",
+- "interaction": "Sample instruction for interacting with the element in {interaction_length} words or less",
+- "category": "Button",
+- "shape": "Shape of the element",
+- "color": "Color of the element",
+- "location": "Location of the element on the screen"
