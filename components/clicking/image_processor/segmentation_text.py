@@ -11,7 +11,9 @@ import json
 from clicking.common.data_structures import ValidityStatus
 from clicking.vision_model.utils import pil_to_base64
 from clicking_client.api.default import get_batch_prediction
-from tqdm import tqdm
+from tqdm.asyncio import tqdm as async_tqdm
+import asyncio
+
 class SegmentationText:
     def __init__(self, client: Client, config: Dict):
         self.client = client
@@ -35,7 +37,7 @@ class SegmentationText:
         except Exception as e:
             print(f"Error setting segmentation model: {str(e)}")
 
-    def get_segmentation_results(self, state: PipelineState, segmentation_mode: TaskType) -> PipelineState:
+    async def get_segmentation_results_async(self, state: PipelineState, segmentation_mode: TaskType) -> PipelineState:
         batch_requests = []
 
         for clicking_image in state.images:
@@ -55,15 +57,15 @@ class SegmentationText:
                 batch_requests.append(request)
                 request.id = str(obj.id)
 
-        batch_size = 20
+        batch_size = 5
         responses = []
         total_batches = (len(batch_requests) + batch_size - 1) // batch_size
         batch_time = 0
 
-        for batch_start in tqdm(range(0, len(batch_requests), batch_size), total=total_batches, desc="Segmenting image batches", unit="batch", unit_scale=True):
+        for batch_start in async_tqdm(range(0, len(batch_requests), batch_size), total=total_batches, desc="Segmenting image batches", unit="batch", unit_scale=True):
             batch_end = min(batch_start + batch_size, len(batch_requests))
             requests = batch_requests[batch_start:batch_end]
-            batch_response = get_batch_prediction.sync(
+            batch_response = await get_batch_prediction.asyncio(
                 client=self.client,
                 body=requests
             )
@@ -91,3 +93,16 @@ class SegmentationText:
                 print(f"Error processing segmentation for object {obj.name}: {str(e)}")
 
         return state
+
+    def get_segmentation_results(self, state: PipelineState, segmentation_mode: TaskType) -> PipelineState:
+        """
+        Synchronous wrapper for get_segmentation_results_async.
+
+        Args:
+            state (PipelineState): The current pipeline state.
+            segmentation_mode (TaskType): The segmentation mode to use.
+
+        Returns:
+            PipelineState: The updated pipeline state with segmentation results.
+        """
+        return asyncio.run(self.get_segmentation_results_async(state, segmentation_mode))
