@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=./generated/config_schema.json
+
+# Dataset settings
+dataset:
+  images_path: './datasets/resized_media/ui_images'
+  annotations_path: './datasets/ui_dataset/coco_annotations.json'
+
+# API settings
+api:
+  local_url: 'http://localhost:8082'
+  cloud_url: 'http://localhost:8083'
+
+# Model settings
+models:
+  ocr:
+    name: 'florence2'
+    variant: 'florence-2-base'
+    tasks:
+      - 'OCR'
+
+# Prompt settings
+prompts:
+  refinement_path: './prompts/prompt_refinement.md'
+  output_corrector_path: './prompts/output_corrector.md'
+  word_limits:
+    IMAGE_TO_UI_ELEMENTS:
+      description_length: 30
+      object_name: 5
+      interaction_length: 20
+
+pipeline:
+  cache_dir: '.ui_pipeline_cache'
+
+# Visualization settings
+visualization:
+  figsize: [5, 5]
+
+# Pipeline mode sequences
+pipeline_mode_sequences:
+  basic:
+    prompt_mode: IMAGE_TO_UI_ELEMENTS
+    localization_input_mode: OBJ_NAME
+    localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
+    bbox_verification_mode: CROP
+    segmentation_mode: SEGMENTATION_WITH_BBOX

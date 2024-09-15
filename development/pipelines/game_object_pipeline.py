@@ -23,7 +23,7 @@ import nest_asyncio
 nest_asyncio.apply()
 #%%
 # Load the configuration file
-CONFIG_PATH = "./development/pipelines/config.yml"
+CONFIG_PATH = "./development/pipelines/game_object_config.yml"
 with open(CONFIG_PATH, 'r') as config_file:
     config = yaml.safe_load(config_file)
 
@@ -113,9 +113,9 @@ for image in loaded_state.images:
         obj.bbox = None
         obj.mask = None
         obj.validity.status = ValidityStatus.UNKNOWN
+#%%
 
 all_results = asyncio.run(pipeline.run_for_all_modes(
-#%%
     #initial_images=clicking_images,
     initial_state=loaded_state,
     pipeline_modes=pipeline_mode_sequence,
