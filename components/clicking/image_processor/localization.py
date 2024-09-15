@@ -47,9 +47,9 @@ class Localization:
             image_base64 = pil_to_base64(clicking_image.image)
             for obj in clicking_image.predicted_objects:
 
-                # if obj.validity.status is ValidityStatus.INVALID:
-                #     print(f"Skipping localization for {obj.name} because it is invalid")
-                #     continue
+                if obj.validity.status is ValidityStatus.INVALID:
+                    print(f"Skipping localization for {obj.name} because it is invalid")
+                    continue
                 
                 # Use the lambda function associated with the input_mode
                 input_text = localization_input_mode.value.handler(obj)

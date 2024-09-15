@@ -12,7 +12,6 @@ from dataclasses import dataclass, field
 import random
 import hashlib
 import pickle
-from .ui_elements import *
 
 class TaskType(str, Enum):
     LOCALIZATION_WITH_TEXT = "LOCALIZATION_WITH_TEXT"
