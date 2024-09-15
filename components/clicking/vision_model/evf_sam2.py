@@ -17,6 +17,7 @@ from clicking.vision_model.utils import coco_encode_rle
 from fastapi import HTTPException
 from PIL import Image
 import io
+from .utils import base64_to_pil
 #%%
 
 class EVF_SAM:
@@ -113,9 +114,8 @@ class EVF_SAM:
         elif req.input_text is None:
             raise ValueError("Text input is required for evf_sam2")
 
-         #Convert to a PIL imagex
-        image_pil = await req.image.read()
-        image_pil = Image.open(io.BytesIO(image_pil))
+         #Convert to a PIL image
+        image_pil = base64_to_pil(req.image)
 
         image_np = np.array(image_pil)
         original_size_list = [image_np.shape[:2]]
