@@ -8,6 +8,7 @@ import json
 from .caching import cache_result
 from litellm import batch_completion
 import openai
+from typing import Optional
 
 T = TypeVar('T')
 
@@ -24,7 +25,7 @@ class ImageProcessorBase:
             return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
     # @cache_result(expiration_time=3000)
-    async def _get_image_response(self, image: Image.Image, text_prompt: str, messages: list, output_type: Type[T]) -> T:
+    async def _get_image_response(self, image: Image.Image, text_prompt: str, messages: list, output_type: Optional[Type[T]] = None) -> T:
         
         base64_image = self._pil_to_base64(image)
         msg = {
@@ -49,6 +50,9 @@ class ImageProcessorBase:
         )
         result = response["choices"][0]["message"]["content"]
 
+        if output_type is None:
+            return result
+
         try:
             parsed_result = json.loads(result)
             return output_type(**parsed_result)
@@ -59,7 +63,7 @@ class ImageProcessorBase:
         self._get_image_response.clear_cache()
 
     # @cache_result(expiration_time=3000)
-    async def _get_batch_image_responses(self, images: List[Image.Image], text_prompts: List[str], messages: List[List[Dict]], output_type: Type[T]) -> List[T]:
+    async def _get_batch_image_responses(self, images: List[Image.Image], text_prompts: List[str], messages: List[List[Dict]], output_type: Optional[Type[T]] = None) -> List[T]:
         base64_images = [self._pil_to_base64(img) for img in images]
         
         batch_messages = []
@@ -98,6 +102,10 @@ class ImageProcessorBase:
                 print(f"Error in response: {response}")
                 continue
             result = response["choices"][0]["message"]["content"]
+
+            if output_type is None:
+                results.append(result)
+                continue
 
             try:
                 parsed_result = json.loads(result)
