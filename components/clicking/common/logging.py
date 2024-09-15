@@ -97,3 +97,15 @@ def show_object_validity(result: PipelineState):
             ])
     
     print(table)
+
+def print_ocr_results(result: PipelineState):
+    table = PrettyTable()
+    table.field_names = ["Text"]
+    table.align = "l"  # Align all columns to the left
+
+    for label in result.prediction.labels:
+        table.add_row([
+            label
+        ])
+    
+    print(table)

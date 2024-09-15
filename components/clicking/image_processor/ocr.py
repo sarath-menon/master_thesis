@@ -71,34 +71,36 @@ class OCR:
         print(f"Batch time: {batch_time}")
         print(f"Responses: {len(responses)}")
 
-
         for response in responses:
             print(f"Response: {response}")
-            # obj = state.find_object_by_id(response.id)
-            # if not obj:
-            #     print(f"Object {response.id} not found in state")
-            #     continue
+            for image in state.images:
+                if image.id != response.id:
+                    continue
+                for element in image.ui_elements:
+                    print(f"Element, {element.name}, label, {response.prediction.labels[0]}")    
+                    if element.name == response.prediction.labels[0]:
+                        print('Matched', element.name, response.prediction.labels[0])
+                    
 
-            # # clear any existing bbox
-            # obj.bbox = None
 
             # try:
-            #     if not response.prediction or not response.prediction.bboxes:
-            #         print(f"No bounding box found for {obj.name}")
+            #     if not response.prediction or not response.prediction.quad_box:
+            #         print(f"No quad box found for {obj.name}")
             #         obj.validity = ObjectValidity(status=ValidityStatus.INVALID, reason="No bounding box found")
             #         continue
 
-            #     if len(response.prediction.bboxes) == 1:
-            #         obj.bbox = BoundingBox(bbox=response.prediction.bboxes[0], mode=BBoxMode.XYXY)
+            #     if len(response.prediction.quad_box) == 1:
+            #         obj.bbox = BoundingBox(bbox=response.prediction.quad_box[0], mode=BBoxMode.XYXY)
 
             #     else:
             #         # If multiple bounding boxes are found, use the largest one
-            #         bboxes = [BoundingBox(bbox=bbox, mode=BBoxMode.XYXY) for bbox in response.prediction.bboxes]
+            #         bboxes = [BoundingBox(bbox=bbox, mode=BBoxMode.XYXY) for bbox in response.prediction.quad_box]
             #         obj.bbox = max(bboxes, key=lambda bbox: bbox.get_area())
-            #         print(f"Multiple bounding boxes found for {obj.name}: {len(response.prediction.bboxes)}. Using the largest one.")
+            #         print(f"Multiple bounding boxes found for {obj.name}: {len(response.prediction.quad_box)}. Using the largest one.")
 
 
             # except Exception as e:
             #     print(f"Error processing ocr for object {obj.name}: {str(e)}")
         # return state
+
         return responses
