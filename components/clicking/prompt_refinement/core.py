@@ -14,17 +14,18 @@ from pydantic import BaseModel
 import json
 from PIL import Image
 import uuid
-from clicking.prompt_refinement.data_structures import *
-from clicking.common.data_structures import ClickingImage, ObjectCategory, ImageObject, PipelineState
+from .data_structures import *
+from clicking.common.data_structures import *
 from pydantic import Field
 from tqdm.asyncio import tqdm
+from typing import TypeVar
 
 # set API keys
 dotenv.load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
-class PromptResponse(BaseModel):
-    objects: list[ImageObject]
+
+T = TypeVar('T')
 
 class PromptRefiner(ImageProcessorBase):
     def __init__(self,  config: Dict, model: str = "gpt-4o", temperature: float = 0.0):
@@ -35,7 +36,7 @@ class PromptRefiner(ImageProcessorBase):
         # Load configuration
         self.config = config
         
-    async def process_prompts_async(self, state: PipelineState, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> PipelineState:
+    async def process_prompts_async(self, state: PipelineState, mode: PromptMode, **kwargs) -> PipelineState:
         images = [ci.image for ci in state.images]
         template_values = [self._get_template_values(mode, None, **kwargs) for _ in state.images]
 
@@ -48,13 +49,13 @@ class PromptRefiner(ImageProcessorBase):
 
         total_batches = (len(images) + batch_size - 1) // batch_size
 
-        async for batch_start in tqdm(range(0, len(images), batch_size), total=total_batches, desc="Processing images"):
+        async for batch_start in tqdm(range(0, len(images), batch_size), total=total_batches, desc="Processing image batches", unit="batch", unit_scale=True):
             batch_end = min(batch_start + batch_size, len(images))
             batch_images = images[batch_start:batch_end]
             batch_prompts = prompts[batch_start:batch_end]
             batch_messages = messages[batch_start:batch_end]
 
-            batch_response = await self._get_batch_image_responses(batch_images, batch_prompts, batch_messages, PromptResponse)
+            batch_response = await self._get_batch_image_responses(batch_images, batch_prompts, batch_messages, mode.response_type)
             batch_results.extend(batch_response)
 
             # Add delay between batches to respect API rate limits
@@ -62,7 +63,11 @@ class PromptRefiner(ImageProcessorBase):
                 await asyncio.sleep(batch_delay)
 
         for clicking_image, result in zip(state.images, batch_results):
-            clicking_image.predicted_objects = [obj for obj in result.objects]
+            print(result)
+            if mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
+                clicking_image.predicted_objects = [obj for obj in result.objects]
+            elif mode == PromptMode.IMAGE_TO_UI_ELEMENTS:
+                clicking_image.ui_elements = [obj for obj in result.objects]
         return state
 
     async def _process_single_image(self, clicking_image: ClickingImage, mode: PromptMode, **kwargs) -> ClickingImage:
@@ -71,20 +76,21 @@ class PromptRefiner(ImageProcessorBase):
         clicking_image.predicted_objects = [obj for obj in objects if obj.category == ObjectCategory.GAME_ASSET]
         return clicking_image
 
-    async def _process_single_prompt(self, image: Image.Image, mode: PromptMode, object_name: Optional[str] = None, **kwargs) -> List[ImageObject]:
+    async def process_single_prompt(self, image: Image.Image, mode: PromptMode, object_name: Optional[str] = None, output_type: Optional[Type[T]] = None, **kwargs) -> List[ImageObject]:
         template_values = self._get_template_values(mode, object_name, **kwargs)
         prompt = self.prompt_manager.get_prompt(type='user', prompt_key=mode.value, template_values=template_values)
         
         try:
-            response = await super()._get_image_response(image, prompt, self.messages, PromptResponse)
+            response = await super()._get_image_response(image, prompt, self.messages, output_type)
         except ValueError as e:
             print(f"Error processing prompt: {e}")
             return []
 
         if mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
             response.objects.sort(key=lambda x: x.category)
-
-        return response.objects
+            return response.objects
+        elif mode == PromptMode.IMAGE_TO_UI_ELEMENTS:
+            return response.objects
 
     def _get_template_values(self, mode: PromptMode, object_name: Optional[str], **kwargs) -> TemplateValues:
         word_limits = self.config['prompts']['word_limits'].get(mode.value, {})
@@ -102,11 +108,18 @@ class PromptRefiner(ImageProcessorBase):
                 "description_length": description_length,
                 "object_name_limit": object_name_limit
             }
+        elif mode == PromptMode.IMAGE_TO_UI_ELEMENTS:
+            word_limits = self.config['prompts']['word_limits'].get(mode.value, {})
+            interaction_length = word_limits.get('interaction_length', 10)  # Default to 10 if not specified
+            return {
+                "interaction_length": interaction_length
+            }
+
         raise ValueError(f"Invalid mode: {mode}")
 
     def show_messages(self) -> None:
         for message in self.messages:
             print(message)
 
-    def process_prompts(self, state: PipelineState, mode: PromptMode = PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS, **kwargs) -> PipelineState:
+    def process_prompts(self, state: PipelineState, mode: PromptMode, **kwargs) -> PipelineState:
         return asyncio.run(self.process_prompts_async(state, mode, **kwargs))
