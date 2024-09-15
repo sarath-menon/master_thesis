@@ -229,8 +229,18 @@ class Pipeline:
                 if not os.path.exists(file_path):
                     raise FileNotFoundError(f"pipeline_state.pkl not found in the latest subdirectory: {latest_subdir_path}")
             
-            with open(file_path, 'rb') as f:
-                state = pickle.load(f)
+            try:
+                with open(file_path, 'rb') as f:
+                    state = pickle.load(f)
+            except FileNotFoundError:
+                print(f"Error: File not found at {file_path}")
+                return None
+            except pickle.UnpicklingError:
+                print(f"Error: Unable to unpickle file at {file_path}")
+                return None
+            except Exception as e:
+                print(f"Unexpected error occurred while loading state: {str(e)}")
+                return None
 
             creation_time = datetime.fromtimestamp(os.path.getctime(file_path))
             print(f"State from {creation_time.strftime('%d-%m-%Y %H:%M:%S')} loaded successfully")
@@ -421,7 +431,7 @@ class Pipeline:
             )
             results[mode.name] = single_run
 
-            end_time = time.time()
+            end_time = time.time() 
             elapsed_time = end_time - start_time
             print(f"Completed mode '{mode.name}' in {elapsed_time:.2f} seconds")
 
