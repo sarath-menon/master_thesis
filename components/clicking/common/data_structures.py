@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 import random
 import hashlib
 import pickle
+from .ui_elements import *
 
 class TaskType(str, Enum):
     LOCALIZATION_WITH_TEXT = "LOCALIZATION_WITH_TEXT"
@@ -24,6 +25,15 @@ class TaskType(str, Enum):
     CAPTIONING = "CAPTIONING"
     SEGMENTATION_AUTO_ANNOTATION = "SEGMENTATION_AUTO_ANNOTATION"
     OCR = "OCR"
+
+class UIElement(BaseModel):
+    name: Optional[str] = None
+    icon: Optional[str] = None
+    interaction: str
+    category: str
+    shape: str
+    color: str
+    location: str
 
 class ObjectCategory(str, Enum):
     GAME_ASSET = "Game Asset"
@@ -78,8 +88,10 @@ class ImageObject(BaseModel):
 class ClickingImage(BaseModel):
     image: Image.Image
     id: str
+    ui_elements: List[UIElement] = Field(default_factory=list)
     annotated_objects: List[ImageObject] = Field(default_factory=list)
     predicted_objects: List[ImageObject] = Field(default_factory=list)
+    ui_elements: List[UIElement] = Field(default_factory=list)
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 class ModuleMode(NamedTuple):
@@ -127,6 +139,13 @@ class PipelineState:
                 return obj
         return None
 
+    def find_ui_element_by_id(self, object_id: str) -> Optional[UIElement]:
+        for image in self.images:
+            obj = next((obj for obj in image.ui_elements if str(obj.id) == object_id), None)
+            if obj:
+                return obj
+        return None
+
     def filter_by_ids(self, image_ids: Optional[List[int]] = None, sample_size: Optional[int] = None):
         if image_ids is not None and sample_size is not None:
             raise ValueError("Cannot specify both image_ids and sample_size. Choose one filtering method.")
@@ -140,7 +159,6 @@ class PipelineState:
             self.images = random.sample(self.images, sample_size)
         
         return self
-
     
     def get_all_predicted_objects(self) -> dict[str, ObjectImageDict]:
         all_objects = {}
@@ -266,3 +284,7 @@ class AutoAnnotationReq(BaseModel):
 class AutoAnnotationResp(BaseModel):
     prediction: SegmentationResp
     inference_time: Optional[float] = 0.0
+
+class OCRResult(BaseModel):
+    label: str
+    quad_box: List[float]
