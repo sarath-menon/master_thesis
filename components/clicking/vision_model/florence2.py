@@ -80,7 +80,6 @@ class Florence2():
         # convert base64 to PIL image
         image_pil = base64_to_pil(req.image)
 
-        print(f"Running inference for task: {req.input_text}")
         response = self.run_inference(image_pil, req.task, req.input_text)
         return PredictionResp(prediction=response)
 
@@ -126,6 +125,10 @@ class Florence2():
             print("task prompt: ", task_prompt)
             bboxes = result[task_prompt]["quad_boxes"]
             labels = result[task_prompt]["labels"]
+
+            # remove token '</s>' from the labels
+            labels = [label.replace('</s>', '') for label in labels]
+
             print(f"Bboxes: {bboxes}")
             print(f"Labels: {labels}")
         else:
