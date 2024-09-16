@@ -36,18 +36,22 @@ class ObjectValidationResult(BaseModel):
     reasoning: str
 
 
-def process_overlay(image: Image.Image, obj: ImageObject) -> List[Image.Image]:
+def process_bbox_overlay(image: Image.Image, obj: ImageObject) -> List[Image.Image]:
     return overlay_bounding_box(image, obj.bbox, padding=10)
 
-def process_crop(image: Image.Image, obj: ImageObject) -> List[Image.Image]:
+def process_bbox_crop(image: Image.Image, obj: ImageObject) -> List[Image.Image]:
     return obj.bbox.extract_area(image, padding=10)
 
-class BBoxVerificationMode(Enum):
-    OVERLAY = ModuleMode("bbox_overlay", process_overlay)
-    CROP = ModuleMode("bbox_crop", process_crop)
+def process_mask_crop(image: Image.Image, obj: ImageObject) -> List[Image.Image]:
+    return obj.mask.extract_area(image, padding=10)
+
+class VerificationMode(Enum):
+    OVERLAY_BBOX = ModuleMode("bbox_overlay", process_bbox_overlay)
+    CROP_BBOX = ModuleMode("crop", process_bbox_crop)
+    CROP_MASK = ModuleMode("crop", process_mask_crop)
 
 class OutputCorrector(ImageProcessorBase):
-    def __init__(self, config: Dict, model: str = "gpt-4o", temperature: float = 0.0):
+    def __init__(self, config: Dict, model: str = "gpt-4o-2024-08-06", temperature: float = 0.0):
         super().__init__(model, temperature)
         self.PROMPT_PATH = config['prompts']['output_corrector_path']
         self.prompt_manager = PromptManager(self.PROMPT_PATH)
@@ -55,7 +59,7 @@ class OutputCorrector(ImageProcessorBase):
 
         self.config = config
 
-    async def verify_bboxes_async(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode, batch_size: int = 20, show_images: bool = False, **kwargs) -> PipelineState:
+    async def verify_async(self, state: PipelineState, verification_mode: VerificationMode, batch_size: int = 20, show_images: bool = False, **kwargs) -> PipelineState:
         
         objects = state.get_all_predicted_objects()
         batch_delay = 10  # Delay between batches in seconds
@@ -64,7 +68,7 @@ class OutputCorrector(ImageProcessorBase):
         processed_images, prompts, messages = [], [], []
         object_names = []
 
-        for obj_dict in async_tqdm(objects.values(), desc="Processing objects"):
+        for obj_dict in async_tqdm(objects.values(), desc="Preparing images"):
             if obj_dict.object.validity.status == ValidityStatus.INVALID:
                 print(f"Warning: Skipping bbox verification for object {obj_dict.object.name} due to invalid bbox.")
                 continue
@@ -72,15 +76,15 @@ class OutputCorrector(ImageProcessorBase):
             clicking_img = state.get_image_by_id(obj_dict.image_id)
             object_names.append(obj_dict.object.name)
 
-            processed_images.append(bbox_verification_mode.value.handler(clicking_img.image, obj_dict.object))
-            template_values = self._get_template_values(bbox_verification_mode.value, obj_dict.object)
-            prompts.append(self.prompt_manager.get_prompt(type='user', prompt_key=bbox_verification_mode.value.name, template_values=template_values))
+            processed_images.append(verification_mode.value.handler(clicking_img.image, obj_dict.object))
+            template_values = self._get_template_values(verification_mode.value, obj_dict.object)
+            prompts.append(self.prompt_manager.get_prompt(type='user', prompt_key=verification_mode.value.name, template_values=template_values))
             messages.append(self.messages.copy())
 
         total_batches = (len(processed_images) + batch_size - 1) // batch_size
         batch_results = []
 
-        async for batch_start in tqdm(range(0, len(processed_images), batch_size), total=total_batches, desc="Processing images"):
+        async for batch_start in tqdm(range(0, len(processed_images), batch_size), total=total_batches, desc="Processing images", unit="batch", unit_scale=True):
             batch_end = min(batch_start + batch_size, len(objects))
             batch_images = processed_images[batch_start:batch_end]
             batch_prompts = prompts[batch_start:batch_end]
@@ -113,8 +117,8 @@ class OutputCorrector(ImageProcessorBase):
                                     visibility=response.visibility)
         return state
 
-    def verify_bboxes(self, state: PipelineState, bbox_verification_mode: BBoxVerificationMode,show_images: bool = True, **kwargs) -> PipelineState:
-        return asyncio.run(self.verify_bboxes_async(state, bbox_verification_mode, show_images=show_images, **kwargs))
+    def verify(self, state: PipelineState, verification_mode: VerificationMode,show_images: bool = True, **kwargs) -> PipelineState:
+        return asyncio.run(self.verify_async(state, verification_mode, show_images=show_images, **kwargs))
 
 
     def _get_template_values(self, mode: PromptMode, object: ImageObject, **kwargs) -> TemplateValues:
@@ -126,6 +130,3 @@ class OutputCorrector(ImageProcessorBase):
             "object_name": object.name,
             "object_id": object.id
         }
-
-    def verify_masks(self, clicking_image: ClickingImage) -> ClickingImage:
-        return asyncio.run(self.verify_masks_async(clicking_image))
