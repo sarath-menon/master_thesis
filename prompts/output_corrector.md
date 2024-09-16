@@ -14,13 +14,13 @@ Return a JSON object structured as follows:
     "reasoning": "Provide a precise explanation using exactly 20 words."
 }}
 
-## bbox_crop
+## crop
 
-Examine the object in the image and determine the following:
-1. Does it match the label {object_name}?
-2. Is the {object_name} fully visible in the image?
+Examine the object in the videogame screenshot and answer the following questions:
+1. Does the object match the label {object_name}?
+2. Is the object {object_name} fully visible in the image?
 
-Provide your response in the following JSON format:
+Ignore the realism of the image. Focus only on the visibility and accuracy of the object. Provide your response in the following JSON format:
 
 Return a JSON object structured as follows:
 {{  "object_name": {object_name},
