@@ -13,6 +13,7 @@ import pandas as pd
 from collections import Counter
 from clicking.pipeline.core import PipelineState
 import matplotlib.pyplot as plt
+from collections import defaultdict
 
 PROJECT_NAME = "clicking"
 
@@ -179,9 +180,54 @@ def save_image_descriptions(clicking_images: List[ClickingImage], output_folder:
 
     # print(f"Image descriptions saved to {output_file}")
 
+def analyze_overall_validity(states: List[PipelineState]) -> PipelineState:
+    image_validity = defaultdict(lambda: ObjectValidity(status=ValidityStatus.INVALID))
+    
+    for state in states:
+        for image in state.images:
+            current_validity = image_validity[image.id]
+            
+            # Check if any object in the image is valid
+            if any(obj.validity.status == ValidityStatus.VALID for obj in image.predicted_objects):
+                current_validity.status = ValidityStatus.VALID
+    
+    # Create a new PipelineState with overall validity information
+    overall_state = PipelineState()
+    
+    for state in states:
+        for image in state.images:
+            overall_validity = image_validity[image.id]
+            
+            # Create a new ClickingImage with an ImageObject representing overall validity
+            overall_image = ClickingImage(
+                image=image.image,
+                id=image.id,
+                predicted_objects=[
+                    ImageObject(
+                        name="Overall Validity",
+                        validity=overall_validity
+                    )
+                ]
+            )
+            
+            overall_state.images.append(overall_image)
+    
+    # Calculate and print statistics
+    total_images = len(overall_state.images)
+    valid_images = sum(1 for img in overall_state.images if img.predicted_objects[0].validity.status == ValidityStatus.VALID)
+    invalid_images = total_images - valid_images
+    
+    print(f"Valid Images: {valid_images}/{total_images} ({valid_images/total_images:.2%})")
+    
+    return overall_state
 
 def show_validity_statistics(states: List[PipelineState], labels: List[str]):
     plt.figure(figsize=(15, 8))
+
+    # calculate overall validity
+    overall_validity_results = analyze_overall_validity(states)
+    states.append(overall_validity_results)
+    labels.append("Overall Validity")
     
     statuses = list(ValidityStatus)
     # remove UNKNOWN from statuses
@@ -190,7 +236,7 @@ def show_validity_statistics(states: List[PipelineState], labels: List[str]):
     width = 0.2
     x = np.arange(len(statuses))
     
-    colors = ['#FF6B6B', '#4ECDC4', '#FFA500']  # More distinct colors
+    colors = ['red', 'green', 'gray', 'yellow']  # More distinct colors
     
     for i, (state, label) in enumerate(zip(states, labels)):
         validity_counts = Counter()
@@ -199,21 +245,23 @@ def show_validity_statistics(states: List[PipelineState], labels: List[str]):
             for obj in image.predicted_objects:
                 validity_counts[obj.validity.status] += 1
         
-        counts = [validity_counts[status] for status in statuses]
+        total_objects = sum(validity_counts.values())
+        percentages = [validity_counts[status] / total_objects * 100 if total_objects > 0 else 0 for status in statuses]
         
         offset = width * (i - 0.5 * (len(states) - 1))
-        bars = plt.bar(x + offset, counts, width, label=label, color=colors[i % len(colors)], edgecolor='black', linewidth=1.5)
+        bars = plt.bar(x + offset, percentages, width, label=label, color=colors[i % len(colors)], edgecolor='black', linewidth=1.5)
         
         for bar in bars:
             height = bar.get_height()
             plt.text(bar.get_x() + bar.get_width() / 2, height,
-                     f'{height}', ha='center', va='bottom', fontweight='bold')
+                     f'{height:.1f}%', ha='center', va='bottom', fontweight='bold')
     
     plt.xlabel('Validity Status', fontsize=12)
-    plt.ylabel('Count', fontsize=12)
+    plt.ylabel('Percentage', fontsize=12)
     plt.title('Object Validity Statistics Comparison', fontsize=16)
-    # plt.xticks(x, [status.name for status in statuses], rotation=45, ha='right', fontsize=10)
     plt.legend(fontsize=12, loc='upper left', bbox_to_anchor=(1, 1))
+
+    plt.ylim(0, 100)
     
     plt.grid(axis='y', linestyle='--', alpha=0.3)
     plt.tight_layout()
