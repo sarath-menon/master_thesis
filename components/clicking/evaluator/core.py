@@ -184,6 +184,9 @@ def show_validity_statistics(states: List[PipelineState], labels: List[str]):
     plt.figure(figsize=(15, 8))
     
     statuses = list(ValidityStatus)
+    # remove UNKNOWN from statuses
+    statuses = [status for status in statuses if status != ValidityStatus.UNKNOWN]
+
     width = 0.2
     x = np.arange(len(statuses))
     
@@ -215,16 +218,27 @@ def show_validity_statistics(states: List[PipelineState], labels: List[str]):
     plt.grid(axis='y', linestyle='--', alpha=0.3)
     plt.tight_layout()
     plt.show()
-    
-    for i, (state, label) in enumerate(zip(states, labels)):
+    from tabulate import tabulate
+    table_data = []
+    headers = ["Label", "Total Objects"] + [status.name for status in statuses]
+
+    for index, (state, label) in enumerate(zip(states, labels), start=1):
         validity_counts = Counter()
         for image in state.images:
             for obj in image.predicted_objects:
                 validity_counts[obj.validity.status] += 1
         
         total_objects = sum(validity_counts.values())
-        print(f"\n{label}:")
-        print(f"Total objects: {total_objects}")
+        row = [index, label, total_objects]
         for status in statuses:
-            percentage = (validity_counts[status] / total_objects) * 100 if total_objects > 0 else 0
-            print(f"{status.name}: {validity_counts[status]} ({percentage:.2f}%)")
+            count = validity_counts[status]
+            percentage = (count / total_objects) * 100 if total_objects > 0 else 0
+            row.append(f"{count} ({percentage:.2f}%)")
+        table_data.append(row)
+
+    max_column_width = 15
+    headers = ["Index"] + headers
+    print(tabulate(table_data, headers=headers, tablefmt="pretty", 
+                   maxcolwidths=[5, 15, 5] + [max_column_width] * len(statuses),
+                   numalign="center", stralign="center"))
+    print()  # Add an extra newline for spacing between rows
