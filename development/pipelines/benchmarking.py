@@ -29,14 +29,6 @@ with open(CONFIG_PATH, 'r') as config_file:
     config = yaml.safe_load(config_file)
 
 client = Client(base_url=config['api']['local_url'], timeout=120)
-#%%
-
-prompt_refiner = PromptRefiner(config=config)
-# localization_processor = Localization(client, config=config)
-# segmentation_processor = Segmentation(client, config=config)
-output_corrector = OutputCorrector(config=config)
-
-#segmentation_text = SegmentationText(client, config=config
 
 #%%
 # Create pipeline and add steps
@@ -46,6 +38,7 @@ loaded_state_1 = pipeline.load_state('.pipeline_cache/florence2_ow_obj_name/pipe
 loaded_state_2 = pipeline.load_state('.pipeline_cache/florence2_ow_obj_description/pipeline_state.pkl')
 loaded_state_3 = pipeline.load_state('.pipeline_cache/evf_obj_description/pipeline_state.pkl')
 
+#%%
 from clicking.evaluator.core import show_validity_statistics
 
 states = [loaded_state_1, loaded_state_2, loaded_state_3]
@@ -75,13 +68,7 @@ show_invalid_object_images(states, state_labels, invalid_object_stats)
 #%%
 for image in current_run.images:
     show_segmentation_predictions(image, show_descriptions=False)
-#%%
-from clicking.image_processor.visualization import show_localization_predictions
 
-for image in current_run.images:
-    show_localization_predictions(image, show_descriptions=False)
-    # for obj in image.predicted_objects:
-    #     print(obj.name, obj.bbox)
 #%%
 from clicking.common.logging import print_object_descriptions
 
@@ -90,29 +77,5 @@ print_object_descriptions(current_run.images, show_stats=True)
 from clicking.common.logging import show_object_validity
 show_object_validity(current_run)
 
-# %%
-from clicking.common.logging import print_object_descriptions
-
-# print_object_descriptions(result.images)
-for image in current_run.images:
-    for obj in image.predicted_objects:
-        print(obj.name, obj.mask)
-# %%
-from clicking.common.logging import print_object_descriptions
-
-print_object_descriptions(current_run.images)
-for image in current_run.images:
-    for obj in image.predicted_objects:
-        print(obj.name, obj.description)
-
-        # obj.mask.denoise_mask()
-#%%
-for clicking_image in current_run.images:
-    show_segmentation_predictions(clicking_image, show_descriptions=False)
-
 #%%
 pipeline.save_state(current_run, name="evf_obj_description")
-#%%
-
-output_corrector = OutputCorrector(config=config)
-output_corrector.verify(current_run, verification_mode=VerificationMode.CROP_MASK)
