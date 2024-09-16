@@ -296,7 +296,7 @@ def print_detailed_information(invalid_object_stats, invalid_objects, num_states
     print(table)
 
 
-def show_invalid_object_images(states: List[PipelineState], sorted_stats: Dict[str, int], max_images_per_object: int = 3):
+def show_invalid_object_images(states: List[PipelineState], state_labels: List[str], sorted_stats: Dict[str, int], max_images_per_object: int = 3):
     """
     Display images containing invalid objects for each category.
 
@@ -314,12 +314,14 @@ def show_invalid_object_images(states: List[PipelineState], sorted_stats: Dict[s
         print("=" * 50)
         
         images_shown = 0
-        for state in states:
+        for state, label in zip(states, state_labels):
             for image in state.images:
                 for obj in image.predicted_objects:
                     if obj.name != obj_name or obj.validity.status != ValidityStatus.INVALID:
                         continue
 
+                    print(f"State: {label}")
+                    print(f"Reason: {obj.validity.reason}")
                     plt.figure(figsize=(10, 10))
                     plt.imshow(image.image)
                     plt.title(f"{obj_name} - Image ID: {image.id}")
@@ -336,8 +338,7 @@ def show_invalid_object_images(states: List[PipelineState], sorted_stats: Dict[s
                         plt.imshow(mask, alpha=0.5, cmap='jet')
                     
                     plt.show()
-                    
-                    print(f"Reason: {obj.validity.reason}")
+
                     
                     images_shown += 1
                     if images_shown >= max_images_per_object:
