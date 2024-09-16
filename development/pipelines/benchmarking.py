@@ -9,7 +9,7 @@ from typing import List, Dict, Tuple, Any
 from clicking.pipeline.core import Pipeline, PipelineState, PipelineStep, PipelineMode, PipelineModeSequence, PipelineModes
 from clicking.dataset_creator.core import CocoDataset
 from clicking.prompt_refinement.core import PromptRefiner, PromptMode
-from clicking.output_corrector.core import OutputCorrector, BBoxVerificationMode
+from clicking.output_corrector.core import OutputCorrector, VerificationMode
 from clicking_client import Client
 from clicking.common.data_structures import *
 import asyncio
@@ -36,23 +36,18 @@ localization_processor = Localization(client, config=config)
 segmentation_processor = Segmentation(client, config=config)
 output_corrector = OutputCorrector(config=config)
 
-#segmentation_text = SegmentationText(client, config=config)
-#%%
-coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
-
-image_ids = [26,24,18]
-clicking_images = coco_dataset.sample_dataset()
+#segmentation_text = SegmentationText(client, config=config
 
 #%%
 # Define the pipeline modes
-from clicking.output_corrector.core import BBoxVerificationMode  
+from clicking.output_corrector.core import VerificationMode  
 
 pipeline_modes = PipelineModes({
     "prompt_mode": PromptMode,
     "localization_input_mode": LocalizerInput, 
     "localization_mode": TaskType,
     "segmentation_mode": TaskType,
-    "bbox_verification_mode": BBoxVerificationMode
+    "bbox_verification_mode": VerificationMode
 })
 
 # Create pipeline steps
@@ -75,7 +70,7 @@ pipeline_steps = [
     ),
     PipelineStep(
         name="Verify bboxes",
-        function=output_corrector.verify_bboxes,
+        function=output_corrector.verify,
         mode_keys=["bbox_verification_mode"]
     ),
     PipelineStep(
@@ -123,7 +118,22 @@ pipeline_mode_sequence.print_mode_sequences()
 loaded_state_1 = pipeline.load_state('.pipeline_cache/florence2_ow_obj_name/pipeline_state.pkl')
 loaded_state_2 = pipeline.load_state('.pipeline_cache/florence2_ow_obj_description/pipeline_state.pkl')
 loaded_state_3 = pipeline.load_state('.pipeline_cache/florence2_ow_obj_evf_description/pipeline_state.pkl')
+#%%
+for clicking_image in loaded_state_3.images:
+    image = clicking_image.image
+    for obj in clicking_image.predicted_objects:
+        obj.validity.status = ValidityStatus.UNKNOWN
+        obj.mask.denoise_mask()
 
+        extracted_area = obj.mask.extract_area(image)
+
+        if extracted_area.width >= image.width or extracted_area.height >= image.height:
+            obj.validity.status = ValidityStatus.INVALID
+            print(f"Invalid mask: {obj.name}")
+
+            print(f"Image size: {image.width,}")
+            print(f"Mask size: {extracted_area.size}")
+        
 #%%
 
 from clicking.evaluator.core import show_validity_statistics
@@ -132,18 +142,20 @@ states = [loaded_state_1, loaded_state_2, loaded_state_3]
 labels = ["Florence2 OW Obj Name", "Florence2 OW Obj Description", "Florence2 OW Obj EVF Description"]
 show_validity_statistics(states, labels)
 
-#%% 
+#%%
+output_corrector = OutputCorrector(config=config)
+output_corrector.verify(loaded_state_3, bbox_verification_mode=VerificationMode.
+CLICKPOINT)
+#%%
 
 for image in loaded_state_3.images:
     for obj in image.predicted_objects:
-        if obj.mask is not None:
-            obj.validity.status = ValidityStatus.VALID
-        else:
-            obj.validity.status = ValidityStatus.INVALID
-
+        print(obj.name)
+        plt.imshow(obj.mask.extract_area(image.image, padding=10))
+        plt.axis('off')
+        plt.show()
 #%%
-
-for image in loaded_state.images:
+for image in loaded_state_3.images:
     show_segmentation_predictions(image, show_descriptions=False)
 #%%
 from clicking.image_processor.visualization import show_localization_predictions
@@ -175,22 +187,6 @@ for image in loaded_state.images:
     for obj in image.predicted_objects:
         print(obj.name, obj.description)
 
-#%%
-from clicking.common.mask import SegmentationMode
-
-for clicking_image in loaded_state.images:
-    image = clicking_image.image
-    for obj in clicking_image.predicted_:
-        obj.validity.status = ValidityStatus.UNKNOWN
-
-        extracted_area = obj.mask.extract_area(image)
-
-        if extracted_area.width >  image.width/2 or extracted_area.height > image.height/2:
-            obj.validity.status = ValidityStatus.INVALID
-            print(f"Invalid mask: {obj.name}")
-
-            print(f"Image size: {image.width,}")
-            print(f"Mask size: {extracted_area.size}")
         # obj.mask.denoise_mask()
 #%%
 for clicking_image in loaded_state.images:
