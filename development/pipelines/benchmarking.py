@@ -47,7 +47,7 @@ pipeline_modes = PipelineModes({
     "localization_input_mode": LocalizerInput, 
     "localization_mode": TaskType,
     "segmentation_mode": TaskType,
-    "bbox_verification_mode": VerificationMode
+    "verification_mode": VerificationMode
 })
 
 # Create pipeline steps
@@ -71,7 +71,7 @@ pipeline_steps = [
     PipelineStep(
         name="Verify bboxes",
         function=output_corrector.verify,
-        mode_keys=["bbox_verification_mode"]
+        mode_keys=["verification_mode"]
     ),
     PipelineStep(
         name="Get Segmentation Results",
@@ -143,14 +143,17 @@ labels = ["Florence2 OW Obj Name", "Florence2 OW Obj Description", "Florence2 OW
 show_validity_statistics(states, labels)
 
 #%%
+
 output_corrector = OutputCorrector(config=config)
-output_corrector.verify(loaded_state_3, bbox_verification_mode=VerificationMode.
-CLICKPOINT)
+output_corrector.verify(loaded_state_3, verification_mode=VerificationMode.CROP_MASK)
 #%%
 
 for image in loaded_state_3.images:
     for obj in image.predicted_objects:
+        # if obj.validity.status != ValidityStatus.INVALID:
+        #     continue
         print(obj.name)
+        print(obj.validity.reason)
         plt.imshow(obj.mask.extract_area(image.image, padding=10))
         plt.axis('off')
         plt.show()
@@ -160,14 +163,14 @@ for image in loaded_state_3.images:
 #%%
 from clicking.image_processor.visualization import show_localization_predictions
 
-for image in loaded_state.images:
+for image in loaded_state_3.images:
     show_localization_predictions(image, show_descriptions=False)
     # for obj in image.predicted_objects:
     #     print(obj.name, obj.bbox)
 #%%
 from clicking.common.logging import print_object_descriptions
 
-print_object_descriptions(loaded_state.images, show_stats=True)
+print_object_descriptions(loaded_state_3.images, show_stats=True)
 #%%
 from clicking.common.logging import show_object_validity
 show_object_validity(loaded_state_3)
