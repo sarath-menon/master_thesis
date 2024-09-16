@@ -7,9 +7,12 @@ from pydantic import BaseModel, Field
 from evaluate import load
 from collections import Counter
 from typing import List, Dict, Literal
-from clicking.common.data_structures import ClickingImage, ValidityStatus
+from clicking.common.data_structures import *
 import wandb
 import pandas as pd
+from collections import Counter
+from clicking.pipeline.core import PipelineState
+import matplotlib.pyplot as plt
 
 PROJECT_NAME = "clicking"
 
@@ -175,3 +178,53 @@ def save_image_descriptions(clicking_images: List[ClickingImage], output_folder:
     #     mlflow.log_table(descriptions_df, "./selva.json")
 
     # print(f"Image descriptions saved to {output_file}")
+
+
+def show_validity_statistics(states: List[PipelineState], labels: List[str]):
+    plt.figure(figsize=(15, 8))
+    
+    statuses = list(ValidityStatus)
+    width = 0.2
+    x = np.arange(len(statuses))
+    
+    colors = ['#FF6B6B', '#4ECDC4', '#FFA500']  # More distinct colors
+    
+    for i, (state, label) in enumerate(zip(states, labels)):
+        validity_counts = Counter()
+        
+        for image in state.images:
+            for obj in image.predicted_objects:
+                validity_counts[obj.validity.status] += 1
+        
+        counts = [validity_counts[status] for status in statuses]
+        
+        offset = width * (i - 0.5 * (len(states) - 1))
+        bars = plt.bar(x + offset, counts, width, label=label, color=colors[i % len(colors)], edgecolor='black', linewidth=1.5)
+        
+        for bar in bars:
+            height = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width() / 2, height,
+                     f'{height}', ha='center', va='bottom', fontweight='bold')
+    
+    plt.xlabel('Validity Status', fontsize=12)
+    plt.ylabel('Count', fontsize=12)
+    plt.title('Object Validity Statistics Comparison', fontsize=16)
+    # plt.xticks(x, [status.name for status in statuses], rotation=45, ha='right', fontsize=10)
+    plt.legend(fontsize=12, loc='upper left', bbox_to_anchor=(1, 1))
+    
+    plt.grid(axis='y', linestyle='--', alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+    
+    for i, (state, label) in enumerate(zip(states, labels)):
+        validity_counts = Counter()
+        for image in state.images:
+            for obj in image.predicted_objects:
+                validity_counts[obj.validity.status] += 1
+        
+        total_objects = sum(validity_counts.values())
+        print(f"\n{label}:")
+        print(f"Total objects: {total_objects}")
+        for status in statuses:
+            percentage = (validity_counts[status] / total_objects) * 100 if total_objects > 0 else 0
+            print(f"{status.name}: {validity_counts[status]} ({percentage:.2f}%)")
