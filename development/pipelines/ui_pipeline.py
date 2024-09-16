@@ -28,13 +28,15 @@ CONFIG_PATH = "./development/pipelines/ui_config.yml"
 with open(CONFIG_PATH, 'r') as config_file:
     config = yaml.safe_load(config_file)
 
-client = Client(base_url=config['api']['local_url'], timeout=50)
+client = Client(base_url=config['api']['local_url'], timeout=120)
 #%%
 prompt_refiner = PromptRefiner(config=config)
 ocr_processor = OCR(client, config=config)
 #%%
 coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
-clicking_images = coco_dataset.sample_dataset(num_samples=3)
+
+
+clicking_images = coco_dataset.sample_dataset(num_samples=50)
 
 #%%
 # Define the pipeline modes
@@ -82,14 +84,8 @@ pipeline_mode_sequence.print_mode_sequences()
 # Load initial state
 loaded_state = pipeline.load_state('.ui_pipeline_cache/ui_ocr/pipeline_state.pkl')
 
-def remove_full_stops(description: str) -> str:
-    if description.endswith('.'):
-        return description[:-1]
-    return description
-
 for image in loaded_state.images:
     for obj in image.ui_elements:
-        obj.name = ""
         obj.bbox = None
 #%%
 all_results = asyncio.run(pipeline.run_for_all_modes(
@@ -97,25 +93,25 @@ all_results = asyncio.run(pipeline.run_for_all_modes(
     initial_state=loaded_state,
     pipeline_modes=pipeline_mode_sequence,
     start_from_step="Filter categories",
-    # stop_after_step="Get Localization Results"
+    #stop_after_step="Process Prompts"
 ))
 
 #% Print summary of results
 # pipeline.print_mode_results_summary(all_results)
 result =  all_results.get_run_by_mode_name("basic")
-#%%
-from clicking.image_processor.visualization import show_ocr_boxes
-
-for image in clicking_images:
-    show_ocr_boxes(image, scale=1) 
-#%%
-from clicking.common.logging import print_ocr_results
-
-for image, result in zip(clicking_images, result):
-   
-    print_ocr_results(result)
-    show_ocr_boxes(image, result.prediction)
 # %%
-
 pipeline.save_state(result, name="ui_ocr")
+# %%
+from clicking.evaluator.core import plot_ui_element_histogram
+
+# Call the function with the result
+plot_ui_element_histogram(result.images)
+#%%
+from clicking.image_processor.visualization import show_ui_elements
+
+images_copy = result.images.copy()
+for image in images_copy: 
+    show_ui_elements(image, bbox_thickness=5)
+
+
 # %%
