@@ -9,7 +9,7 @@ from typing import List, Dict, Tuple, Any
 from clicking.pipeline.core import Pipeline, PipelineState, PipelineStep, PipelineMode, PipelineModeSequence, PipelineModes
 from clicking.dataset_creator.core import CocoDataset
 from clicking.prompt_refinement.core import PromptRefiner, PromptMode
-from clicking.output_corrector.core import OutputCorrector, BBoxVerificationMode
+from clicking.output_corrector.core import OutputCorrector, VerificationMode
 from clicking_client import Client
 from clicking.common.data_structures import *
 import asyncio
@@ -30,7 +30,6 @@ with open(CONFIG_PATH, 'r') as config_file:
 
 client = Client(base_url=config['api']['local_url'], timeout=50)
 #%%
-
 prompt_refiner = PromptRefiner(config=config)
 ocr_processor = OCR(client, config=config)
 #%%
@@ -39,14 +38,14 @@ clicking_images = coco_dataset.sample_dataset(num_samples=3)
 
 #%%
 # Define the pipeline modes
-from clicking.output_corrector.core import BBoxVerificationMode  
+from clicking.output_corrector.core import VerificationMode  
 
 pipeline_modes = PipelineModes({
     "prompt_mode": PromptMode,
     "localization_input_mode": LocalizerInput, 
     "localization_mode": TaskType,
     "segmentation_mode": TaskType,
-    "bbox_verification_mode": BBoxVerificationMode
+    "verification_mode": VerificationMode
 })
 
 # Create pipeline steps
@@ -80,18 +79,8 @@ pipeline_mode_sequence = PipelineModeSequence.from_config(config, pipeline_modes
 pipeline_mode_sequence.print_mode_sequences()
 
 #%%
-image_ids = [26,24,18]
-# clicking_images = coco_dataset.sample_dataset()
-
 # Load initial state
-loaded_state = pipeline.load_state()
-loaded_state = loaded_state.filter_by_ids(image_ids)
-# loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
-
-for image in loaded_state.images:
-    plt.imshow(image.image)
-    plt.axis('off')
-    plt.show()
+loaded_state = pipeline.load_state('.ui_pipeline_cache/ui_ocr/pipeline_state.pkl')
 
 def remove_full_stops(description: str) -> str:
     if description.endswith('.'):
@@ -99,86 +88,34 @@ def remove_full_stops(description: str) -> str:
     return description
 
 for image in loaded_state.images:
-    for obj in image.predicted_objects:
-        obj.description = remove_full_stops(obj.description)
+    for obj in image.ui_elements:
+        obj.name = ""
         obj.bbox = None
-        obj.mask = None
-        obj.validity.status = ValidityStatus.UNKNOWN
 #%%
-
 all_results = asyncio.run(pipeline.run_for_all_modes(
-    initial_images=clicking_images,
-    # initial_state=loaded_state,
+    #initial_images=clicking_images,
+    initial_state=loaded_state,
     pipeline_modes=pipeline_mode_sequence,
-    # start_from_step="Filter categories",
+    start_from_step="Filter categories",
     # stop_after_step="Get Localization Results"
 ))
 
-# # Print summary of results
+#% Print summary of results
 # pipeline.print_mode_results_summary(all_results)
-
-result =  all_results.get_run_by_mode_name("object_detection_open_vocab")
-#result =  all_results.get_run_by_mode_name("object_detection_text_grounded")
+result =  all_results.get_run_by_mode_name("basic")
 #%%
 from clicking.image_processor.visualization import show_ocr_boxes
 
-for image, ocr_result in zip(clicking_images, result):
-    print(ocr_result.prediction.labels)
-    show_ocr_boxes(image, ocr_result.prediction)
-
-#%%
-with open(CONFIG_PATH, 'r') as config_file:
-    config = yaml.safe_load(config_file)
-prompt_refiner = PromptRefiner(config=config)
-
-#%%
-from clicking.prompt_refinement.core import UIResponse
-
-results = asyncio.run(prompt_refiner.process_single_prompt(clicking_images[1].image, mode=PromptMode.IMAGE_TO_UI_ELEMENTS, output_type=UIResponse))
-
-#%%
-state = PipelineState(images=clicking_images)
-state = prompt_refiner.process_prompts(state, mode=PromptMode.IMAGE_TO_UI_ELEMENTS)
-#%%
-for image in state.images:
-    # plt.imshow(image.image)
-    # plt.axis('off')
-    # plt.show()
-    for element in image.ui_elements:
-        print(element.name, element.icon)
-#%%
-clicking_images[1].image
-#%%
-for result in results:
-    print(result.name, result.icon)
-
-#%%
-from clicking.image_processor.visualization import show_ocr_boxes
-
-ocr_result = ocr_processor.get_ocr_results(PipelineState(images =clicking_images))
+for image in clicking_images:
+    show_ocr_boxes(image, scale=1) 
 #%%
 from clicking.common.logging import print_ocr_results
 
-for image, result in zip(clicking_images, ocr_result):
-    # remove token '</s>' from the labels
-    result.prediction.labels = [label.replace('</s>', '') for label in result.prediction.labels]
+for image, result in zip(clicking_images, result):
+   
     print_ocr_results(result)
     show_ocr_boxes(image, result.prediction)
 # %%
 
-for response in ocr_result:
-    for i,image in enumerate(state.images):
-        if image.id != response.id:
-            continue
-        plt.imshow(image.image)
-        plt.axis('off')
-        plt.show()
-        for element in image.ui_elements:
-            found = False
-            for label in response.prediction.labels: 
-                if element.name.lower() in label.lower():
-                    # print('Matched', element.name, label)
-                    found = True
-                    break
-            if not found:
-                print('Not found', element.name)
+pipeline.save_state(result, name="ui_ocr")
+# %%
