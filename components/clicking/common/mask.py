@@ -69,7 +69,7 @@ class SegmentationMask:
 
         return Image.fromarray(cropped_image)
 
-    def denoise_mask(self, kernel_size: int = 10, open_iterations: int = 3, close_iterations: int = 1):
+    def denoise_mask(self, kernel_size: int = 15, open_iterations: int = 2, close_iterations: int = 1):
         kernel = np.ones((kernel_size, kernel_size), np.uint8)
         mask = self.binary_mask.astype(np.uint8) * 255
         
