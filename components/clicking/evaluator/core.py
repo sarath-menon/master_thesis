@@ -290,3 +290,34 @@ def show_validity_statistics(states: List[PipelineState], labels: List[str]):
                    maxcolwidths=[5, 15, 5] + [max_column_width] * len(statuses),
                    numalign="center", stralign="center"))
     print()  # Add an extra newline for spacing between rows
+
+
+def plot_ui_element_histogram(images: List[ClickingImage]):
+    with_bbox = 0
+    without_bbox = 0
+
+    for image in images:
+        for element in image.ui_elements:
+            if element.category == "Button" and element.name is not None:
+                if element.bbox is not None:
+                    with_bbox += 1
+                else:
+                    without_bbox += 1
+
+    total = with_bbox + without_bbox
+    categories = ['With BBox', 'Without BBox']
+    percentages = [with_bbox / total * 100, without_bbox / total * 100]
+
+    plt.figure(figsize=(10, 6))
+    plt.bar(categories, percentages)
+    plt.title('UI Elements (Buttons)')
+    plt.ylabel('Percentage')
+    plt.xlabel('Category')
+    plt.ylim(0, 100)
+
+    for i, percentage in enumerate(percentages):
+        plt.text(i, percentage, f'{percentage:.1f}%', ha='center', va='bottom')
+
+    plt.show()
+
+    print(f"Detected: {with_bbox}/{total} ({with_bbox / total * 100:.1f}%)")
