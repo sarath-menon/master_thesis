@@ -307,13 +307,13 @@ def plot_ui_element_histogram(images: List[ClickingImage]):
     total = with_bbox + without_bbox
     categories = ['With BBox', 'Without BBox']
     percentages = [with_bbox / total * 100, without_bbox / total * 100]
-
+ 
     plt.figure(figsize=(10, 6))
     plt.bar(categories, percentages)
     plt.title('UI Elements (Buttons)')
     plt.ylabel('Percentage')
     plt.xlabel('Category')
-    plt.ylim(0, 100)
+    plt.ylim(0, 100) 
 
     for i, percentage in enumerate(percentages):
         plt.text(i, percentage, f'{percentage:.1f}%', ha='center', va='bottom')
