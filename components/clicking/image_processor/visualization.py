@@ -195,6 +195,7 @@ import random
 
 colormap = ['blue','orange','green','purple','brown','pink','gray','olive','cyan','red',
             'lime','indigo','violet','aqua','magenta','coral','gold','tan','skyblue']
+            
 def show_ocr_boxes(clicking_image: ClickingImage, prediction, scale=1):
     image = clicking_image.image.copy()
     draw = ImageDraw.Draw(image)
@@ -216,7 +217,6 @@ def show_ocr_boxes(clicking_image: ClickingImage, prediction, scale=1):
 
     plt.imshow(image)
     plt.show()
-
 
 
 def show_invalid_objects(state: PipelineState, mode: VerificationMode):
@@ -349,3 +349,47 @@ def show_invalid_object_images(states: List[PipelineState], state_labels: List[s
             
             if images_shown >= max_images_per_object:
                 break
+
+
+def show_ui_elements(clicking_image: ClickingImage, label_alpha=0.7, label_y_offset=30, scale=1, bbox_thickness=5):
+    fig, ax = plt.subplots()
+    ax.imshow(clicking_image.image)
+
+    draw = ImageDraw.Draw(clicking_image.image)
+
+    buttons = []
+    
+    for ui_element in clicking_image.ui_elements:
+
+        if ui_element.name is None:
+            continue
+
+        if ui_element.bbox is None:
+            print(f"UI Element {ui_element.name} has no bounding box")
+            continue
+            
+        color = random.choice(colormap)
+        new_box = (np.array(ui_element.bbox) * scale).tolist()
+        draw.polygon(new_box, width=bbox_thickness, outline=color)
+        draw.text((new_box[0]+8, new_box[1]+2),
+                  f"{ui_element.name}",
+                  align="left",
+                  fill=color)
+
+        if ui_element.category == "Button":
+            buttons.append(ui_element.name)
+
+        # x, y, w, h = ui_element.bbox.get(mode=BBoxMode.XYWH)
+
+        # bbox_color = 'blue'  # You can adjust this color as needed
+        # bg_color = 'red'
+
+        # rect = patches.Rectangle((x, y), w, h, linewidth=2, edgecolor=bbox_color, facecolor='none')
+        # ax.add_patch(rect)
+
+        # plt.text(x, y - label_y_offset, f"{ui_element.name}", color='white', fontsize=8, bbox=dict(facecolor=bg_color, alpha=label_alpha))
+
+    ax.axis('off')
+    plt.show()
+
+    print(f"Button: {buttons}")
