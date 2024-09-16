@@ -7,10 +7,11 @@ from clicking.common.mask import SegmentationMask, SegmentationMode
 from pycocotools import mask as mask_utils
 import cv2
 from typing import List
-from clicking.common.data_structures import ClickingImage, ImageObject, ObjectCategory, CATEGORY_COLOR_MAP
+from clicking.common.data_structures import *
 from PIL import ImageDraw
 from clicking.common.logging import print_object_descriptions
 from clicking.common.data_structures import ValidityStatus
+plt.style.use('dark_background')
 
 # overlay bounding box in format (x, y, w, h) on a PIL image
 def overlay_bounding_box(image, bbox: BoundingBox, color='red', thickness=14, padding=0):
