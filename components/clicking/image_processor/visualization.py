@@ -12,6 +12,10 @@ from PIL import ImageDraw
 from clicking.common.logging import print_object_descriptions
 from clicking.common.data_structures import ValidityStatus
 plt.style.use('dark_background')
+from collections import defaultdict, Counter
+
+from prettytable import PrettyTable
+from ..output_corrector.core import VerificationMode
 
 # overlay bounding box in format (x, y, w, h) on a PIL image
 def overlay_bounding_box(image, bbox: BoundingBox, color='red', thickness=14, padding=0):
@@ -215,6 +219,132 @@ def show_ocr_boxes(clicking_image: ClickingImage, prediction, scale=1):
 
 
 
+def show_invalid_objects(state: PipelineState, mode: VerificationMode):
+    for image in state.images:
+        for obj in image.predicted_objects:
+            if obj.validity.status != ValidityStatus.INVALID:
+                continue
+
+            print(f"Object: {obj.name} is invalid because: {obj.validity.reason}")
+
+            if mode == VerificationMode.CROP_BBOX:
+                if obj.bbox is None:
+                    print(f"Object {obj.name} has no bounding box")
+                    continue
+                plt.imshow(obj.bbox.extract_area(image.image, padding=10))
+            elif mode == VerificationMode.CROP_MASK:
+                plt.imshow(obj.mask.extract_area(image.image, padding=10))
+            else:
+                raise ValueError(f"Invalid verification mode: {mode}")
+            
+            plt.axis('off')
+            plt.show()
 
 
+def compare_invalid_objects(states: List[PipelineState], labels: List[str], visualize=False, show_details=False):
+    invalid_objects = defaultdict(lambda: defaultdict(bool))
+    
+    for state, label in zip(states, labels):
+        for image in state.images:
+            for obj in image.predicted_objects:
+                if obj.validity.status == ValidityStatus.INVALID:
+                    invalid_objects[obj.name][label] = True
+    
+    statistics = {obj_name: sum(invalid_in_states.values()) for obj_name, invalid_in_states in invalid_objects.items()}
+    sorted_stats = dict(sorted(statistics.items(), key=lambda x: x[1], reverse=True))
+    
+    if visualize:
+        visualize_invalid_objects(sorted_stats, len(states))
+    
+    if show_details:
+        print_detailed_information(sorted_stats, invalid_objects, len(states))
+    
+    return sorted_stats, invalid_objects
 
+def visualize_invalid_objects(invalid_object_stats, num_states):
+    invalid_count_frequency = Counter(invalid_object_stats.values())
+    invalid_counts = list(range(1, num_states + 1))
+    frequencies = [invalid_count_frequency.get(count, 0) for count in invalid_counts]
+
+    plt.figure(figsize=(10, 6))
+    plt.bar(invalid_counts, frequencies, align='center', alpha=0.8)
+    plt.xlabel('Number of States Where Object is Invalid')
+    plt.ylabel('Number of Objects')
+    plt.title('Distribution of Invalid Objects Across States')
+    plt.xticks(invalid_counts)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+    for i, v in enumerate(frequencies):
+        if v > 0:
+            plt.text(i + 1, v, str(v), ha='center', va='bottom')
+
+    plt.tight_layout()
+    plt.show()
+
+def print_detailed_information(invalid_object_stats, invalid_objects, num_states):
+    print("\nDetailed invalid object information:")
+    table = PrettyTable()
+    table.field_names = ["Object Name", "Invalid Count", "Invalid States"]
+    table.align["Object Name"] = "l"
+    table.align["Invalid Count"] = "center"
+    table.align["Invalid States"] = "l"
+
+    for obj_name, invalid_count in invalid_object_stats.items():
+        invalid_in = [label for label, is_invalid in invalid_objects[obj_name].items() if is_invalid]
+        table.add_row([obj_name, f"{invalid_count}/{num_states}", ", ".join(invalid_in)])
+
+    print(table)
+
+
+def show_invalid_object_images(states: List[PipelineState], sorted_stats: Dict[str, int], max_images_per_object: int = 3):
+    """
+    Display images containing invalid objects for each category.
+
+    Args:
+    sorted_stats (Dict[str, int]): A dictionary of object names and their invalid counts, sorted in descending order.
+    states (List[PipelineState]): List of PipelineState objects containing the images and object information.
+    max_images_per_object (int): Maximum number of images to display for each object category.
+    """
+    sorted_objects = sorted(sorted_stats.items(), key=lambda x: x[1], reverse=True)
+
+    for obj_name, invalid_count in sorted_objects:
+        print("\n" + "=" * 50)
+        print(f"Object: {obj_name}")
+        print(f"Invalid in {invalid_count} out of {len(states)} states")
+        print("=" * 50)
+        
+        images_shown = 0
+        for state in states:
+            for image in state.images:
+                for obj in image.predicted_objects:
+                    if obj.name != obj_name or obj.validity.status != ValidityStatus.INVALID:
+                        continue
+
+                    plt.figure(figsize=(10, 10))
+                    plt.imshow(image.image)
+                    plt.title(f"{obj_name} - Image ID: {image.id}")
+                    plt.axis('off')
+                    
+                    if obj.bbox:
+                        bbox = obj.bbox.get(BBoxMode.XYXY)
+                        rect = patches.Rectangle((bbox[0], bbox[1]), bbox[2] - bbox[0], bbox[3] - bbox[1],
+                                                 linewidth=2, edgecolor='r', facecolor='none')
+                        plt.gca().add_patch(rect)
+                    
+                    if obj.mask:
+                        mask = mask_utils.decode(obj.mask.get(SegmentationMode.COCO_RLE))
+                        plt.imshow(mask, alpha=0.5, cmap='jet')
+                    
+                    plt.show()
+                    
+                    print(f"Reason: {obj.validity.reason}")
+                    
+                    images_shown += 1
+                    if images_shown >= max_images_per_object:
+                        break
+                
+                if images_shown >= max_images_per_object:
+                    break
+            
+            if images_shown >= max_images_per_object:
+                break
