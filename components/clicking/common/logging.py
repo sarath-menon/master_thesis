@@ -38,6 +38,8 @@ def print_image_objects(image_objects: List[ClickingImage], show_image=False):
 def print_object_descriptions(image_objects: List[ClickingImage], show_image=False, max_col_width=30, show_stats=False):
     category_counts = {}
 
+    n_images = len(image_objects)
+
     for result in image_objects:
         table = PrettyTable()
         table.field_names = ["Index", "Predicted Object", "Description", "Reasoning"]
@@ -67,7 +69,7 @@ def print_object_descriptions(image_objects: List[ClickingImage], show_image=Fal
         font_size = 16
         plt.style.use('dark_background')
         bars = plt.bar(category_counts.keys(), category_counts.values())
-        plt.title('Histogram of Object Categories Across All Images', color='white', fontsize=font_size)
+        plt.title(f'Histogram of Object Categories Across {n_images} Images', color='white', fontsize=font_size)
         plt.xticks(fontsize=font_size)
         plt.yticks(fontsize=font_size)
 
