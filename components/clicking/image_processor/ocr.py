@@ -9,7 +9,6 @@ from clicking.common.bbox import BoundingBox, BBoxMode
 from enum import Enum
 from clicking.vision_model.utils import pil_to_base64
 
-
 class OCR:
     def __init__(self, client: Client, config: Dict):
         self.client = client
@@ -77,19 +76,29 @@ class OCR:
                     if image.id != response.id:
                         continue
 
+                    # Skip if elements that are not named
+                    if element.name is None:
+                        continue
+                        
+                    element_name = element.name.lower()
+                    # remove leading and trailing whitespace
+                    element_name = element_name.strip()
+
+                    # remove !,.?
+                    element_name = element_name.replace("!", "").replace(".", "").replace(",", "").replace("?", "")
+
+                    compared_labels = []
                     for (bbox, label) in zip(response.prediction.bboxes, response.prediction.labels):
 
-                        # Skip if elements that are not named
-                        if element.name is None:
-                            continue
-  
-                        element_name = element.name.lower()
                         label = label.lower()
+                        label = label.strip()
+                        label = label.replace("!", "").replace(".", "").replace(",", "").replace("?", "")
 
-                        if element_name in label:
+                        if element_name in label or label in element_name:
                             element.bbox = bbox
                             break
-
+                        else:
+                            compared_labels.append(label)
         return state
 
         
