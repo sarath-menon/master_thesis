@@ -380,15 +380,6 @@ def show_ui_elements(clicking_image: ClickingImage, label_alpha=0.7, label_y_off
         if ui_element.category == "Button":
             buttons.append(ui_element.name)
 
-        # x, y, w, h = ui_element.bbox.get(mode=BBoxMode.XYWH)
-
-        # bbox_color = 'blue'  # You can adjust this color as needed
-        # bg_color = 'red'
-
-        # rect = patches.Rectangle((x, y), w, h, linewidth=2, edgecolor=bbox_color, facecolor='none')
-        # ax.add_patch(rect)
-
-        # plt.text(x, y - label_y_offset, f"{ui_element.name}", color='white', fontsize=8, bbox=dict(facecolor=bg_color, alpha=label_alpha))
 
     ax.axis('off')
     plt.show()
