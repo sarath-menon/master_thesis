@@ -33,6 +33,7 @@ class UIElement(BaseModel):
     shape: str
     color: str
     location: str
+    bbox: Optional[BoundingBox] = None
 
 class ObjectCategory(str, Enum):
     GAME_ASSET = "Game Asset"
