@@ -63,7 +63,6 @@ class PromptRefiner(ImageProcessorBase):
                 await asyncio.sleep(batch_delay)
 
         for clicking_image, result in zip(state.images, batch_results):
-            print(result)
             if mode == PromptMode.IMAGE_TO_OBJECT_DESCRIPTIONS:
                 clicking_image.predicted_objects = [obj for obj in result.objects]
             elif mode == PromptMode.IMAGE_TO_UI_ELEMENTS:

@@ -358,6 +358,7 @@ def show_ui_elements(clicking_image: ClickingImage, label_alpha=0.7, label_y_off
     draw = ImageDraw.Draw(clicking_image.image)
 
     buttons = []
+    unmatched_buttons = []
     
     for ui_element in clicking_image.ui_elements:
 
@@ -365,7 +366,7 @@ def show_ui_elements(clicking_image: ClickingImage, label_alpha=0.7, label_y_off
             continue
 
         if ui_element.bbox is None:
-            print(f"UI Element {ui_element.name} has no bounding box")
+            unmatched_buttons.append(ui_element.name)
             continue
             
         color = random.choice(colormap)
@@ -393,3 +394,4 @@ def show_ui_elements(clicking_image: ClickingImage, label_alpha=0.7, label_y_off
     plt.show()
 
     print(f"Button: {buttons}")
+    print(f"Unmatched Button: {unmatched_buttons}")
