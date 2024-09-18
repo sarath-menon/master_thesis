@@ -41,5 +41,5 @@ pipeline_mode_sequences:
     prompt_mode: IMAGE_TO_UI_ELEMENTS
     localization_input_mode: OBJ_NAME
     localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
-    bbox_verification_mode: CROP
+    verification_mode: CROP_BBOX
     segmentation_mode: SEGMENTATION_WITH_BBOX
