@@ -63,30 +63,28 @@ class BaseProcessor:
         return chunk_response.responses, chunk_response.inference_time
 
     async def get_batch_predictions_async(self, batch_requests: List[PredictionReq]) -> List:
-        chunk_size = 20
+        chunk_size = 50
         max_concurrent_chunks = 5
+        semaphore = asyncio.Semaphore(max_concurrent_chunks)
         responses = []
-        total_chunks = (len(batch_requests) + chunk_size - 1) // chunk_size
         total_time = 0
 
-        async def process_chunk_with_retry(chunk):
-            try:
+        async def process_chunk_with_semaphore(chunk):
+            async with semaphore:
                 return await self.process_chunk(chunk)
-            except Exception as e:
-                print(f"Error processing chunk: {str(e)}")
-                raise
 
         chunks = [batch_requests[i:i+chunk_size] for i in range(0, len(batch_requests), chunk_size)]
-        
-        with tqdm(total=total_chunks, desc=f"Processing {self.model_key} chunks", unit="chunk") as pbar:
-            for i in range(0, len(chunks), max_concurrent_chunks):
-                chunk_group = chunks[i:i+max_concurrent_chunks]
-                chunk_results = await asyncio.gather(*[process_chunk_with_retry(chunk) for chunk in chunk_group])
-                
-                for chunk_responses, chunk_time in chunk_results:
-                    responses.extend(chunk_responses)
-                    total_time += chunk_time
-                    pbar.update(1)
+        total_chunks = len(chunks)
+
+        async def process_all_chunks():
+            nonlocal total_time
+            tasks = [process_chunk_with_semaphore(chunk) for chunk in chunks]
+            for completed in tqdm(asyncio.as_completed(tasks), total=total_chunks, desc=f"Processing {self.model_key} chunks", unit="chunk"):
+                chunk_responses, chunk_time = await completed
+                responses.extend(chunk_responses)
+                total_time += chunk_time
+
+        await process_all_chunks()
 
         print(f"Total inference time: {total_time:.2f} seconds")
         return responses
