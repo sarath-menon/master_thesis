@@ -11,6 +11,7 @@
 /dist
 /wandb
 /.pipeline_cache
+/.ui_pipeline_cache
 /.interactive
 **/.interactive
 /test/assets
