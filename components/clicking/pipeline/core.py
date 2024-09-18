@@ -139,7 +139,10 @@ class PipelineRunResults:
     results: Dict[str, PipelineSingleRun]
 
     def get_run_by_mode_name(self, mode_name: str) -> Optional[PipelineSingleRun]:
-        return self.results.get(mode_name).result
+        if mode_name not in self.results:
+            print(f"Error: Mode '{mode_name}' does not exist.")
+            return None
+        return self.results[mode_name].result
     
 class Pipeline:
     def __init__(self, config: Dict[str, Any], cache_folder= "./cache"):
