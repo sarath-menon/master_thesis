@@ -5,6 +5,7 @@ from clicking_client.api.default import set_model, get_batch_prediction
 from clicking.common.data_structures import PipelineState, TaskType, ValidityStatus
 from tqdm import tqdm
 from clicking.vision_model.utils import pil_to_base64
+import asyncio
 
 class BaseProcessor:
     def __init__(self, client: Client, config: Dict, model_key: str):
@@ -52,24 +53,37 @@ class BaseProcessor:
         # This method should be implemented by subclasses
         raise NotImplementedError
 
-    def get_batch_predictions(self, batch_requests: List[PredictionReq]) -> List:
-        batch_size = 20
+    async def get_batch_predictions_async(self, batch_requests: List[PredictionReq]) -> List:
+        chunk_size = 20
+        max_concurrent_chunks = 5
         responses = []
-        total_batches = (len(batch_requests) + batch_size - 1) // batch_size
-        batch_time = 0
+        total_chunks = (len(batch_requests) + chunk_size - 1) // chunk_size
+        total_time = 0
 
-        for batch_start in tqdm(range(0, len(batch_requests), batch_size), total=total_batches, desc=f"Processing {self.model_key} batches", unit="batch", unit_scale=True):
-            batch_end = min(batch_start + batch_size, len(batch_requests))
-            requests = batch_requests[batch_start:batch_end]
-            batch_response = get_batch_prediction.sync(
+        async def process_chunk(chunk):
+            chunk_response = await get_batch_prediction.asyncio(
                 client=self.client,
-                body=requests
+                body=chunk
             )
-            responses.extend(batch_response.responses)
-            batch_time += batch_response.inference_time
+            return chunk_response.responses, chunk_response.inference_time
 
-        print(f"Batch time: {batch_time}")
+        chunks = [batch_requests[i:i+chunk_size] for i in range(0, len(batch_requests), chunk_size)]
+        
+        with tqdm(total=total_chunks, desc=f"Processing {self.model_key} chunks", unit="chunk") as pbar:
+            for i in range(0, len(chunks), max_concurrent_chunks):
+                chunk_group = chunks[i:i+max_concurrent_chunks]
+                chunk_results = await asyncio.gather(*[process_chunk(chunk) for chunk in chunk_group])
+                
+                for chunk_responses, chunk_time in chunk_results:
+                    responses.extend(chunk_responses)
+                    total_time += chunk_time
+                    pbar.update(1)
+
+        print(f"Total inference time: {total_time:.2f} seconds")
         return responses
+
+    def get_batch_predictions(self, batch_requests: List[PredictionReq]) -> List:
+        return asyncio.run(self.get_batch_predictions_async(batch_requests))
 
     def process_responses(self, state: PipelineState, responses: List) -> PipelineState:
         # This method should be implemented by subclasses
