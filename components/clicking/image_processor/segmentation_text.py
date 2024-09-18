@@ -46,7 +46,7 @@ class SegmentationText:
             for obj in clicking_image.predicted_objects:
                 if obj.validity.status is ValidityStatus.INVALID:
                     print(f"Skipping segmentation for {obj.name} because it is invalid: {obj.validity.status}")
-                    continue
+                    continue   
 
                 request = PredictionReq(
                     image=image_base64,
@@ -106,3 +106,19 @@ class SegmentationText:
             PipelineState: The updated pipeline state with segmentation results.
         """
         return asyncio.run(self.get_segmentation_results_async(state, segmentation_mode))
+
+
+# for clicking_image in loaded_state_3.images:
+#     image = clicking_image.image
+#     for obj in clicking_image.predicted_objects:
+#         obj.validity.status = ValidityStatus.UNKNOWN
+#         obj.mask.denoise_mask()
+
+#         extracted_area = obj.mask.extract_area(image)
+
+#         if extracted_area.width >= image.width or extracted_area.height >= image.height:
+#             obj.validity.status = ValidityStatus.INVALID
+#             print(f"Invalid mask: {obj.name}")
+
+#             print(f"Image size: {image.width,}")
+#             print(f"Mask size: {extracted_area.size}")
