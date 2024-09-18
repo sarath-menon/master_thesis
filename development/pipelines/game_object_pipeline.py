@@ -34,7 +34,7 @@ prompt_refiner = PromptRefiner(config=config)
 localization_processor = Localization(client, config=config)
 segmentation_processor = Segmentation(client, config=config)
 output_corrector = OutputCorrector(config=config)
-segmentation_text = SegmentationText(client, config=config)
+# segmentation_text = SegmentationText(client, config=config)
 #%%
 coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
 
@@ -50,7 +50,7 @@ pipeline_modes = PipelineModes({
     "localization_input_mode": LocalizerInput, 
     "localization_mode": TaskType,
     "segmentation_mode": TaskType,
-    "bbox_verification_mode": VerificationMode
+    "verification_mode": VerificationMode
 })
 
 # Create pipeline steps
@@ -58,7 +58,7 @@ pipeline_steps = [
     PipelineStep(
         name="Process Prompts",
         function=prompt_refiner.process_prompts,
-        mode_keys=["prompt_mode"],
+        mode_keys=["prompt_mode"], 
         use_cache=True
     ),
     PipelineStep(
@@ -74,7 +74,7 @@ pipeline_steps = [
     PipelineStep(
         name="Verify bboxes",
         function=output_corrector.verify,
-        mode_keys=["bbox_verification_mode"]
+        mode_keys=["verification_mode"]
     ),
     PipelineStep(
         name="Get Segmentation Results",
@@ -118,9 +118,7 @@ image_ids = [26,24,18]
 
 # Load initial state
 loaded_state = pipeline.load_state('.pipeline_cache/obj_descriptions/pipeline_state.pkl')
-# loaded_state = loaded_state.filter_by_ids(image_ids)
-# loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
-
+loaded_state = loaded_state.filter_by_ids(image_ids)
 
 def remove_full_stops(description: str) -> str:
     if description.endswith('.'):
@@ -139,13 +137,13 @@ all_results = asyncio.run(pipeline.run_for_all_modes(
     initial_state=loaded_state,
     pipeline_modes=pipeline_mode_sequence,
     start_from_step="Filter categories",
-    #stop_after_step="Process Prompts"
+    #stop_after_step="Get Localization Results"
 ))
 
 # Print summary of results
 pipeline.print_mode_results_summary(all_results)
 
-result =  all_results.get_run_by_mode_name("open_vocab_object_description")
+result =  all_results.get_run_by_mode_name("open_vocab_object_name")
 #%%
 for image in result.images:
     show_segmentation_predictions(image, show_descriptions=False)
@@ -215,10 +213,11 @@ from clicking.common.logging import show_object_validity
 show_object_validity(result)
 
 # %%
-#localization_processor = Localization(client, config=config)
-localization_processor.get_localization_results(loaded_state, localization_mode=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB, localization_input_mode=LocalizerInput.OBJ_NAME)
+localization_processor = Localization(client, config=config)
+#%%
+new_state =  localization_processor.get_localization_results(loaded_state, localization_mode=TaskType.LOCALIZATION_WITH_TEXT_OPEN_VOCAB, localization_input_mode=LocalizerInput.OBJ_NAME)
 # %%
-for image in loaded_state.images:
+for image in new_state.images:
     show_localization_predictions(image, show_descriptions=False)
     for obj in image.predicted_objects:
         print(f"Obj {obj.name} bbox: {obj.bbox}")

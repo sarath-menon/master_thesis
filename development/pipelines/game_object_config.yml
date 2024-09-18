@@ -59,13 +59,13 @@ pipeline_mode_sequences:
     prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
     localization_input_mode: OBJ_NAME
     localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
-    bbox_verification_mode: CROP_BBOX
+    verification_mode: CROP_BBOX
     segmentation_mode: SEGMENTATION_WITH_BBOX
   # open_vocab_object_description:
   #   prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
   #   localization_input_mode: OBJ_DESCRIPTION
   #   localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
-  #   bbox_verification_mode: CROP_BBOX
+  #   verification_mode: CROP_BBOX
   #   segmentation_mode: SEGMENTATION_WITH_BBOX
   # evf_object_description:
   #   prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
