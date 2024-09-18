@@ -55,16 +55,19 @@ visualization:
 
 # Pipeline mode sequences
 pipeline_mode_sequences:
-  # open_vocab_object_name:
-  #   prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
-  #   localization_input_mode: OBJ_NAME
-  #   localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
-  #   bbox_verification_mode: CROP
-  #   segmentation_mode: SEGMENTATION_WITH_BBOX
-  open_vocab_object_description:
+  open_vocab_object_name:
     prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
-    localization_input_mode: OBJ_DESCRIPTION
+    localization_input_mode: OBJ_NAME
     localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
-    bbox_verification_mode: CROP
-    segmentation_mode: SEGMENTATION_WITH_TEXT
-  
+    bbox_verification_mode: CROP_BBOX
+    segmentation_mode: SEGMENTATION_WITH_BBOX
+  # open_vocab_object_description:
+  #   prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
+  #   localization_input_mode: OBJ_DESCRIPTION
+  #   localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
+  #   bbox_verification_mode: CROP_BBOX
+  #   segmentation_mode: SEGMENTATION_WITH_BBOX
+  # evf_object_description:
+  #   prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
+  #   segmentation_mode: SEGMENTATION_WITH_TEXT
+  #   verification_mode: CROP_BBOX
