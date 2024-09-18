@@ -62,7 +62,7 @@ class ImageProcessorBase:
     def clear_cache(self):
         self._get_image_response.clear_cache()
 
-    # @cache_result(expiration_time=3000)
+    @cache_result(expiration_time=3000)
     async def _get_batch_image_responses(self, images: List[Image.Image], text_prompts: List[str], messages: List[List[Dict]], output_type: Optional[Type[T]] = None) -> List[T]:
         base64_images = [self._pil_to_base64(img) for img in images]
         
