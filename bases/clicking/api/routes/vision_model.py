@@ -83,34 +83,3 @@ async def batch_prediction(batch_requests: BatchPredictionReq = Depends()) -> Ba
     total_time = end_time - start_time
 
     return BatchPredictionResp(responses=responses, inference_time=total_time)
-
-    
-@vision_model_router.post("/stream_batch_prediction", operation_id="stream_batch_prediction")
-async def stream_batch_prediction(batch_requests: BatchPredictionReq = Depends()) -> BatchPredictionResp:
-    if not batch_requests:
-        raise HTTPException(status_code=400, detail="Batch request is empty")
-
-    start_time = time.time()
-    responses = []
-
-    async def process_requests():
-        nonlocal responses
-        for req in batch_requests.requests:
-            if req.task is None:
-                raise HTTPException(status_code=400, detail="Task is required for all requests in the batch")
-
-            print(f"Processing request {req.id}")
-            response = await vision_model.get_prediction(req)
-            response.id = req.id
-            responses.append(response)
-
-            # Add a small delay to simulate streaming
-            await asyncio.sleep(0.01)
-
-    # Process requests asynchronously
-    await process_requests()
-
-    end_time = time.time()
-    total_time = end_time - start_time
-
-    return BatchPredictionResp(responses=responses, inference_time=total_time)
