@@ -80,10 +80,8 @@ class PipelineModeSequence:
         for name, seq in sequences.items():
             mode_values = {}
             for mode_name, enum_class in pipeline_modes.modes.items():
-                if mode_name not in seq:
-                    raise ValueError(f"Warning: {mode_name} not found in config for sequence {name}. Using default value.")
-
-                mode_values[mode_name] = enum_class[seq[mode_name]]
+                if mode_name in seq:
+                    mode_values[mode_name] = enum_class[seq[mode_name]]
             modes.append(PipelineMode(name=name, modes=mode_values))
         return cls(modes=modes)
 
@@ -92,11 +90,20 @@ class PipelineModeSequence:
             print("No mode sequences found.")
             return
 
-        headers = ["Index", "Name"] + list(self.modes[0].modes.keys())
+        # Get all unique mode keys across all modes
+        all_mode_keys = set()
+        for mode in self.modes:
+            all_mode_keys.update(mode.modes.keys())
+
+        # Create headers for each mode and its name
+        headers = ["Mode"] + [f"{mode.name} ({i})" for i, mode in enumerate(self.modes)]
         table = PrettyTable(headers)
-        for i, mode in enumerate(self.modes):
-            row = [i, mode.name] + list(mode.modes.values())
+
+        # Add rows for each mode key
+        for key in all_mode_keys:
+            row = [key] + [mode.modes.get(key, "-") for mode in self.modes]
             table.add_row(row)
+
         print(table)
 
     @classmethod

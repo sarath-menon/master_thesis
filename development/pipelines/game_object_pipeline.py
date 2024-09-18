@@ -28,14 +28,12 @@ CONFIG_PATH = "./development/pipelines/game_object_config.yml"
 with open(CONFIG_PATH, 'r') as config_file:
     config = yaml.safe_load(config_file)
 
-client = Client(base_url=config['api']['cloud_url'], timeout=120)
+client = Client(base_url=config['api']['local_url'], timeout=120)
 #%%
-
 prompt_refiner = PromptRefiner(config=config)
-# localization_processor = Localization(client, config=config)
-# segmentation_processor = Segmentation(client, config=config)
-# output_corrector = OutputCorrector(config=config)
-
+localization_processor = Localization(client, config=config)
+segmentation_processor = Segmentation(client, config=config)
+output_corrector = OutputCorrector(config=config)
 segmentation_text = SegmentationText(client, config=config)
 #%%
 coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
@@ -55,38 +53,6 @@ pipeline_modes = PipelineModes({
     "bbox_verification_mode": VerificationMode
 })
 
-# # Create pipeline steps
-# pipeline_steps = [
-#     PipelineStep(
-#         name="Process Prompts",
-#         function=prompt_refiner.process_prompts,
-#         mode_keys=["prompt_mode"],
-#         use_cache=True
-#     ),
-#     PipelineStep(
-#         name="Filter categories",
-#         function=lambda state: state.filter_by_object_category(ObjectCategory.GAME_ASSET),
-#         mode_keys=[],
-#     ),
-#     PipelineStep(
-#         name="Get Localization Results",
-#         function=localization_processor.get_localization_results,
-#         mode_keys=["localization_mode", "localization_input_mode"]
-#     ),
-#     PipelineStep(
-#         name="Verify bboxes",
-#         function=output_corrector.verify,
-#         mode_keys=["bbox_verification_mode"]
-#     ),
-#     PipelineStep(
-#         name="Get Segmentation Results",
-#         function=segmentation_processor.get_segmentation_results,
-#         mode_keys=["segmentation_mode"]
-#     )
-# ]
-
-
-
 # Create pipeline steps
 pipeline_steps = [
     PipelineStep(
@@ -101,11 +67,41 @@ pipeline_steps = [
         mode_keys=[],
     ),
     PipelineStep(
-        name="Get Segmentation Results",
-        function=segmentation_text.get_segmentation_results,
-        mode_keys=["segmentation_mode"]
+        name="Get Localization Results",
+        function=localization_processor.get_localization_results,
+        mode_keys=["localization_mode", "localization_input_mode"]
     ),
+    PipelineStep(
+        name="Verify bboxes",
+        function=output_corrector.verify,
+        mode_keys=["bbox_verification_mode"]
+    ),
+    PipelineStep(
+        name="Get Segmentation Results",
+        function=segmentation_processor.get_segmentation_results,
+        mode_keys=["segmentation_mode"]
+    )
 ]
+
+# # Create pipeline steps
+# pipeline_steps = [
+#     PipelineStep(
+#         name="Process Prompts",
+#         function=prompt_refiner.process_prompts,
+#         mode_keys=["prompt_mode"],
+#         use_cache=True
+#     ),
+#     PipelineStep(
+#         name="Filter categories",
+#         function=lambda state: state.filter_by_object_category(ObjectCategory.GAME_ASSET),
+#         mode_keys=[],
+#     ),
+#     PipelineStep(
+#         name="Get Segmentation Results",
+#         function=segmentation_text.get_segmentation_results,
+#         mode_keys=["segmentation_mode"]
+#     ),
+# ]
 
 # Create pipeline and add steps
 pipeline = Pipeline(config=config)
@@ -121,7 +117,7 @@ image_ids = [26,24,18]
 # clicking_images = coco_dataset.sample_dataset()
 
 # Load initial state
-loaded_state = pipeline.load_state()
+loaded_state = pipeline.load_state('.pipeline_cache/obj_descriptions/pipeline_state.pkl')
 # loaded_state = loaded_state.filter_by_ids(image_ids)
 # loaded_state = loaded_state.filter_by_object_category(ObjectCategory.GAME_ASSET)
 
@@ -139,11 +135,11 @@ for image in loaded_state.images:
         obj.validity.status = ValidityStatus.UNKNOWN
 #%%
 all_results = asyncio.run(pipeline.run_for_all_modes(
-    initial_images=clicking_images,
-    #initial_state=loaded_state,
+    #initial_images=clicking_images,
+    initial_state=loaded_state,
     pipeline_modes=pipeline_mode_sequence,
-    # start_from_step="Filter categories",
-    stop_after_step="Process Prompts"
+    start_from_step="Filter categories",
+    #stop_after_step="Process Prompts"
 ))
 
 # Print summary of results
@@ -235,7 +231,4 @@ for image in loaded_state.images:
     show_segmentation_predictions(image, show_descriptions=False)
     for obj in image.predicted_:
         print(f"Obj {obj.name} mask: {obj.mask}")
-# %%
-from clicking.image_processor.ocr import OCR
-
 
