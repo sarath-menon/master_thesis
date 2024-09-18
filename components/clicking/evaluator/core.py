@@ -305,7 +305,7 @@ def plot_ui_element_histogram(images: List[ClickingImage]):
                     without_bbox += 1
 
     total = with_bbox + without_bbox
-    categories = ['With BBox', 'Without BBox']
+    categories = ['Detected', 'Missed']
     percentages = [with_bbox / total * 100, without_bbox / total * 100]
  
     plt.figure(figsize=(10, 6))
