@@ -46,7 +46,7 @@ state_labels = ["Florence2 Sam2 Obj Name", "Florence2 Sam2 Obj Description", "EV
 show_validity_statistics(states, state_labels)
 
 #%%
-current_run = loaded_state_2
+current_run = loaded_state_1
 
 #%%
 from clicking.image_processor.visualization import show_invalid_objects
@@ -79,3 +79,28 @@ show_object_validity(current_run)
 
 #%%
 pipeline.save_state(current_run, name="evf_obj_description")
+
+#%%
+
+pipeline.save_state_as_json(current_run, folder_path=".pipeline_cache/obj_descriptions")
+
+#%%
+#--------------------
+# UI eements 
+#--------------------
+
+# Load cached state
+loaded_state = pipeline.load_state('.ui_pipeline_cache/ui_ocr/pipeline_state.pkl')
+
+#%%
+from clicking.evaluator.core import plot_ui_element_histogram
+
+plot_ui_element_histogram(loaded_state.images)
+#%%
+from clicking.image_processor.visualization import show_ui_elements
+
+images_copy = loaded_state.images.copy()
+for image in images_copy: 
+    show_ui_elements(image, bbox_thickness=5)
+
+    
