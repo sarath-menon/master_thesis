@@ -6,6 +6,7 @@ from clicking.common.data_structures import PipelineState, TaskType, ValiditySta
 from tqdm import tqdm
 from clicking.vision_model.utils import pil_to_base64
 import asyncio
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 class BaseProcessor:
     def __init__(self, client: Client, config: Dict, model_key: str):
@@ -53,6 +54,14 @@ class BaseProcessor:
         # This method should be implemented by subclasses
         raise NotImplementedError
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+    async def process_chunk(self, chunk):
+        chunk_response = await get_batch_prediction.asyncio(
+            client=self.client,
+            body=chunk
+        )
+        return chunk_response.responses, chunk_response.inference_time
+
     async def get_batch_predictions_async(self, batch_requests: List[PredictionReq]) -> List:
         chunk_size = 20
         max_concurrent_chunks = 5
@@ -60,19 +69,19 @@ class BaseProcessor:
         total_chunks = (len(batch_requests) + chunk_size - 1) // chunk_size
         total_time = 0
 
-        async def process_chunk(chunk):
-            chunk_response = await get_batch_prediction.asyncio(
-                client=self.client,
-                body=chunk
-            )
-            return chunk_response.responses, chunk_response.inference_time
+        async def process_chunk_with_retry(chunk):
+            try:
+                return await self.process_chunk(chunk)
+            except Exception as e:
+                print(f"Error processing chunk: {str(e)}")
+                raise
 
         chunks = [batch_requests[i:i+chunk_size] for i in range(0, len(batch_requests), chunk_size)]
         
         with tqdm(total=total_chunks, desc=f"Processing {self.model_key} chunks", unit="chunk") as pbar:
             for i in range(0, len(chunks), max_concurrent_chunks):
                 chunk_group = chunks[i:i+max_concurrent_chunks]
-                chunk_results = await asyncio.gather(*[process_chunk(chunk) for chunk in chunk_group])
+                chunk_results = await asyncio.gather(*[process_chunk_with_retry(chunk) for chunk in chunk_group])
                 
                 for chunk_responses, chunk_time in chunk_results:
                     responses.extend(chunk_responses)
