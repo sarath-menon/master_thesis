@@ -74,6 +74,105 @@ def save_validity_results(results: PipelineState, output_folder: str):
     print(f"ObjectValidity results saved to {output_folder}")
     print(f"Overlay images saved in the same directory")
 
+def save_descriptions(results: PipelineState, output_folder: str):
+    images_folder = os.path.join(output_folder, 'images')
+    annotation_images_folder = os.path.join(output_folder, 'annotation_images')
+    json_file = os.path.join(output_folder, 'descriptions_results.json')
+
+    if not os.path.exists(images_folder):
+        os.makedirs(images_folder)
+    
+    if not os.path.exists(annotation_images_folder):
+        os.makedirs(annotation_images_folder)
+    
+    entries = []
+    for clicking_image in results.images:
+        for obj in clicking_image.predicted_objects:
+            # Save image to annotation_images folder
+            image_path = os.path.join(annotation_images_folder, f"{obj.id}.jpg")
+            clicking_image.image.save(image_path)
+
+            # Create entries for name and description
+
+            category_entry = {
+                "value": {
+                "points": [
+                    [29.498239436619716, 44.08450704225352],
+                    [30.31763497652582, 51.83098591549295],
+                    [34.14148082942097, 57.32394366197183],
+                    [40.787689097548245, 52.67605633802817],
+                ],
+                    "closed": True,
+                    "polygonlabels": ["Game object"]
+                },
+                "id": str(obj.id),
+                "from_name": "objects",
+                "to_name": "image",
+                "type": "polygonlabels",
+                "origin": "manual"
+            }
+
+
+            name_entry = {
+                "value": {
+                    "points": [
+                    [29.498239436619716, 44.08450704225352],
+                    [30.31763497652582, 51.83098591549295],
+                    [34.14148082942097, 57.32394366197183],
+                    [40.787689097548245, 52.67605633802817],
+                    [40.42351330203442, 42.67605633802817],
+                    [37.145931142410014, 40.845070422535215],
+                    [34.23252477829942, 41.12676056338028]
+                ],
+                    "closed": True,
+                    "text": [obj.name]
+                },
+                "id": str(obj.id),
+                "from_name": "name",
+                "to_name": "image",
+                "type": "textarea",
+                "origin": "manual"
+            }
+
+            description_entry = {
+                "value": {
+                    "points": [
+                    [29.498239436619716, 44.08450704225352],
+                    [30.31763497652582, 51.83098591549295],
+                    [34.14148082942097, 57.32394366197183],
+                    [40.787689097548245, 52.67605633802817],
+                    [40.42351330203442, 42.67605633802817],
+                    [37.145931142410014, 40.845070422535215],
+                    [34.23252477829942, 41.12676056338028]
+                ],
+                    "closed": True,
+                    "text": [obj.description]
+                },
+                "id": str(obj.id),
+                "from_name": "description",
+                "to_name": "image",
+                "type": "textarea",
+                "origin": "manual"
+            }
+
+            formatted_data = {
+                "data": {
+                    "image": f"/data/local-files/?d=evals/annotation_images/{obj.id}.jpg",
+                    "description": f"Name: {obj.name}\nCategory :Game Object\nDescription: {obj.description}",
+                },
+                "annotations": [
+                    # {
+                    #     "result": [category_entry, name_entry, description_entry]
+                    # }
+                ]
+            }
+            entries.append(formatted_data)
+
+    with open(json_file, 'w') as f:
+        json.dump(entries, f, indent=2)
+    
+    print(f"Object descriptions saved to {json_file}")
+
 def evaluate_validity_results(ground_truth_file: str, predictions_file: str):
     # Load the metric
     accuracy_metric = load("accuracy")
