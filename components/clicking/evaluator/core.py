@@ -155,9 +155,12 @@ def save_descriptions(results: PipelineState, output_folder: str):
                 "origin": "manual"
             }
 
+            # image_path = f"/data/local-files/?d=evals/annotation_images/{obj.id}.jpg"
+
+
             formatted_data = {
                 "data": {
-                    "image": f"/data/local-files/?d=evals/annotation_images/{obj.id}.jpg",
+                    "image": clicking_image.path,
                     "description": f"Name: {obj.name}\nCategory :Game Object\nDescription: {obj.description}",
                 },
                 "annotations": [
