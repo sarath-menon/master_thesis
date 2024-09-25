@@ -87,6 +87,7 @@ class ImageObject(BaseModel):
 
 class ClickingImage(BaseModel):
     image: Image.Image
+    path: str
     id: str
     ui_elements: List[UIElement] = Field(default_factory=list)
     annotated_objects: List[ImageObject] = Field(default_factory=list)
