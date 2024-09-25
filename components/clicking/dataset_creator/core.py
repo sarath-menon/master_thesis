@@ -9,14 +9,17 @@ from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.common.bbox import BoundingBox, BBoxMode
 import uuid
 from pycocotools import mask as mask_utils
+import requests
+from io import BytesIO
 
 class CocoDataset:
-    def __init__(self, data_dir, annFile):
+    def __init__(self, data_dir, annFile, use_gcp_urls=False):
         self.data_dir = data_dir
         self.annFile = annFile
         self.coco = COCO(annFile)
         self.all_object_names = [cat['name'] for cat in self.coco.cats.values()]
         self.img_ids = self.coco.getImgIds()
+        self.use_gcp_urls = use_gcp_urls
         print(f"Dataset size: {len(self.img_ids)}")
 
     def length(self):
@@ -38,14 +41,21 @@ class CocoDataset:
         
         for img_id in image_ids:
             img_info = self.coco.loadImgs(int(img_id))[0]
-            image_path = os.path.join(self.data_dir, img_info['file_name'])
-            image = Image.open(image_path)
+            
+            if self.use_gcp_urls:
+                image_url = img_info['coco_url']
+                response = requests.get(image_url)
+                image = Image.open(BytesIO(response.content))
+                image_path = image_url
+            else:
+                image_path = os.path.join(self.data_dir, img_info['file_name'])
+                image = Image.open(image_path)
             
             ann_ids = self.coco.getAnnIds(imgIds=img_id)
             annotations = self.coco.loadAnns(ann_ids)
             
             objects = self._create_image_objects(annotations)
-            clicking_images.append(ClickingImage(image=image, id=str(img_id), annotated_objects=objects))
+            clicking_images.append(ClickingImage(image=image, id=str(img_id), annotated_objects=objects, path=image_path))
 
         print(f"Loaded {len(clicking_images)} clicking images")
 
@@ -53,8 +63,13 @@ class CocoDataset:
 
     def get_image(self, image_id: int) -> Image:
         img_info = self.coco.loadImgs(image_id)[0]
-        image_path = os.path.join(self.data_dir, img_info['file_name'])
-        image = Image.open(image_path)
+        if self.use_gcp_urls:
+            image_url = img_info['coco_url']
+            response = requests.get(image_url)
+            image = Image.open(BytesIO(response.content))
+        else:
+            image_path = os.path.join(self.data_dir, img_info['file_name'])
+            image = Image.open(image_path)
         return image
 
     def _create_image_objects(self, annotations) -> List[ImageObject]:
