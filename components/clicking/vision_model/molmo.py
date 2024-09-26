@@ -1,4 +1,4 @@
-from transformers import AutoProcessor, AutoModelForCausalLM
+from transformers import AutoProcessor, AutoModelForCausalLM, GenerationConfig
 from PIL import Image
 import os
 import numpy as np
@@ -54,7 +54,7 @@ class Molmo():
         return processor, model
 
     async def predict(self, req: PredictionReq):
-        if req.task not in self.task_prompts_map:
+        if req.task not in self.task_prompts:
             raise ValueError(f"Invalid task type: {req.task}")
         elif req.image is None:
             raise ValueError("Image is required for any vision task")
@@ -62,15 +62,17 @@ class Molmo():
         # convert base64 to PIL image
         image_pil = base64_to_pil(req.image)
 
+
         response = self.run_inference(image_pil, req.task, req.input_text)
-        return response
+        return PredictionResp(prediction=response)
 
     def text_to_image_point(self, text: str):
         pattern = r'<point x="(\d+(?:\.\d+)?)" y="(\d+(?:\.\d+)?)" alt="([^"]+)">'
         match = re.search(pattern, text)
         
         if not match:
-            raise ValueError("Invalid text format. Expected <point x=\"...\" y=\"...\" alt=\"...\">")
+            print("Invalid text format. Expected <point x=\"...\" y=\"...\" alt=\"...\">")
+            return ClickPoint(x=0, y=0, name="Object not found")
         
         x = float(match.group(1))
         y = float(match.group(2))
@@ -81,18 +83,23 @@ class Molmo():
 
     def run_inference(self, image, task, text_input=None):
 
-        # move inputs to the correct device and make a batch of size 1
-        inputs = {k: v.to(model.device).unsqueeze(0) for k, v in inputs.items()}
+        inputs = self.processor.process(
+            images=[image],
+            text=text_input
+        )
 
-        output = model.generate_from_batch(
+        # move inputs to the correct device and make a batch of size 1
+        inputs = {k: v.to(self.model.device).unsqueeze(0) for k, v in inputs.items()}
+
+        output = self.model.generate_from_batch(
             inputs,
             GenerationConfig(max_new_tokens=200, stop_strings="<|endoftext|>"),
-            tokenizer=processor.tokenizer
+            tokenizer=self.processor.tokenizer
         )
 
         # only get generated tokens; decode them to text
         generated_tokens = output[0,inputs['input_ids'].size(1):]
-        generated_text = processor.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+        generated_text = self.processor.tokenizer.decode(generated_tokens, skip_special_tokens=True)
 
         if task == TaskType.CLICKPOINT_WITH_TEXT:
             return self.text_to_image_point(generated_text)
