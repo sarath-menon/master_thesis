@@ -15,7 +15,7 @@ import asyncio
 
 class VisionModel:
     def __init__(self):
-        self._available_models = ['florence2', 'sam2', 'evf_sam2', 'molmo-7B']
+        self._available_models = ['florence2', 'sam2', 'evf_sam2', 'molmo']
         
         # to store task-model mappings
         self._task_models = {}  
@@ -47,6 +47,9 @@ class VisionModel:
         elif req.name == 'sam2':
             from clicking.vision_model.sam2 import SAM2
             model_class_obj = SAM2
+        elif req.name == 'molmo':
+            from clicking.vision_model.molmo import Molmo
+            model_class_obj = Molmo
         else:
             raise HTTPException(status_code=400, detail=f"Model {req.name} not supported")
         
