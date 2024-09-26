@@ -37,7 +37,7 @@ python-dotenv = "^1.0.1"
 litellm = "^1.43.18"
 promptdown = "^0.7.5"
 accelerate = "^0.33.0"
-huggingface-hub = "^0.24.6"
+huggingface-hub = {extras = ["hf-transfer"], version = "^0.25.1"}
 setuptools = "^73.0.1"
 wheel = "^0.44.0"
 wandb = "^0.17.7"

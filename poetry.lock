@@ -1385,6 +1385,70 @@ files = [
 ]
 
 [[package]]
+name = "hf-transfer"
+version = "0.1.8"
+description = "Speed up file transfers with the Hugging Face Hub."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "hf_transfer-0.1.8-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:70858f9e94286738ed300484a45beb5cfee6a7ddac4c5886f9c6fce7823ac5ab"},
+    {file = "hf_transfer-0.1.8-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:38adc73f0a8526319d90f7cc5dc2d5e4bb66f487a513d94b98aa6725be732e4a"},
+    {file = "hf_transfer-0.1.8-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:44d2f0c08198d8d899fe9d66e86aee2dd844bd7ce33888f261373fcec81d2a54"},
+    {file = "hf_transfer-0.1.8-cp310-cp310-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:1de2a4ef36f9e60b3d3bec00193c0aafd75771709f2ca51b9b162373f5af3d32"},
+    {file = "hf_transfer-0.1.8-cp310-cp310-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e319269e3606a5ff2979296841766649ac73598a4a8eee2a968f86c8071fea5a"},
+    {file = "hf_transfer-0.1.8-cp310-cp310-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:0f6026cf3be6a53ea42f92172f60c1c0675baaa9073f865e671b661dde5fd157"},
+    {file = "hf_transfer-0.1.8-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f865c33ada5bd3650c2b46e59979f2d7755c3f517f8d0facc78576a0c7d26406"},
+    {file = "hf_transfer-0.1.8-cp310-none-win32.whl", hash = "sha256:2054730e8d8ed21917c64be7199e06424b2bd08df1c43a72766afaed7992f2d3"},
+    {file = "hf_transfer-0.1.8-cp310-none-win_amd64.whl", hash = "sha256:2b4f1a9446ba31170b5b1eca4e916504d18378a6b5fe959896bdac8a736a5ecb"},
+    {file = "hf_transfer-0.1.8-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:e27c15fcc5869ad7e52bbc0bdec6106b288d1c463f8d2da92f28615a3b181361"},
+    {file = "hf_transfer-0.1.8-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:871a0032d011ebc6409a73a8406b98b84ff2cd3ed7d9e1af8cdf4d660b9fab9b"},
+    {file = "hf_transfer-0.1.8-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:686fa756e1e0214bb6327d33c66732c52274d94a8460beb50604ad988b391cf6"},
+    {file = "hf_transfer-0.1.8-cp311-cp311-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:36a03b1b2911b0cf15b1b9d971a34b32dadcc4f2fd979aaff5979d6ce4017c34"},
+    {file = "hf_transfer-0.1.8-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:079db90c81f41f4cf3227dfaaa855a9b8e9aef45bc7c2be29ce7232cd83ff881"},
+    {file = "hf_transfer-0.1.8-cp311-cp311-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:ac08a4524127fdd14c234d4bcbe49d1c498acf5335c781714823179bcc8dc039"},
+    {file = "hf_transfer-0.1.8-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:837432e73cb17274a6782b6216e8ce058aa325a475dc44a5a6a753d48b86d18a"},
+    {file = "hf_transfer-0.1.8-cp311-none-win32.whl", hash = "sha256:b180f9823dde35aba9bc0f1d0c04ac8a873baebd3732a7ffe4f11940abc7df0d"},
+    {file = "hf_transfer-0.1.8-cp311-none-win_amd64.whl", hash = "sha256:37907d2135cebcf8b6d419bb575148d89c224f16b69357f027bd29d0e85c6529"},
+    {file = "hf_transfer-0.1.8-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:baf948f4f493949309cbe60529620b9b0aef854a22b6e526753364acc57c09b6"},
+    {file = "hf_transfer-0.1.8-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:0bce5c8bdefa478c5d5eaa646cc4ce1df5cfe764d98572ad0c6b8773e98d49f6"},
+    {file = "hf_transfer-0.1.8-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:54d6f8a1a86128d651a3799e1267c343d60f81f2c565d7c5416eb8e674e4cf0e"},
+    {file = "hf_transfer-0.1.8-cp312-cp312-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:f79fd1b0c2ed93efb4c5f684118d7a762ecdd218e170df8208c4e13d3dcd4959"},
+    {file = "hf_transfer-0.1.8-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:414df35692670683bf5623498ef9d88a8df5d77e9516515da6e2b34d1054c11f"},
+    {file = "hf_transfer-0.1.8-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:3c9798d5f951f66b96d40a7a53910260cb5874fda56cf5944dddb7c571f37ec3"},
+    {file = "hf_transfer-0.1.8-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:060c661691f85a61392e57579c80eb64b5ee277434e81fb582f605c1c8ff05d5"},
+    {file = "hf_transfer-0.1.8-cp312-none-win32.whl", hash = "sha256:f7840e32379820c3e1571a480238e05ea043e970c99d2e999578004a2eb17788"},
+    {file = "hf_transfer-0.1.8-cp312-none-win_amd64.whl", hash = "sha256:9a3204ec423cc5e659872e8179f8704ad9ce2abb1e6a991f8838aedf1dc07830"},
+    {file = "hf_transfer-0.1.8-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:09949e86ad63ee139e463fd0dfaf401515ae70445854199f61d545514c65f744"},
+    {file = "hf_transfer-0.1.8-cp37-cp37m-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:bf1a74552845b93ea972e6e7131ef54e56056aa54137e93a40faf3fbcb2442ff"},
+    {file = "hf_transfer-0.1.8-cp37-cp37m-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:959bcb3afb4ee6f2a07031a947dba98ec0b64c001bc914fbd8fc32e13a287162"},
+    {file = "hf_transfer-0.1.8-cp37-cp37m-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:e01eecdb8162bd61dab9090fbd9f8034dd8b5755ef727a21ca8a057f80cb91ee"},
+    {file = "hf_transfer-0.1.8-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:50650a38e9d31f5ad8f010e4598bf304ecd99c17162e7d93f67e031571b864ee"},
+    {file = "hf_transfer-0.1.8-cp37-none-win32.whl", hash = "sha256:e29b9d1d378138f2f4eae0e93ca94af3b5d45f4532eef69f1ab97fe06f9c9d9e"},
+    {file = "hf_transfer-0.1.8-cp37-none-win_amd64.whl", hash = "sha256:cfd6cef43ae883103117a371f8ebae4e7f9637bc6fb480f1be5568e2fe22a8a7"},
+    {file = "hf_transfer-0.1.8-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:92a68f7a0043cca8a0de4decc760dca177530944cbab502afac503bd1b2fa01a"},
+    {file = "hf_transfer-0.1.8-cp38-cp38-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:e3138e408179f80a5480598e32f8e1abb564915cbde4d3bc8da52811c75dc3ea"},
+    {file = "hf_transfer-0.1.8-cp38-cp38-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:4544d148930ad34442d43b8fa911c8479c04a95b858b1d1f91e0b7da77082fad"},
+    {file = "hf_transfer-0.1.8-cp38-cp38-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:a851794b9f029965664f8c3002c957fccf21685e9397ceb4f9f19c986dee8ad3"},
+    {file = "hf_transfer-0.1.8-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:791aaf87c5319ac83edb6ab2994b3db19924c49d6ff667dd3d8a610b455ff70a"},
+    {file = "hf_transfer-0.1.8-cp38-none-win32.whl", hash = "sha256:8f71e5d35d3a3160dcca12fdcc8119033aeacaa6a32838a7ad9f9cb1008bbe58"},
+    {file = "hf_transfer-0.1.8-cp38-none-win_amd64.whl", hash = "sha256:543287b4ceb1e25501580b99690f7f0df9d3631d29306f37cbd97e918c732944"},
+    {file = "hf_transfer-0.1.8-cp39-cp39-macosx_10_12_x86_64.whl", hash = "sha256:7ce02a18bd0bb2343e707ac85b68c946bc37623ee24150c69158f6b2b2c7a98f"},
+    {file = "hf_transfer-0.1.8-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:64d7f8dbd64ba183ed1df75d47c84e075ff666ceaa335bff1de16b09eaac5b80"},
+    {file = "hf_transfer-0.1.8-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1e7858694e11419ae27e542fb8fc0d0e54d46ff7768fe73bc359d70b8f5aa578"},
+    {file = "hf_transfer-0.1.8-cp39-cp39-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:bed116cd9d1edfa32c0136d7cb8e5f1afd2b32df43c49085d428f108fc8e1c8f"},
+    {file = "hf_transfer-0.1.8-cp39-cp39-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:6e385d0da9c6b3472ab29285d2d46c9f9903205b8d108f88a82f3f85aafae0ab"},
+    {file = "hf_transfer-0.1.8-cp39-cp39-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:98f75fa4b86ef15433cd907807ac77d1fb39d7e7b790bfd39c7ae9c385bf0200"},
+    {file = "hf_transfer-0.1.8-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d1a63ad947d2901425ac0a3ed70c3696dfde27fadb0482ed763bdd5cc946b278"},
+    {file = "hf_transfer-0.1.8-cp39-none-win32.whl", hash = "sha256:3e74096915813ae842ea6a5bdf10c0fef960aa51a35a560955b3e61cdfe3db57"},
+    {file = "hf_transfer-0.1.8-cp39-none-win_amd64.whl", hash = "sha256:05ea16307bf4a5eb097cbc6e5057e4eb5e080a138af23ef639fd38857723c288"},
+    {file = "hf_transfer-0.1.8-pp310-pypy310_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:928ff036c3e98e10dcfbdb4fcdfc4592d37a5cc8e365a7ba8dfd4337e849d675"},
+    {file = "hf_transfer-0.1.8-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d49ba3ce67035f460ae1924fe2feafec155cb535eec7f31ed5109c19064cd294"},
+    {file = "hf_transfer-0.1.8-pp39-pypy39_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:b01f5872c62cfee3ec9ca5c738818296f69f8adf84b4d8d15f2a5601d9dda339"},
+    {file = "hf_transfer-0.1.8-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:659d4212d50847a5165666bf43d67727679b4f694ef9c413613cc27093136527"},
+    {file = "hf_transfer-0.1.8.tar.gz", hash = "sha256:26d229468152e7a3ec12664cac86b8c2800695fd85f9c9a96677a775cc04f0b3"},
+]
+
+[[package]]
 name = "httpcore"
 version = "1.0.5"
 description = "A minimal low-level HTTP client."
@@ -1479,18 +1543,19 @@ socks = ["socksio (==1.*)"]
 
 [[package]]
 name = "huggingface-hub"
-version = "0.24.6"
+version = "0.25.1"
 description = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "huggingface_hub-0.24.6-py3-none-any.whl", hash = "sha256:a990f3232aa985fe749bc9474060cbad75e8b2f115f6665a9fda5b9c97818970"},
-    {file = "huggingface_hub-0.24.6.tar.gz", hash = "sha256:cc2579e761d070713eaa9c323e3debe39d5b464ae3a7261c39a9195b27bb8000"},
+    {file = "huggingface_hub-0.25.1-py3-none-any.whl", hash = "sha256:a5158ded931b3188f54ea9028097312cb0acd50bffaaa2612014c3c526b44972"},
+    {file = "huggingface_hub-0.25.1.tar.gz", hash = "sha256:9ff7cb327343211fbd06e2b149b8f362fd1e389454f3f14c6db75a4999ee20ff"},
 ]
 
 [package.dependencies]
 filelock = "*"
 fsspec = ">=2023.5.0"
+hf-transfer = {version = ">=0.1.4", optional = true, markers = "extra == \"hf-transfer\""}
 packaging = ">=20.9"
 pyyaml = ">=5.1"
 requests = "*"
@@ -3049,22 +3114,22 @@ testing = ["google-api-core (>=1.31.5)"]
 
 [[package]]
 name = "protobuf"
-version = "5.27.3"
+version = "4.25.5"
 description = ""
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "protobuf-5.27.3-cp310-abi3-win32.whl", hash = "sha256:dcb307cd4ef8fec0cf52cb9105a03d06fbb5275ce6d84a6ae33bc6cf84e0a07b"},
-    {file = "protobuf-5.27.3-cp310-abi3-win_amd64.whl", hash = "sha256:16ddf3f8c6c41e1e803da7abea17b1793a97ef079a912e42351eabb19b2cffe7"},
-    {file = "protobuf-5.27.3-cp38-abi3-macosx_10_9_universal2.whl", hash = "sha256:68248c60d53f6168f565a8c76dc58ba4fa2ade31c2d1ebdae6d80f969cdc2d4f"},
-    {file = "protobuf-5.27.3-cp38-abi3-manylinux2014_aarch64.whl", hash = "sha256:b8a994fb3d1c11156e7d1e427186662b64694a62b55936b2b9348f0a7c6625ce"},
-    {file = "protobuf-5.27.3-cp38-abi3-manylinux2014_x86_64.whl", hash = "sha256:a55c48f2a2092d8e213bd143474df33a6ae751b781dd1d1f4d953c128a415b25"},
-    {file = "protobuf-5.27.3-cp38-cp38-win32.whl", hash = "sha256:043853dcb55cc262bf2e116215ad43fa0859caab79bb0b2d31b708f128ece035"},
-    {file = "protobuf-5.27.3-cp38-cp38-win_amd64.whl", hash = "sha256:c2a105c24f08b1e53d6c7ffe69cb09d0031512f0b72f812dd4005b8112dbe91e"},
-    {file = "protobuf-5.27.3-cp39-cp39-win32.whl", hash = "sha256:c84eee2c71ed83704f1afbf1a85c3171eab0fd1ade3b399b3fad0884cbcca8bf"},
-    {file = "protobuf-5.27.3-cp39-cp39-win_amd64.whl", hash = "sha256:af7c0b7cfbbb649ad26132e53faa348580f844d9ca46fd3ec7ca48a1ea5db8a1"},
-    {file = "protobuf-5.27.3-py3-none-any.whl", hash = "sha256:8572c6533e544ebf6899c360e91d6bcbbee2549251643d32c52cf8a5de295ba5"},
-    {file = "protobuf-5.27.3.tar.gz", hash = "sha256:82460903e640f2b7e34ee81a947fdaad89de796d324bcbc38ff5430bcdead82c"},
+    {file = "protobuf-4.25.5-cp310-abi3-win32.whl", hash = "sha256:5e61fd921603f58d2f5acb2806a929b4675f8874ff5f330b7d6f7e2e784bbcd8"},
+    {file = "protobuf-4.25.5-cp310-abi3-win_amd64.whl", hash = "sha256:4be0571adcbe712b282a330c6e89eae24281344429ae95c6d85e79e84780f5ea"},
+    {file = "protobuf-4.25.5-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:b2fde3d805354df675ea4c7c6338c1aecd254dfc9925e88c6d31a2bcb97eb173"},
+    {file = "protobuf-4.25.5-cp37-abi3-manylinux2014_aarch64.whl", hash = "sha256:919ad92d9b0310070f8356c24b855c98df2b8bd207ebc1c0c6fcc9ab1e007f3d"},
+    {file = "protobuf-4.25.5-cp37-abi3-manylinux2014_x86_64.whl", hash = "sha256:fe14e16c22be926d3abfcb500e60cab068baf10b542b8c858fa27e098123e331"},
+    {file = "protobuf-4.25.5-cp38-cp38-win32.whl", hash = "sha256:98d8d8aa50de6a2747efd9cceba361c9034050ecce3e09136f90de37ddba66e1"},
+    {file = "protobuf-4.25.5-cp38-cp38-win_amd64.whl", hash = "sha256:b0234dd5a03049e4ddd94b93400b67803c823cfc405689688f59b34e0742381a"},
+    {file = "protobuf-4.25.5-cp39-cp39-win32.whl", hash = "sha256:abe32aad8561aa7cc94fc7ba4fdef646e576983edb94a73381b03c53728a626f"},
+    {file = "protobuf-4.25.5-cp39-cp39-win_amd64.whl", hash = "sha256:7a183f592dc80aa7c8da7ad9e55091c4ffc9497b3054452d629bb85fa27c2a45"},
+    {file = "protobuf-4.25.5-py3-none-any.whl", hash = "sha256:0aebecb809cae990f8129ada5ca273d9d670b76d9bfc9b1809f0a9c02b7dbf41"},
+    {file = "protobuf-4.25.5.tar.gz", hash = "sha256:7f8249476b4a9473645db7f8ab42b02fe1488cbe5fb72fddd445e0665afd8584"},
 ]
 
 [[package]]
@@ -5067,11 +5132,6 @@ files = [
     {file = "triton-3.0.0-1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:34e509deb77f1c067d8640725ef00c5cbfcb2052a1a3cb6a6d343841f92624eb"},
     {file = "triton-3.0.0-1-cp38-cp38-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:bcbf3b1c48af6a28011a5c40a5b3b9b5330530c3827716b5fbf6d7adcc1e53e9"},
     {file = "triton-3.0.0-1-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:6e5727202f7078c56f91ff13ad0c1abab14a0e7f2c87e91b12b6f64f3e8ae609"},
-    {file = "triton-3.0.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:39b052da883351fdf6be3d93cedae6db3b8e3988d3b09ed221bccecfa9612230"},
-    {file = "triton-3.0.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cd34f19a8582af96e6291d4afce25dac08cb2a5d218c599163761e8e0827208e"},
-    {file = "triton-3.0.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0d5e10de8c011adeb7c878c6ce0dd6073b14367749e34467f1cff2bde1b78253"},
-    {file = "triton-3.0.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e8903767951bf86ec960b4fe4e21bc970055afc65e9d57e916d79ae3c93665e3"},
-    {file = "triton-3.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:41004fb1ae9a53fcb3e970745feb87f0e3c94c6ce1ba86e95fa3b8537894bef7"},
 ]
 
 [package.dependencies]
@@ -5614,4 +5674,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10.12"
-content-hash = "a8d0b36738d8089197f124e6491a639853c1f7f7ca9fe194d8bcb44b328b20e4"
+content-hash = "7db44a570ecb84708dc0459dfbc3cc955e8475da4b17840c3e2c7017c24203ff"
