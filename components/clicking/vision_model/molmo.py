@@ -34,7 +34,7 @@ class Molmo():
     
     @staticmethod
     def tasks():
-        return list(Molmo.task_prompts_map.keys())
+        return list(Molmo.task_prompts.keys())
         
     def load_model(self, model_id):
         processor = AutoProcessor.from_pretrained(
@@ -65,7 +65,7 @@ class Molmo():
         response = self.run_inference(image_pil, req.task, req.input_text)
         return response
 
-    def text_to_image_point(self, text: str) 
+    def text_to_image_point(self, text: str):
         pattern = r'<point x="(\d+(?:\.\d+)?)" y="(\d+(?:\.\d+)?)" alt="([^"]+)">'
         match = re.search(pattern, text)
         
