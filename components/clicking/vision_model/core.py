@@ -95,6 +95,7 @@ class VisionModel:
                 response = await model_handle.predict(req)
                 response.inference_time = time.time() - start_time
         except Exception as e:
+            print(f"Error during prediction: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error during prediction: {str(e)}")
 
         return response
