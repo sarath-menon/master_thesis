@@ -30,3 +30,12 @@ High speed model download
 pip install huggingface_hub[hf_transfer]
 huggingface-cli download allenai/Molmo-7B-D-0924
 ```
+
+## molmo specific 
+
+tensorflow cpu install
+
+```
+pip list --format=freeze | grep '^tensorflow' | cut -d= -f1 | xargs -n1 pip uninstall -y
+pip install tensorflow-cpu 
+```
