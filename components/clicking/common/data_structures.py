@@ -260,7 +260,7 @@ class BatchPredictionReq(BaseModel):
 class PredictionResp(BaseModel):
     id: Optional[str] = None
     inference_time: Optional[float] = 0.0
-    prediction: Union[LocalizationResp, SegmentationResp]
+    prediction: Union[LocalizationResp, SegmentationResp, ClickPoint]
 
 class BatchPredictionResp(BaseModel):
     responses: List[PredictionResp]
