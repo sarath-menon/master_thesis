@@ -7,6 +7,7 @@ from tqdm import tqdm
 from clicking.vision_model.utils import pil_to_base64
 import asyncio
 from tenacity import retry, stop_after_attempt, wait_exponential
+import logging
 
 class BaseProcessor:
     def __init__(self, client: Client, config: Dict, model_key: str):
@@ -56,11 +57,16 @@ class BaseProcessor:
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
     async def process_chunk(self, chunk):
-        chunk_response = await get_batch_prediction.asyncio(
-            client=self.client,
-            body=chunk
-        )
-        return chunk_response.responses, chunk_response.inference_time
+        try:
+            chunk_response = await get_batch_prediction.asyncio(
+                client=self.client,
+                body=chunk
+            )
+            return chunk_response.responses, chunk_response.inference_time
+        except KeyError as e:
+            logging.error(f"KeyError encountered: {e}")
+            logging.error(f"Chunk data: {chunk}")
+            raise
 
     async def get_batch_predictions_async(self, batch_requests: List[PredictionReq]) -> List:
         chunk_size = 50
