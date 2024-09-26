@@ -1,6 +1,3 @@
-from clicking.vision_model.florence2 import Florence2
-from clicking.vision_model.sam2 import SAM2
-from clicking.vision_model.evf_sam2 import EVF_SAM
 from pydantic import BaseModel
 from PIL import Image
 import io
@@ -18,11 +15,8 @@ import asyncio
 
 class VisionModel:
     def __init__(self):
-        self._available_models = {
-            'florence2': Florence2,
-            'sam2': SAM2,
-            'evf_sam2': EVF_SAM
-        }
+        self._available_models = ['florence2', 'sam2', 'evf_sam2']
+        
         # to store task-model mappings
         self._task_models = {}  
         self._model_locks = {}
@@ -44,11 +38,18 @@ class VisionModel:
 
 
     def set_model(self, req: SetModelReq):
-        if req.name not in self._available_models:
-            print(f"Model {req.name} not supported")
+        if req.name == 'evf_sam2':
+            from clicking.vision_model.evf_sam2 import EVF_SAM
+            model_class_obj = EVF_SAM
+        elif req.name == 'florence2':
+            from clicking.vision_model.florence2 import Florence2
+            model_class_obj = Florence2
+        elif req.name == 'sam2':
+            from clicking.vision_model.sam2 import SAM2
+            model_class_obj = SAM2
+        else:
             raise HTTPException(status_code=400, detail=f"Model {req.name} not supported")
         
-        model_class_obj = self._available_models[req.name]
         if req.variant not in model_class_obj.variants():
             print(f"Variant {req.variant} not supported for model {req.name}")
             raise HTTPException(status_code=400, detail=f"Variant {req.variant} not supported for model {req.name}")
