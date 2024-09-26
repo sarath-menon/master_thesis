@@ -14,6 +14,7 @@ from collections import Counter
 from clicking.pipeline.core import PipelineState
 import matplotlib.pyplot as plt
 from collections import defaultdict
+import uuid
 
 PROJECT_NAME = "clicking"
 
@@ -31,6 +32,21 @@ class FormattedData(BaseModel):
     data: Dict[str, str]
     annotations: List[dict] = []
     predictions: List[Prediction] = []
+
+class MetadataField(BaseModel):
+    schema_id: str
+    value: str
+
+class Attachment(BaseModel):
+    type: str
+    value: str
+
+class LabelboxAsset(BaseModel):
+    row_data: str
+    global_key: str
+    media_type: str
+    metadata_fields: List[MetadataField]
+    attachments: List[Attachment]
 
 def save_validity_results(results: PipelineState, output_folder: str):
     images_folder = os.path.join(output_folder, 'images')
@@ -73,6 +89,38 @@ def save_validity_results(results: PipelineState, output_folder: str):
     
     print(f"ObjectValidity results saved to {output_folder}")
     print(f"Overlay images saved in the same directory")
+
+def save_descriptions_labelbox(results: PipelineState, output_folder: str, file_name: str):
+    images_folder = os.path.join(output_folder, 'images')
+    annotation_images_folder = os.path.join(output_folder, 'annotation_images')
+    json_file = os.path.join(output_folder, f'{file_name}_results.json')
+
+    if not os.path.exists(images_folder):
+        os.makedirs(images_folder)
+    
+    if not os.path.exists(annotation_images_folder):
+        os.makedirs(annotation_images_folder)
+    
+    entries = []
+    for clicking_image in results.images:
+        for obj in clicking_image.predicted_objects:
+            
+            description = f"Name: {obj.name}<br>Category :Game Object<br>Description: {obj.description}"
+
+            asset = LabelboxAsset(
+                row_data=clicking_image.path,
+                global_key=str(uuid.uuid4()),
+                media_type="IMAGE",
+                metadata_fields=[MetadataField(schema_id="cko8s9r5v0001h2dk9elqdidh", value="tag_1")],
+                attachments=[Attachment(type="RAW_TEXT", value=description)]
+            )
+
+            entries.append(asset.dict())
+
+    with open(json_file, 'w') as f:
+        json.dump(entries, f, indent=2)
+    
+    print(f"Object descriptions saved to {json_file}")
 
 def save_descriptions(results: PipelineState, output_folder: str):
     images_folder = os.path.join(output_folder, 'images')
