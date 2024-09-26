@@ -28,11 +28,16 @@ inputs = processor.process(
 # move inputs to the correct device and make a batch of size 1
 inputs = {k: v.to(model.device).unsqueeze(0) for k, v in inputs.items()}
 # %%
+import time
+start_time = time.time()
 output = model.generate_from_batch(
     inputs,
     GenerationConfig(max_new_tokens=200, stop_strings="<|endoftext|>"),
     tokenizer=processor.tokenizer
 )
+
+end_time = time.time()
+print(f"Time taken: {end_time - start_time} seconds")
 
 # only get generated tokens; decode them to text
 generated_tokens = output[0,inputs['input_ids'].size(1):]
