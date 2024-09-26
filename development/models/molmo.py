@@ -19,15 +19,15 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 # %%
 # process the image and text
+text = "Point to the dog."
 inputs = processor.process(
     images=[Image.open(requests.get("https://picsum.photos/id/237/536/354", stream=True).raw)],
-    text="Describe this image."
+    text=text
 )
 
 # move inputs to the correct device and make a batch of size 1
 inputs = {k: v.to(model.device).unsqueeze(0) for k, v in inputs.items()}
 # %%
-# generate output; maximum 200 new tokens; stop generation when <|endoftext|> is generated
 output = model.generate_from_batch(
     inputs,
     GenerationConfig(max_new_tokens=200, stop_strings="<|endoftext|>"),
