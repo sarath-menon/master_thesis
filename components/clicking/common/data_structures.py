@@ -24,6 +24,7 @@ class TaskType(str, Enum):
     CAPTIONING = "CAPTIONING"
     SEGMENTATION_AUTO_ANNOTATION = "SEGMENTATION_AUTO_ANNOTATION"
     OCR = "OCR"
+    CLICKPOINT_WITH_TEXT = "CLICKPOINT_WITH_TEXT"
 
 class UIElement(BaseModel):
     name: Optional[str] = None
@@ -94,6 +95,11 @@ class ClickingImage(BaseModel):
     predicted_objects: List[ImageObject] = Field(default_factory=list)
     ui_elements: List[UIElement] = Field(default_factory=list)
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+class ClickPoint(BaseModel):
+    x: float = Field(..., description="X-coordinate of the point as a percentage of the image width")
+    y: float = Field(..., description="Y-coordinate of the point as a percentage of the image height")
+    name: str = Field(..., description="Object name")
 
 class ModuleMode(NamedTuple):
     name: str

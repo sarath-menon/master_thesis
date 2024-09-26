@@ -15,7 +15,7 @@ import asyncio
 
 class VisionModel:
     def __init__(self):
-        self._available_models = ['florence2', 'sam2', 'evf_sam2']
+        self._available_models = ['florence2', 'sam2', 'evf_sam2', 'molmo-7B']
         
         # to store task-model mappings
         self._task_models = {}  
