@@ -1,3 +1,4 @@
+#%%
 from Quartz import CGWindowListCopyWindowInfo, kCGNullWindowID, kCGWindowListOptionAll
 import cv2 as cv
 import numpy
@@ -6,11 +7,22 @@ from PIL import Image, ImageGrab
 import os
 import pyautogui
 import matplotlib.pyplot as plt
+from pydantic import BaseModel
+import subprocess
+
+class WindowInfo(BaseModel):
+    name: str
+    width: int
+    height: int
+    last_cursor_x: int
+    last_cursor_y: int
+    id: int
 
 class WindowCapture:
     def __init__(self, windowName='Ryujinx', scale_factor=0.5):
         self.windowName = windowName
         self.scale_factor = scale_factor
+        self.current_window_info = self._getWindowInfo()
 
     def _findWindowId(self):
         window_list = CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID)
@@ -33,42 +45,81 @@ class WindowCapture:
         print('unable to find window id')
         return False
 
-    def takeScreenshot(self):
-        windowId = self._findWindowId()
+    def _getWindowInfo(self) -> WindowInfo | None:
+        window_list = CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID)
+        for window in window_list:
+            if self.windowName == window['kCGWindowOwnerName']:
+                if window['kCGWindowName'].strip() != "":
+                    bounds = window.get('kCGWindowBounds', {})
+                    return WindowInfo(
+                        name=window['kCGWindowName'],
+                        width=bounds.get('Width', 0),
+                        height=bounds.get('Height', 0),
+                        last_cursor_x=bounds.get('X', 0),
+                        last_cursor_y=bounds.get('Y', 0),
+                        id=window.get('kCGWindowNumber', 0)
+                    )
+        print('Unable to find window')
+        return None
 
-        # -x mutes sound, -c copies to clipboard, -l specifies windowId
-        # Use screencapture to copy the screen to the clipboard instead of saving to a file
-        os.system('screencapture -c -x -l %s' % windowId)
+    def move_cursor(self, x: float, y: float) -> None:
+        if not self.current_window_info:
+            print("Window information not available")
+            return
+        
+        # Sanity checks
+        if not 0 <= x <= 100 or not 0 <= y <= 100:
+            print("Invalid percentage values. x and y must be between 0 and 100.")
+            return
+        
+        window_x = self.current_window_info.last_cursor_x
+        window_y = self.current_window_info.last_cursor_y
+        window_width = self.current_window_info.width
+        window_height = self.current_window_info.height
+        
+        # Convert percentage to pixels
+        pixel_x = int(window_x + (x / 100) * window_width)
+        pixel_y = int(window_y + (y / 100) * window_height)
+        
+        pyautogui.moveTo(pixel_x, pixel_y)
+        
+        # Update current_window_info with new cursor position
+        self.current_window_info = WindowInfo(
+            name=self.current_window_info.name,
+            width=self.current_window_info.width,
+            height=self.current_window_info.height,
+            last_cursor_x=pixel_x,
+            last_cursor_y=pixel_y,
+            id=self.current_window_info.id
+        )
+        print(f"Cursor moved to {pixel_x}, {pixel_y}")
 
-        # Load the image from the clipboard
-        img = ImageGrab.grabclipboard()
+    def click(self, x=None, y=None, duration=0.1):
+        if x is not None and y is not None:
+            self.move_cursor(x, y)
+        
+        applescript = f'''
+        tell application "System Events"
+            tell application "{self.windowName}" to activate
+            delay 0.1
+            set mouseDown to true
+            delay {duration}
+            set mouseDown to false
+        end tell
+        '''
+        subprocess.run(['osascript', '-e', applescript], check=True)
 
-        if img is not None:
-            # Get the original dimensions
-            original_width, original_height = img.size
+    def double_click(self, x=None, y=None):
+        if x is not None and y is not None:
+            self.move_cursor(x, y)
+        pyautogui.doubleClick()
 
-            # Calculate the new dimensions
-            new_width = int(original_width * self.scale_factor)
-            new_height = int(original_height * self.scale_factor)
-            # print(f"Original dimensions: {original_width}x{original_height}, New dimensions: {new_width}x{new_height}")
+# Usage example
+#%%
+window_capture = WindowCapture()
+# window_capture.move_cursor(20, 55)
+window_capture.double_click()
 
-            # Downsample the image
-            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-
-            # Crop 50 pixels from the top and bottom
-            crop_top = 60
-            crop_bottom = 60
-            cropped_img = img.crop((0, crop_top, new_width, new_height - crop_bottom))  
-            return cropped_img
-        else:
-            print("No image on clipboard!")
-            return None
-
-    def save_img(self, img):
-        if img is not None:
-            img = img.convert('RGB')  # Convert the image to RGB mode
-            img.save('screenshot.jpg', format='JPEG', quality=100)
-            plt.imshow(img)
-            plt.axis('off')
-            plt.show()
-
+# %%
+window_capture._findWindowId()
+# %%
