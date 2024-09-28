@@ -54,6 +54,8 @@ bleach = "^6.1.0"
 uvloop = "^0.20.0"
 httptools = "^0.6.1"
 labelbox = "^5.0.0"
+pyautogui = "^0.9.54"
+websocket-client = "^1.8.0"
 
 
 [tool.poetry.group.dev.dependencies]
