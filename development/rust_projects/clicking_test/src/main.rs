@@ -73,6 +73,8 @@ impl WindowCapture {
             self.move_cursor(x, y);
         }
 
+        println!("Window name: {}", self.window_name);
+
         // Activate the window using AppleScript
         let script = format!(
             r#"tell application "System Events"
@@ -91,7 +93,7 @@ impl WindowCapture {
         // self.enigo.button(Button::Left, Click);
 
         self.enigo.button(Button::Left, Press);
-        thread::sleep(Duration::from_millis(100));
+        thread::sleep(Duration::from_millis(200));
         self.enigo.button(Button::Left, Release);
     }
 
@@ -120,7 +122,5 @@ fn main() {
 
     // window_capture.click(Some(20.0), Some(55.0));
 
-    for _ in 0..2 {
-        window_capture.click(Some(20.0), Some(55.0));
-    }
+    window_capture.click(Some(20.0), Some(55.0));
 }
