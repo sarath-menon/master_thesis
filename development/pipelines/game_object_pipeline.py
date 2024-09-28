@@ -23,24 +23,23 @@ from clicking.image_processor.segmentation_text import SegmentationText
 import nest_asyncio
 nest_asyncio.apply()
 #%%
-# Load the configuration file
+# Load the configuration file«
 CONFIG_PATH = "./development/pipelines/game_object_config.yml"
 with open(CONFIG_PATH, 'r') as config_file:
     config = yaml.safe_load(config_file)
 
-client = Client(base_url=config['api']['local_url'], timeout=120)
+client = Client(base_url=config['api']['cloud_url'], timeout=120)
 #%%
 prompt_refiner = PromptRefiner(config=config)
-localization_processor = Localization(client, config=config)
+#localization_processor = Localization(client, config=config)
 segmentation_processor = Segmentation(client, config=config)
-output_corrector = OutputCorrector(config=config)
+# output_corrector = OutputCorrector(config=config)
 # segmentation_text = SegmentationText(client, config=config)
 #%%
 coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
 
 image_ids = [26,24,18]
 clicking_images = coco_dataset.sample_dataset()
-
 #%%
 # Define the pipeline modes
 from clicking.output_corrector.core import VerificationMode  
@@ -117,8 +116,8 @@ image_ids = [26,24,18]
 # clicking_images = coco_dataset.sample_dataset()
 
 # Load initial state
-loaded_state = pipeline.load_state('.pipeline_cache/obj_descriptions/pipeline_state.pkl')
-loaded_state = loaded_state.filter_by_ids(image_ids)
+loaded_state = pipeline.load_state('.pipeline_cache/florence2_ow_obj_name/pipeline_state.pkl')
+# loaded_state = loaded_state.filter_by_ids(image_ids)
 
 def remove_full_stops(description: str) -> str:
     if description.endswith('.'):
@@ -137,13 +136,13 @@ all_results = asyncio.run(pipeline.run_for_all_modes(
     initial_state=loaded_state,
     pipeline_modes=pipeline_mode_sequence,
     start_from_step="Filter categories",
-    #stop_after_step="Get Localization Results"
+    stop_after_step="Get Localization Results"
 ))
 
 # Print summary of results
 pipeline.print_mode_results_summary(all_results)
 
-result =  all_results.get_run_by_mode_name("open_vocab_object_name")
+result =  all_results.get_run_by_mode_name("open_vocab_object_name") 
 #%%
 for image in result.images:
     show_segmentation_predictions(image, show_descriptions=False)
@@ -225,9 +224,4 @@ for image in new_state.images:
 
 #segmentation_processor = Segmentation(client, config=config)
 
-segmentation_processor.get_segmentation_results(result, segmentation_mode=TaskType.SEGMENTATION_WITH_CLICKPOINT)
-for image in loaded_state.images:
-    show_segmentation_predictions(image, show_descriptions=False)
-    for obj in image.predicted_:
-        print(f"Obj {obj.name} mask: {obj.mask}")
-
+segmentation_processor.get_segmentation_results(loaded_state, segmentation_mode=TaskType.SEGMENTATION_WITH_CLICKPOINT)

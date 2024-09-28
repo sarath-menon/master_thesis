@@ -142,3 +142,26 @@ prefix = "gameplay_images"
 local_dir = "./local_gameplay_images"
 download_blobs_with_prefix_to_disk(bucket_name, prefix, local_dir)
 #%%
+#To download a list of URLs for files inside a Google Cloud Storage (GCS) bucket, yo
+from google.cloud import storage
+
+
+def list_gcs_files_with_prefix(bucket_name: str, prefix: str):
+    # Initialize a client
+    client = storage.Client()
+
+    # Get the bucket
+    bucket = client.get_bucket(bucket_name)
+
+    # List all the blobs in the bucket with the specified prefix
+    blobs = bucket.list_blobs(prefix=prefix)
+
+    # Print the URLs of all the blobs
+    for blob in blobs:
+        print(f"https://storage.googleapis.com/{bucket_name}/{blob.name}")
+
+if __name__ == "__main__":
+    # Replace 'your-bucket-name' with your actual bucket name
+    bucket_name = 'clicking_dataset'
+    prefix = 'annotation_dataset'
+    list_gcs_files_with_prefix(bucket_name, prefix)

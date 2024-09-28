@@ -32,6 +32,11 @@ models:
     variant: 'florence-2-base'
     tasks:
       - 'OCR'
+  pointing:
+    name: 'molmo'
+    variant: 'molmo-7B'
+    tasks:
+      - 'CLICKPOINT_WITH_TEXT'
 
 # Prompt settings
 prompts:
@@ -55,12 +60,16 @@ visualization:
 
 # Pipeline mode sequences
 pipeline_mode_sequences:
-  open_vocab_object_name:
+  direct_clickpoint:
     prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
-    localization_input_mode: OBJ_NAME
-    localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
-    verification_mode: CROP_BBOX
-    segmentation_mode: SEGMENTATION_WITH_BBOX
+    pointing_mode: CLICKPOINT_WITH_TEXT
+    pointing_input_mode: OBJ_DESCRIPTION
+  # open_vocab_object_name:
+  #   prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
+  #   localization_input_mode: OBJ_NAME
+  #   localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
+  #   verification_mode: CROP_BBOX
+  #   segmentation_mode: SEGMENTATION_WITH_BBOX
   # open_vocab_object_description:
   #   prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
   #   localization_input_mode: OBJ_DESCRIPTION
