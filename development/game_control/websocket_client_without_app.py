@@ -9,11 +9,11 @@ import json
 
 # Example variables - replace these with actual values
 image_data = b'...'  # This should be your _imageByte data
-# width = 1920      # Replace with actual image width
-# height = 1080        # Replace with actual image height
+width = 1920      # Replace with actual image width
+height = 1080        # Replace with actual image height
 
-width = 1600      # Replace with actual image width
-height = 900        # Replace with actual image height
+# width = 1600      # Replace with actual image width
+# height = 900        # Replace with actual image height
 
 def main(ws, duration_ms, fps):
     message = {"duration": duration_ms, "fps": fps}
@@ -52,8 +52,8 @@ if __name__ == "__main__":
     ws.connect("ws://localhost:8086/stream_websocket")
     ws.settimeout(2)# Set the timeout to 2 seconds 
 
-    duration_ms = 1000
-    fps = 10
+    duration_ms = 5000
+    fps = 30
     main(ws, duration_ms, fps)
 
     # Close the WebSocket connection gracefully

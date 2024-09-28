@@ -28,11 +28,11 @@ class GameController:
 
         # Example variables - replace these with actual values
         self.image_data = b'...'  # This should be your _imageByte data
-        # self.width = 1920  # for captain toad
-        # self.height = 1080  
+        self.width = 1920  # for captain toad
+        self.height = 1080  
 
-        self.width = 1600  # for Mario
-        self.height = 900
+        # self.width = 1600  # for Mario
+        # self.height = 900
 
         # for receiving images (observations)
         self.obs_ws = websocket.WebSocket()
