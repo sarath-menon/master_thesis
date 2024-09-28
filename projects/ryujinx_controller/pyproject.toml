@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "ryujinx_controller"
+version = "0.1.0"
+description = ""
+authors = ["Sarath S Menon <sarathmenon.downey@gmail.com>"]
+license = ""
+
+packages = [
+    { include = "clicking/chat_gui", from = "../../bases" },
+    { include = "clicking/ryujinx_interface", from = "../../components" },
+]
+
+
+[tool.poetry.dependencies]
+python = "^3.10.12"
+pyautogui = "^0.9.54"
+websocket-client = "^1.8.0"
+gradio = "^4.41.0"
+gradio-log = "^0.0.4"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
