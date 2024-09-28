@@ -10,7 +10,7 @@ def process_description(description: str):
     return description
 
 class PointingInput(Enum):
-    OBJ_NAME = ModuleMode("obj_name", lambda obj: obj.name)
+    OBJ_NAME = ModuleMode("obj_name", lambda obj:  f"Point to the {obj.name.lower()}.")
     OBJ_DESCRIPTION = ModuleMode("obj_description", lambda obj: process_description(obj.description))
 
 class Pointing(BaseProcessor):
@@ -20,7 +20,6 @@ class Pointing(BaseProcessor):
 
     def create_prediction_request(self, image_base64: str, obj, mode: TaskType) -> PredictionReq:
         input_text = self.pointing_input_mode.value.handler(obj)
-        input_text = f"Point to the {input_text.lower()}."
         print(input_text)
         return PredictionReq(
             image=image_base64,
