@@ -27,7 +27,6 @@ docker push sarathmenon1999/clicking_server
 High speed model download 
 
 ```
-pip install huggingface_hub[hf_transfer]
 huggingface-cli download allenai/Molmo-7B-D-0924
 ```
 
