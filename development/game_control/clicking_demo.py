@@ -9,6 +9,7 @@ import pyautogui
 import matplotlib.pyplot as plt
 from pydantic import BaseModel
 import subprocess
+from pynput import mouse
 
 class WindowInfo(BaseModel):
     name: str
@@ -23,6 +24,7 @@ class WindowCapture:
         self.windowName = windowName
         self.scale_factor = scale_factor
         self.current_window_info = self._getWindowInfo()
+        self.mouse_controller = mouse.Controller()
 
     def _findWindowId(self):
         window_list = CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID)
@@ -81,7 +83,7 @@ class WindowCapture:
         pixel_x = int(window_x + (x / 100) * window_width)
         pixel_y = int(window_y + (y / 100) * window_height)
         
-        pyautogui.moveTo(pixel_x, pixel_y)
+        self.mouse_controller.position = (pixel_x, pixel_y)
         
         # Update current_window_info with new cursor position
         self.current_window_info = WindowInfo(
@@ -98,28 +100,30 @@ class WindowCapture:
         if x is not None and y is not None:
             self.move_cursor(x, y)
         
-        applescript = f'''
-        tell application "System Events"
-            tell application "{self.windowName}" to activate
-            delay 0.1
-            set mouseDown to true
-            delay {duration}
-            set mouseDown to false
-        end tell
-        '''
-        subprocess.run(['osascript', '-e', applescript], check=True)
+        # Activate the window using AppleScript
+        script = f'tell application "System Events" to set frontmost of process "{self.windowName}" to true'
+        subprocess.run(['osascript', '-e', script], check=True)
+        
+        # Add a small delay to ensure the window is activated
+        time.sleep(0.1)
+        
+        self.mouse_controller.press(mouse.Button.left)
+        time.sleep(duration)
+        self.mouse_controller.release(mouse.Button.left)
 
     def double_click(self, x=None, y=None):
         if x is not None and y is not None:
             self.move_cursor(x, y)
-        pyautogui.doubleClick()
+
+        time.sleep(0.2)
+        self.mouse_controller.click(mouse.Button.left, 2)
 
 # Usage example
 #%%
 window_capture = WindowCapture()
-# window_capture.move_cursor(20, 55)
-window_capture.double_click()
+
+
+window_capture.click(x=20, y=55)
 
 # %%
 window_capture._findWindowId()
-# %%
