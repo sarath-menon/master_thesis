@@ -40,8 +40,7 @@ pointing_processor = Pointing(client, config=config)
 #%%
 coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
 
-image_ids = [26,24,18]
-clicking_images = coco_dataset.sample_dataset()
+clicking_images = coco_dataset.sample_dataset(num_samples=3)
 #%%
 # Define the pipeline modes
 from clicking.output_corrector.core import VerificationMode  
@@ -66,8 +65,8 @@ pipeline_steps = [
         mode_keys=[],
     ),
     PipelineStep(
-        name="Get Localization Results",
-        function=pointing_processor.get_batch_predictions,
+        name="Get Clickpoints",
+        function=pointing_processor.get_pointing_results,
         mode_keys=["pointing_mode", "pointing_input_mode"]
     ),
 ]
@@ -106,13 +105,13 @@ all_results = asyncio.run(pipeline.run_for_all_modes(
     initial_state=loaded_state,
     pipeline_modes=pipeline_mode_sequence,
     start_from_step="Filter categories",
-    stop_after_step="Get Localization Results"
+    stop_after_step="Get Clickpoints"
 ))
 
 # Print summary of results
 pipeline.print_mode_results_summary(all_results)
 
-result =  all_results.get_run_by_mode_name("open_vocab_object_name") 
+result =  all_results.get_run_by_mode_name("direct_clickpoint") 
 #%%
 for clicking_image in loaded_state.images:
     plt.imshow(clicking_image.image)
@@ -120,8 +119,6 @@ for clicking_image in loaded_state.images:
     for obj in clicking_image.predicted_objects:
         print(obj.description)
     # show_segmentation_predictions(image, show_descriptions=False)
-#%%
-pointing_processor = Pointing(client, config=config)
 #%%
 pointing_processor.get_pointing_results(loaded_state, TaskType.CLICKPOINT_WITH_TEXT, PointingInput.OBJ_NAME)
 #%%
