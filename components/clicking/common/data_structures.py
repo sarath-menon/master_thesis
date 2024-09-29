@@ -74,6 +74,11 @@ class ObjectValidity(BaseModel):
     visibility: Optional[Literal["fully visible", "partially visible", "hidden"]] = Field(default=None)
     reason: Optional[str] = None
 
+class ClickPoint(BaseModel):
+    x: float = Field(..., description="X-coordinate of the point as a percentage of the image width")
+    y: float = Field(..., description="Y-coordinate of the point as a percentage of the image height")
+    name: str = Field(..., description="Object name")
+
 class ImageObject(BaseModel):
     id: str = Field(default_factory=uuid.uuid4)
     name: str
@@ -83,6 +88,7 @@ class ImageObject(BaseModel):
     mask: Optional[SegmentationMask] = None
     significance: Optional[str] = None
     validity: ObjectValidity = Field(default=ObjectValidity())
+    clickpoint: Optional[ClickPoint] = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -96,10 +102,6 @@ class ClickingImage(BaseModel):
     ui_elements: List[UIElement] = Field(default_factory=list)
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-class ClickPoint(BaseModel):
-    x: float = Field(..., description="X-coordinate of the point as a percentage of the image width")
-    y: float = Field(..., description="Y-coordinate of the point as a percentage of the image height")
-    name: str = Field(..., description="Object name")
 
 class ModuleMode(NamedTuple):
     name: str
