@@ -1,9 +1,9 @@
 from typing import Dict, List
 from clicking_client import Client
-from clicking_client.models import PredictionReq
-from clicking.common.data_structures import TaskType, ModuleMode, ValidityStatus, PipelineState, ObjectValidity
+from clicking.common.data_structures import *
 from enum import Enum
 from clicking.vision_model.utils import pil_to_base64
+from clicking_client.models import PredictionReq
 from .base_processor import BaseProcessor
 
 def process_description(description: str):
@@ -29,13 +29,17 @@ class Pointing(BaseProcessor):
         )
 
     def process_responses(self, state: PipelineState, responses: List) -> PipelineState:
-        for response in responses:
-            obj = state.find_object_by_id(response.id)
+        for resp in responses:
+            obj = state.find_object_by_id(resp.id)
             if not obj:
-                print(f"Object {response.id} not found in state")
+                print(f"Object {resp.id} not found in state")
                 continue
 
-            print(response)
+            # clear any existing clickpoint
+            obj.clickpoint = None
+
+            obj.clickpoint = resp.prediction
+
         return state
 
     def get_pointing_results(self, state: PipelineState, pointing_mode: TaskType, pointing_input_mode: PointingInput) -> PipelineState:
