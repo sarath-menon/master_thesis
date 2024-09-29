@@ -11,6 +11,10 @@ import os
 import json
 import time
 import cv2
+from clicking.pipelines.molmo_direct import MolmoDirectPipelineWrapper
+import yaml
+import math
+from PIL import ImageDraw
 
 URL = "http://localhost:8086/screenshot"
 
@@ -87,10 +91,39 @@ def execute_btn_callback(chat_input):
     response_json = json.loads(response)
     print(response_json["action"], response_json["direction/target"])
 
-def object_detection_callback(model, text_input):
+def generate_star_points(centroid, size=20):
+    x, y = centroid
+    points = []
+    # There are 10 points in a 5-point star
+    for i in range(10):
+        angle = math.pi / 2 + (i * 2 * math.pi / 10)
+        if i % 2 == 0:
+            # Outer point
+            x = x + size * math.cos(angle)
+            y = y - size * math.sin(angle)
+        else:
+            # Inner point (halfway toward the center)
+            x = x + (size / 2) * math.cos(angle)
+            y = y - (size / 2) * math.sin(angle)
+        points.append((x, y))
+    return points
+    
+async def clicking_pipeline_callback(model, text_input):
     img = gc.get_screenshot()
-
-    return img, "Unsupported model"
+    
+    # Process the image using the pipeline wrapper
+    clickpoint = await pipeline_wrapper.process_image(img, text_input)
+    
+    # Overlay a star icon on the image at the clickpoint coordinates
+    draw = ImageDraw.Draw(img)
+    x = int(clickpoint.x / 100 * img.width)
+    y = int(clickpoint.y / 100 * img.height)
+    star_size = 20
+    star_points = generate_star_points((x, y), size=star_size)
+    draw.polygon(star_points, fill="yellow", outline="black")
+    
+    # Return the overlayed image
+    return img, f"x: {x}, y: {y}"
 
 philosophy_quotes = [
     ["I think therefore I am."],
@@ -104,6 +137,14 @@ startup_quotes = [
 
 def predict(im):
     return im["composite"]
+
+# Load the configuration file
+CONFIG_PATH = "./development/pipelines/game_object_config.yml"
+with open(CONFIG_PATH, 'r') as config_file:
+    config = yaml.safe_load(config_file)
+
+# Initialize the pipeline wrapper
+pipeline_wrapper = MolmoDirectPipelineWrapper(config)
 
 with gr.Blocks() as demo:
     gr.Markdown("# Game Screenshot and Response")
@@ -135,8 +176,6 @@ with gr.Blocks() as demo:
 
             #     execute_btn.click(fn=execute_btn_callback, inputs=[chatbot], outputs=[])
 
-       
-
         # object detection output
         with gr.Tab("Object Detection"):
             with gr.Column():
@@ -152,7 +191,7 @@ with gr.Blocks() as demo:
                 with gr.Column():
                     obj_detection_output = gr.Textbox(label="Model output")
 
-                submit_button.click(fn=object_detection_callback, inputs=[obj_detection_dropdown, text_input], outputs=[vlm_input, obj_detection_output])
+                submit_button.click(fn=clicking_pipeline_callback, inputs=[obj_detection_dropdown, text_input], outputs=[vlm_input, obj_detection_output])
 
         with gr.Tab("Manual Action"):
             with gr.Column():
