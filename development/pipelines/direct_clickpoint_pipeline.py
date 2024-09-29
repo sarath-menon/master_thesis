@@ -113,12 +113,8 @@ pipeline.print_mode_results_summary(all_results)
 
 result =  all_results.get_run_by_mode_name("direct_clickpoint") 
 #%%
-for clicking_image in loaded_state.images:
+for clicking_image in result.images:
     plt.imshow(clicking_image.image)
     plt.show()
     for obj in clicking_image.predicted_objects:
-        print(obj.description)
-    # show_segmentation_predictions(image, show_descriptions=False)
-#%%
-pointing_processor.get_pointing_results(loaded_state, TaskType.CLICKPOINT_WITH_TEXT, PointingInput.OBJ_NAME)
-#%%
+        print(obj.clickpoint)
