@@ -15,6 +15,7 @@ from clicking.pipelines.molmo_direct import MolmoDirectPipelineWrapper
 import yaml
 import math
 from PIL import ImageDraw
+from clicking.chat_gui.macos_clicking import WindowCapture
 
 URL = "http://localhost:8086/screenshot"
 
@@ -83,8 +84,52 @@ def update_direction_options(action):
 async def call_model(text_input, image=None):
     pass
 
-async def chatbox_callback(message, history, dummy_call=True):
-    pass
+# from gradio.data_classes import FileData, BaseModel
+# from typing import Optional, List, Tuple
+
+# class FileMessage(BaseModel):
+#     file: FileData
+#     alt_text: Optional[str] = None
+
+# class MultimodalMessage(BaseModel):
+#     text: Optional[str] = None
+#     files: Optional[List[FileMessage]] = None
+
+# class ChatbotData(BaseModel):
+#     root: List[Tuple[Optional[MultimodalMessage], Optional[MultimodalMessage]]]
+
+import io
+
+async def chatbox_callback(message, history):
+    img = gc.get_screenshot()
+    
+    # Process the image using the pipeline wrapper
+    clickpoint = await pipeline_wrapper.process_image(img, message['text'])
+
+    # click on the screen
+    window_capture = WindowCapture()
+    window_capture.click(x=clickpoint.x, y=clickpoint.y)
+    
+    # Overlay a star icon on the image at the clickpoint coordinates
+    draw = ImageDraw.Draw(img)
+    x = int(clickpoint.x / 100 * img.width)
+    y = int(clickpoint.y / 100 * img.height)
+    star_size = 10
+    star_points = generate_star_points((x, y), size=star_size)
+    draw.polygon(star_points, fill="yellow", outline="black")
+    
+    # Convert PIL image to bytes
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format='PNG')
+    img_byte_arr = img_byte_arr.getvalue()
+
+    # Create and return MultimodalMessage
+    # text_msg = f"Clickpoint is x: {x}, y: {y}"
+    img_base64 = image_to_base64(img)
+
+    img_msg = f"<img src='data:image/webp;base64,{img_base64}' style='width: 600px; max-width:none; max-height:none'></img>"
+
+    return img_msg
 
 def execute_btn_callback(chat_input):
     response = chat_input[-1][-1]
@@ -113,30 +158,21 @@ async def clicking_pipeline_callback(model, text_input):
     
     # Process the image using the pipeline wrapper
     clickpoint = await pipeline_wrapper.process_image(img, text_input)
+
+    # click on the screen
+    window_capture = WindowCapture()
+    window_capture.click(x=clickpoint.x, y=clickpoint.y)
     
     # Overlay a star icon on the image at the clickpoint coordinates
     draw = ImageDraw.Draw(img)
     x = int(clickpoint.x / 100 * img.width)
     y = int(clickpoint.y / 100 * img.height)
-    star_size = 20
+    star_size = 10
     star_points = generate_star_points((x, y), size=star_size)
     draw.polygon(star_points, fill="yellow", outline="black")
     
     # Return the overlayed image
     return img, f"x: {x}, y: {y}"
-
-philosophy_quotes = [
-    ["I think therefore I am."],
-    ["The unexamined life is not worth living."]
-]
-
-startup_quotes = [
-    ["Ideas are easy. Implementation is hard"],
-    ["Make mistakes faster."]
-]
-
-def predict(im):
-    return im["composite"]
 
 # Load the configuration file
 CONFIG_PATH = "./development/pipelines/game_object_config.yml"
@@ -146,35 +182,28 @@ with open(CONFIG_PATH, 'r') as config_file:
 # Initialize the pipeline wrapper
 pipeline_wrapper = MolmoDirectPipelineWrapper(config)
 
-with gr.Blocks() as demo:
+
+with gr.Blocks(css=".message-wrap.svelte-1lcyrx4>div.svelte-1lcyrx4  img {min-width: 200px}") as demo:
     gr.Markdown("# Game Screenshot and Response")
 
     with gr.Column():
         with gr.Tab("Chatbot"):
-            chatbot = gr.Chatbot(render=False)            
+            chatbot = gr.Chatbot(
+                [],
+                elem_id="chatbot",
+                bubble_full_width=False,
+            )
+
             chat_input = gr.ChatInterface(
                 fn=chatbox_callback,
-                examples=["take_action_1_step", "take_action_3_steps", "describe_game_state"],
+                examples=[{"text": "start button"}, {"text": "back button in the bottom left"}, {"text": "pink diamond in the top left"}],
                 chatbot=chatbot,
                 retry_btn=None,
                 undo_btn=None,
-                # clear_btn=None,
+                multimodal=True,
+                clear_btn="Clear",
+                autofocus=True,
             )
-
-            # with gr.Row():
-            #     model_select = gr.Dropdown(value="gpt-4o-img", choices=["gpt-4o-img", "gpt-4o-video",
-            #     "gpt4-vision",'llava-1.6',"gpt-3.5"], label="Select model")
-
-            #     with gr.Column():
-            #         execute_btn = gr.Button("Execute")
-            #         auto_execute_checkbox = gr.Checkbox(label="Auto execute")
-                    
-                
-            #     model_select.change(fn=lambda x: setattr(config, 'selected_model', x), inputs=[model_select], outputs=[])
-
-            #     auto_execute_checkbox.change(fn=lambda x: setattr(config, 'is_auto_execute', x), inputs=[auto_execute_checkbox], outputs=[])
-
-            #     execute_btn.click(fn=execute_btn_callback, inputs=[chatbot], outputs=[])
 
         # object detection output
         with gr.Tab("Object Detection"):
