@@ -3,7 +3,6 @@ import time
 import requests
 import websocket
 import threading
-import time
 import io
 from PIL import Image
 import cv2
@@ -13,7 +12,16 @@ import queue
 import atexit
 
 class RyujinxInterface:
-    def __init__(self):
+    _instance = None
+    _connection_count = 0
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(RyujinxInterface, cls).__new__(cls)
+            cls._instance._initialize()
+        return cls._instance
+
+    def _initialize(self):
         self.game_url = "http://localhost:8086"
 
         self.score = 0
@@ -35,19 +43,33 @@ class RyujinxInterface:
         # self.height = 900
 
         # for receiving images (observations)
-        self.obs_ws = websocket.WebSocket()
-        # for sending actions (keypresses)
-        self.action_ws = websocket.WebSocket()
+        self.obs_ws = None
+        self.action_ws = None
 
         # Register the cleanup function
         atexit.register(self.close_websockets)
 
+    @classmethod
+    def _increment_connection_count(cls):
+        cls._connection_count += 1
+        print(f"New connection established. Total connections: {cls._connection_count}")
+
+    @classmethod
+    def _decrement_connection_count(cls):
+        cls._connection_count -= 1
+        print(f"Connection closed. Total connections: {cls._connection_count}")
+
     def connect_websockets(self):
         try:    
-            if not self.obs_ws.connected:
+            if not self.obs_ws or not self.obs_ws.connected:
+                self.obs_ws = websocket.WebSocket()
                 self.obs_ws.connect("ws://localhost:8086/stream_websocket")
-            if not self.action_ws.connected:
+                self._increment_connection_count()
+
+            if not self.action_ws or not self.action_ws.connected:
+                self.action_ws = websocket.WebSocket()
                 self.action_ws.connect("ws://localhost:8086/keypress_websocket")
+                self._increment_connection_count()
 
             self.obs_ws.settimeout(2)# Set websocket timeout to 2 seconds 
             self.action_ws.settimeout(2)# Set websocket timeout to 2 seconds 
@@ -57,8 +79,14 @@ class RyujinxInterface:
 
     def close_websockets(self):
         try:
-            if self.obs_ws: self.obs_ws.close()
-            if self.action_ws: self.action_ws.close()
+            if self.obs_ws:
+                self.obs_ws.close()
+                self._decrement_connection_count()
+                self.obs_ws = None
+            if self.action_ws:
+                self.action_ws.close()
+                self._decrement_connection_count()
+                self.action_ws = None
         except websocket.WebSocketException as e:
             print(f"Failed to close websockets: {e}")
 
@@ -68,6 +96,8 @@ class RyujinxInterface:
                 "duration": duration
                 }
         try:
+            if not self.action_ws or not self.action_ws.connected:
+                self.connect_websockets()
             self.action_ws.send(json.dumps(msg))
             print(f"Sent message: {msg}")
         except websocket.WebSocketException as e:
@@ -93,9 +123,11 @@ class RyujinxInterface:
     def get_screenshot(self):
 
         message = {"duration": 0, "fps": 0, "screenshot": "True"}
-        self.obs_ws.send(json.dumps(message))
-
         try:
+            if not self.obs_ws or not self.obs_ws.connected:
+                self.connect_websockets()
+            self.obs_ws.send(json.dumps(message))
+
             message = self.obs_ws.recv()
         except websocket.WebSocketTimeoutException:
             print("Timeout occurred while waiting for a message")
