@@ -78,7 +78,7 @@ class Molmo():
         y = float(match.group(2))
         alt = match.group(3)
         
-        return ClickPoint(x=x, y=y, name=alt, validity=ClickPointValidity(status=ValidityStatus.VALID))
+        return ClickPoint(x=x, y=y, name=alt, validity=ClickPointValidity(status=ValidityStatus.VALID, reason=text))
 
 
     def run_inference(self, image, task, text_input=None):
