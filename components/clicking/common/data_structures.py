@@ -74,12 +74,15 @@ class ObjectValidity(BaseModel):
     visibility: Optional[Literal["fully visible", "partially visible", "hidden"]] = Field(default=None)
     reason: Optional[str] = None
 
+class ClickPointValidity(BaseModel):
+    status: ValidityStatus = Field(default=ValidityStatus.UNKNOWN)
+    reason: Optional[str] = None
+
 class ClickPoint(BaseModel):
     x: Optional[float] = Field(None, description="X-coordinate of the point as a percentage of the image width")
     y: Optional[float] = Field(None, description="Y-coordinate of the point as a percentage of the image height")
     name: Optional[str] = Field(None, description="Object name")
-    validity: ValidityStatus = Field(default=ValidityStatus.UNKNOWN)
-    description: Optional[str] = None
+    validity: ClickPointValidity = Field(default=ClickPointValidity())
 
 class ImageObject(BaseModel):
     id: str = Field(default_factory=uuid.uuid4)
