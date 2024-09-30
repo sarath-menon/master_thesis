@@ -78,6 +78,7 @@ class ClickPoint(BaseModel):
     x: float = Field(..., description="X-coordinate of the point as a percentage of the image width")
     y: float = Field(..., description="Y-coordinate of the point as a percentage of the image height")
     name: str = Field(..., description="Object name")
+    validity: ValidityStatus = Field(default=ValidityStatus.UNKNOWN)
 
 class ImageObject(BaseModel):
     id: str = Field(default_factory=uuid.uuid4)
