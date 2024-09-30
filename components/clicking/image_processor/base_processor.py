@@ -1,10 +1,11 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 from clicking_client import Client
-from clicking_client.models import SetModelReq, PredictionReq
-from clicking_client.api.default import set_model, get_batch_prediction
+from clicking_client.models import SetModelReq, PredictionReq, PredictionResp
+from clicking_client.types import Response
 from clicking.common.data_structures import PipelineState, TaskType, ValidityStatus
 from tqdm import tqdm
 from clicking.vision_model.utils import pil_to_base64
+from clicking_client.api.default import set_model, get_batch_prediction, get_prediction
 import asyncio
 from tenacity import retry, stop_after_attempt, wait_exponential
 import logging
@@ -99,5 +100,37 @@ class BaseProcessor:
         return asyncio.run(self.get_batch_predictions_async(batch_requests))
 
     def process_responses(self, state: PipelineState, responses: List) -> PipelineState:
+        # This method should be implemented by subclasses
+        raise NotImplementedError
+
+    async def get_single_prediction_async(self, req: PredictionReq) -> Union[PredictionResp, Response]:
+        return await get_prediction.asyncio(
+            client=self.client,
+            body=req
+        )
+
+    def get_single_prediction(self, req: PredictionReq):
+        return asyncio.run(self.get_single_prediction_async(req))
+
+    async def process_single_result_async(self, state: PipelineState, mode: TaskType, obj_id: str) -> PipelineState:
+        clicking_image = state.images[0]
+        obj = clicking_image.predicted_objects[0]
+
+        image_base64 = pil_to_base64(clicking_image.image)
+        request = self.create_prediction_request(image_base64, obj, mode)
+        request.id = str(obj.id)
+
+        response = await self.get_single_prediction_async(request)
+
+        if isinstance(response, PredictionResp):
+            return self.process_single_response(state, response, obj.id)
+        else:
+            print(f"Error in prediction: {response.status_code}")
+            return state
+
+    def process_single_result(self, state: PipelineState, mode: TaskType, obj_id: str) -> PipelineState:
+        return asyncio.run(self.process_single_result_async(state, mode, obj_id))
+
+    def process_single_response(self, state: PipelineState, response, obj_id: str) -> PipelineState:
         # This method should be implemented by subclasses
         raise NotImplementedError
