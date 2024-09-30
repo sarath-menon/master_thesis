@@ -250,12 +250,8 @@ class PredictionReq(BaseModel):
     enable_cache: Optional[bool] = Field(True)
     reset_cache: Optional[bool] = Field(False)
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
 class BatchPredictionReq(BaseModel):
     requests: List[PredictionReq] = Field(..., description="List of prediction requests")
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 class PredictionResp(BaseModel):
     id: Optional[str] = None
