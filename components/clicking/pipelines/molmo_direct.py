@@ -27,7 +27,7 @@ class MolmoDirectPipelineWrapper(PipelineWrapper):
         pipeline_steps = [
             PipelineStep(
                 name="Get Clickpoints",
-                function=pointing_processor.get_pointing_results,
+                function=pointing_processor.get_pointing_result,
                 mode_keys=["pointing_mode", "pointing_input_mode"]
             ),
         ]
