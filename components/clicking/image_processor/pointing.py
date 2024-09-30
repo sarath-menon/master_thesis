@@ -56,10 +56,7 @@ class Pointing(BaseProcessor):
         self.pointing_input_mode = pointing_input_mode
         return self.process_results(state, pointing_mode)
 
-    async def get_pointing_result_async(self, state: PipelineState, pointing_mode: TaskType, pointing_input_mode: PointingInput) -> PipelineState:
+    def get_pointing_result(self, state: PipelineState, pointing_mode: TaskType, pointing_input_mode: PointingInput) -> PipelineState:
         self.pointing_input_mode = pointing_input_mode
         obj_id = state.images[0].predicted_objects[0].id
-        return await self.process_single_result_async(state, pointing_mode, obj_id)
-
-    def get_pointing_result(self, state: PipelineState, pointing_mode: TaskType, pointing_input_mode: PointingInput) -> PipelineState:
-        return asyncio.run(self.get_pointing_result_async(state, pointing_mode, pointing_input_mode))
+        return self.process_single_result(state, pointing_mode, obj_id)

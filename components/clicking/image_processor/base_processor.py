@@ -103,16 +103,13 @@ class BaseProcessor:
         # This method should be implemented by subclasses
         raise NotImplementedError
 
-    async def get_single_prediction_async(self, req: PredictionReq) -> Union[PredictionResp, Response]:
-        return await get_prediction.asyncio(
+    def get_single_prediction(self, req: PredictionReq) -> Union[PredictionResp, Response]:
+        return get_prediction.sync(
             client=self.client,
             body=req
         )
 
-    def get_single_prediction(self, req: PredictionReq):
-        return asyncio.run(self.get_single_prediction_async(req))
-
-    async def process_single_result_async(self, state: PipelineState, mode: TaskType, obj_id: str) -> PipelineState:
+    def process_single_result(self, state: PipelineState, mode: TaskType, obj_id: str) -> PipelineState:
         clicking_image = state.images[0]
         obj = clicking_image.predicted_objects[0]
 
@@ -120,16 +117,13 @@ class BaseProcessor:
         request = self.create_prediction_request(image_base64, obj, mode)
         request.id = str(obj.id)
 
-        response = await self.get_single_prediction_async(request)
+        response = self.get_single_prediction(request)
 
         if isinstance(response, PredictionResp):
             return self.process_single_response(state, response, obj.id)
         else:
             print(f"Error in prediction: {response.status_code}")
             return state
-
-    def process_single_result(self, state: PipelineState, mode: TaskType, obj_id: str) -> PipelineState:
-        return asyncio.run(self.process_single_result_async(state, mode, obj_id))
 
     def process_single_response(self, state: PipelineState, response, obj_id: str) -> PipelineState:
         # This method should be implemented by subclasses
