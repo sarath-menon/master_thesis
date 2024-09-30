@@ -75,9 +75,9 @@ class ObjectValidity(BaseModel):
     reason: Optional[str] = None
 
 class ClickPoint(BaseModel):
-    x: float = Field(..., description="X-coordinate of the point as a percentage of the image width")
-    y: float = Field(..., description="Y-coordinate of the point as a percentage of the image height")
-    name: str = Field(..., description="Object name")
+    x: Optional[float] = Field(None, description="X-coordinate of the point as a percentage of the image width")
+    y: Optional[float] = Field(None, description="Y-coordinate of the point as a percentage of the image height")
+    name: Optional[str] = Field(None, description="Object name")
     validity: ValidityStatus = Field(default=ValidityStatus.UNKNOWN)
 
 class ImageObject(BaseModel):
