@@ -42,7 +42,7 @@ async def set_model(req: SetModelReq = None):
 
 @vision_model_router.post("/prediction", operation_id="get_prediction", response_model=PredictionResp)
 @cache_prediction
-async def prediction(req: PredictionReq = Depends()) -> PredictionResp:
+async def prediction(req: PredictionReq) -> PredictionResp:
     if req.task is None:
         raise HTTPException(status_code=400, detail="Task is required")
 
