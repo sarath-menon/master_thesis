@@ -216,9 +216,5 @@ with gr.Blocks() as demo:
             connect_emulator_btn.click(fn=gc.connect_websockets)
             disconnect_emulator_btn.click(fn=gc.close_websockets)
 
-            def connect_emulator_btn_callback():
-                gc.connect_websockets()
-                return
-
 if __name__ == "__main__":
     demo.launch()
