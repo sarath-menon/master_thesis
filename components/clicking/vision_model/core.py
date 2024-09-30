@@ -12,6 +12,7 @@ from enum import Enum, auto
 from clicking.common.data_structures import *
 
 import asyncio
+import logging
 
 class VisionModel:
     def __init__(self):
@@ -20,6 +21,7 @@ class VisionModel:
         # to store task-model mappings
         self._task_models = {}  
         self._model_locks = {}
+        self.logger = logging.getLogger("uvicorn")
 
     def tasks(self) -> list[str]:
         return [task.value for task in TaskType]
@@ -38,6 +40,15 @@ class VisionModel:
 
 
     def set_model(self, req: SetModelReq):
+        task_type = TaskType(req.task)
+
+        self.logger.debug(f"self._task_models: {self._task_models}")
+        
+        # Check if the model is already set for the task
+        if task_type in self._task_models and self._task_models[task_type].name == req.name:
+            message = f"Model {req.name} is already set for task {req.task}"
+            return {"message": message, "status_code": 200}
+
         if req.name == 'evf_sam2':
             from clicking.vision_model.evf_sam2 import EVF_SAM
             model_class_obj = EVF_SAM
