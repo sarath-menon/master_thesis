@@ -72,13 +72,13 @@ class Molmo():
         
         if not match:
             print("Invalid text format. Expected <point x=\"...\" y=\"...\" alt=\"...\">")
-            return ClickPoint(x=0, y=0, name="Object not found")
+            return ClickPoint(validity=ClickPointValidity(status=ValidityStatus.INVALID, reason=text))
         
         x = float(match.group(1))
         y = float(match.group(2))
         alt = match.group(3)
         
-        return ClickPoint(x=x, y=y, name=alt)
+        return ClickPoint(x=x, y=y, name=alt, validity=ClickPointValidity(status=ValidityStatus.VALID, reason=text))
 
 
     def run_inference(self, image, task, text_input=None):
