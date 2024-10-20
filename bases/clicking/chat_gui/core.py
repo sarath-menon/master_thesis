@@ -16,6 +16,7 @@ import yaml
 import math
 from PIL import ImageDraw
 from clicking.chat_gui.macos_clicking import WindowCapture
+from clicking.common.data_structures import ValidityStatus
 
 URL = "http://localhost:8086/screenshot"
 
@@ -106,6 +107,10 @@ async def chatbox_callback(message, history):
     # Process the image using the pipeline wrapper
     clickpoint = await pipeline_wrapper.process_image(img, message['text'])
 
+    print(f"clickpoint status: {clickpoint.validity.status}")
+    if clickpoint.validity.status == 'invalid':
+        return f"Invalid clickpoint: {clickpoint.validity.reason}"
+
     # click on the screen
     window_capture = WindowCapture()
     window_capture.click(x=clickpoint.x, y=clickpoint.y)
@@ -126,7 +131,6 @@ async def chatbox_callback(message, history):
     # Create and return MultimodalMessage
     # text_msg = f"Clickpoint is x: {x}, y: {y}"
     img_base64 = image_to_base64(img)
-
     img_msg = f"<img src='data:image/webp;base64,{img_base64}' style='width: 600px; max-width:none; max-height:none'></img>"
 
     return img_msg
@@ -182,8 +186,13 @@ with open(CONFIG_PATH, 'r') as config_file:
 # Initialize the pipeline wrapper
 pipeline_wrapper = MolmoDirectPipelineWrapper(config)
 
+CSS ="""
+.contain { display: flex; flex-direction: column; }
+#component-0 { height: 100%; }
+#chatbot { flex-grow: 1; overflow: auto;}
+"""
 
-with gr.Blocks(css=".message-wrap.svelte-1lcyrx4>div.svelte-1lcyrx4  img {min-width: 200px}") as demo:
+with gr.Blocks() as demo:
     gr.Markdown("# Game Screenshot and Response")
 
     with gr.Column():
