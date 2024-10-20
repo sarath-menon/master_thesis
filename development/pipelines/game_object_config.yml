@@ -2,8 +2,8 @@
 
 # Dataset settings
 dataset:
-  images_path: './datasets/label_studio_gen/coco_dataset/images'
-  annotations_path: './datasets/label_studio_gen/coco_dataset/result.json'
+  annotations_path: './datasets/gameplay_dataset/coco_annotations.json'
+  images_path: './datasets/resized_media/gameplay_images'
 
 # API settings
 api:
@@ -63,7 +63,7 @@ pipeline_mode_sequences:
   direct_clickpoint:
     prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
     pointing_mode: CLICKPOINT_WITH_TEXT
-    pointing_input_mode: OBJ_DESCRIPTION
+    pointing_input_mode: OBJ_NAME
   # open_vocab_object_name:
   #   prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
   #   localization_input_mode: OBJ_NAME
