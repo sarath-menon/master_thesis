@@ -29,7 +29,6 @@ with open(CONFIG_PATH, 'r') as config_file:
     config = yaml.safe_load(config_file)
 
 client = Client(base_url=config['api']['local_url'], timeout=120)
-
 #%%
 # Create pipeline and add steps
 pipeline = Pipeline(config=config)
@@ -102,5 +101,3 @@ from clicking.image_processor.visualization import show_ui_elements
 images_copy = loaded_state.images.copy()
 for image in images_copy: 
     show_ui_elements(image, bbox_thickness=5)
-
-    

@@ -121,8 +121,6 @@ class WindowCapture:
 # Usage example
 #%%
 window_capture = WindowCapture()
-
-
 window_capture.click(x=20, y=55)
 
 # %%
