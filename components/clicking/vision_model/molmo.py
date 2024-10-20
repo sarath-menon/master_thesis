@@ -10,6 +10,7 @@ import io
 import base64
 from .utils import base64_to_pil
 import re
+from vllm import LLM, SamplingParams
 
 class Molmo():
     variant_to_id = {
@@ -26,7 +27,8 @@ class Molmo():
         self.variant = variant
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-        self.processor, self.model = self.load_model(self.variant)
+        # self.processor, self.model = self.load_model(self.variant)
+        self.model = self.load_model(self.variant)
 
     @staticmethod
     def variants():
@@ -37,21 +39,26 @@ class Molmo():
         return list(Molmo.task_prompts.keys())
         
     def load_model(self, model_id):
-        processor = AutoProcessor.from_pretrained(
-            self.variant_to_id[model_id],
-            trust_remote_code=True,
-            torch_dtype='auto',
-            device_map='auto'
-            )
+        # huggingface model loading
+        # processor = AutoProcessor.from_pretrained(
+        #     self.variant_to_id[model_id],
+        #     trust_remote_code=True,
+        #     torch_dtype='auto',
+        #     device_map='auto'
+        #     )
 
-        # load the model
-        model = AutoModelForCausalLM.from_pretrained(
-            self.variant_to_id[model_id],
-            trust_remote_code=True,
-            torch_dtype='auto',
-            device_map='auto'
-        )
-        return processor, model
+        # # load the model
+        # model = AutoModelForCausalLM.from_pretrained(
+        #     self.variant_to_id[model_id],
+        #     trust_remote_code=True,
+        #     torch_dtype='auto',
+        #     device_map='auto'
+        # )
+        # return processor, model
+
+        # vllm model loading
+        model = LLM(self.variant_to_id[model_id], trust_remote_code=True)
+        return model
 
     async def predict(self, req: PredictionReq):
         if req.task not in self.task_prompts:
@@ -83,23 +90,29 @@ class Molmo():
 
     def run_inference(self, image, task, text_input=None):
 
-        inputs = self.processor.process(
-            images=[image],
-            text=text_input
-        )
+        # huggingface inference
+        # inputs = self.processor.process(
+        #     images=[image],
+        #     text=text_input
+        # )
 
-        # move inputs to the correct device and make a batch of size 1
-        inputs = {k: v.to(self.model.device).unsqueeze(0) for k, v in inputs.items()}
+        # # move inputs to the correct device and make a batch of size 1
+        # inputs = {k: v.to(self.model.device).unsqueeze(0) for k, v in inputs.items()}
 
-        output = self.model.generate_from_batch(
-            inputs,
-            GenerationConfig(max_new_tokens=200, stop_strings="<|endoftext|>"),
-            tokenizer=self.processor.tokenizer
-        )
+        # output = self.model.generate_from_batch(
+        #     inputs,
+        #     GenerationConfig(max_new_tokens=200, stop_strings="<|endoftext|>"),
+        #     tokenizer=self.processor.tokenizer
+        # )
 
-        # only get generated tokens; decode them to text
-        generated_tokens = output[0,inputs['input_ids'].size(1):]
-        generated_text = self.processor.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+        # # only get generated tokens; decode them to text
+        # generated_tokens = output[0,inputs['input_ids'].size(1):]
+        # generated_text = self.processor.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+
+        # vllm inference
+        sampling_params = SamplingParams(temperature=1.0, max_tokens=200)
+        outputs = self.model.generate([text_input], sampling_params)
+        generated_text = outputs[0].outputs[0].text
 
         if task == TaskType.CLICKPOINT_WITH_TEXT:
             return self.text_to_image_point(generated_text)
