@@ -111,7 +111,10 @@ class Molmo():
 
         # vllm inference
         sampling_params = SamplingParams(temperature=1.0, max_tokens=200)
-        outputs = self.model.generate([text_input], sampling_params)
+        outputs = self.model.generate({
+            "prompt": text_input,
+            "multi_modal_data": {"image": image},
+        }, sampling_params)
         generated_text = outputs[0].outputs[0].text
 
         if task == TaskType.CLICKPOINT_WITH_TEXT:
