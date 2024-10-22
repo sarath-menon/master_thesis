@@ -56,8 +56,8 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 # %%
 # process the image and text
-text = "Point to the dog."
-images = [Image.open(requests.get("https://picsum.photos/id/237/536/354", stream=True).raw)]
+text = "Point to the book on the cabinet"
+images = [Image.open('./master_thesis/development/test_received.png')]
 inputs = processor.process(
     images=images,
     text=text

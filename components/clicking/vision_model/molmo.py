@@ -39,7 +39,7 @@ class Molmo():
         return list(Molmo.task_prompts.keys())
         
     def load_model(self, model_id):
-        # huggingface model loading
+        # # huggingface model loading
         # processor = AutoProcessor.from_pretrained(
         #     self.variant_to_id[model_id],
         #     trust_remote_code=True,
@@ -90,7 +90,7 @@ class Molmo():
 
     def run_inference(self, image, task, text_input=None):
 
-        # huggingface inference
+        # # huggingface inference
         # inputs = self.processor.process(
         #     images=[image],
         #     text=text_input
@@ -99,11 +99,12 @@ class Molmo():
         # # move inputs to the correct device and make a batch of size 1
         # inputs = {k: v.to(self.model.device).unsqueeze(0) for k, v in inputs.items()}
 
-        # output = self.model.generate_from_batch(
-        #     inputs,
-        #     GenerationConfig(max_new_tokens=200, stop_strings="<|endoftext|>"),
-        #     tokenizer=self.processor.tokenizer
-        # )
+        # with torch.autocast(device_type="cuda", enabled=True, dtype=torch.float32):
+        #     output = self.model.generate_from_batch(
+        #         inputs,
+        #         GenerationConfig(max_new_tokens=200, stop_strings="<|endoftext|>"),
+        #         tokenizer=self.processor.tokenizer
+        #     )
 
         # # only get generated tokens; decode them to text
         # generated_tokens = output[0,inputs['input_ids'].size(1):]
@@ -116,6 +117,8 @@ class Molmo():
             "multi_modal_data": {"image": image},
         }, sampling_params)
         generated_text = outputs[0].outputs[0].text
+
+        print("Molmo output: ", generated_text)
 
         if task == TaskType.CLICKPOINT_WITH_TEXT:
             return self.text_to_image_point(generated_text)
