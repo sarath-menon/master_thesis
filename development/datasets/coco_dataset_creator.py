@@ -81,11 +81,11 @@ def create_coco_dataset(root_dir, output_file, do_rename=False):
                 image_id = os.path.splitext(file)[0]
                 
                 coco_format["images"].append({
-                    "id": image_id,
+                    "id": int(image_id),
                     "file_name": relative_path,
                     "width": width,
                     "height": height,
-                    "metadata": {"instructions": ""}
+                    "metadata": {"user_prompt": ""}
                 })
 
     # sort the images by id
@@ -123,7 +123,7 @@ def add_instructions_to_coco(json_file_path, yaml_file_path):
     for image_id, instruction in instructions_data.items():
         str_image_id = str(image_id)
         if str_image_id in image_dict:
-            image_dict[str_image_id]['metadata']['instructions'] = instruction
+            image_dict[str_image_id]['metadata']['user_prompt'] = instruction
         else:
             print(f"Warning: Image ID {str_image_id} not found in the COCO dataset.")
     
