@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=./generated/config_schema.json
+
+# Dataset settings
+dataset:
+  annotations_path: './datasets/monopoly_dataset/coco_annotations.json'
+  images_path: './datasets/resized_media/monopoly_images'
+
+# API settings
+api:
+  url: 'http://localhost:8082'
+
+# Model settings
+models:
+  localization:
+    name: 'florence2'
+    variant: 'florence-2-base'
+    tasks:
+      - 'LOCALIZATION_WITH_TEXT_OPEN_VOCAB'
+  segmentation:
+    name: 'sam2'
+    variant: 'sam2_hiera_large'
+    tasks: 
+      - 'SEGMENTATION_WITH_BBOX'
+  segmentation_with_text:
+    name: 'evf_sam2'
+    variant: 'sam2'
+    tasks: 
+      - 'SEGMENTATION_WITH_TEXT'
+  ocr:
+    name: 'florence2'
+    variant: 'florence-2-base'
+    tasks:
+      - 'OCR'
+  pointing:
+    name: 'molmo'
+    variant: 'molmo-7B'
+    tasks:
+      - 'CLICKPOINT_WITH_TEXT'
+
+# Prompt settings
+prompts:
+  refinement_path: './prompts/prompt_refinement.md'
+  output_corrector_path: './prompts/output_corrector.md'
+  word_limits:
+    IMAGE_TO_OBJECT_DESCRIPTIONS:
+      description_length: 30
+      object_name: 5
+    OBJECTS_LIST_TO_DESCRIPTIONS:
+      description_length: 10
+      object_name: 3
+
+# Pipeline settings
+pipeline:
+  cache_dir: '.pipeline_cache'
+
+# Visualization settings
+visualization:
+  figsize: [5, 5]
+
+# Pipeline mode sequences
+pipeline_mode_sequences:
+  direct_clickpoint:
+    prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
+    pointing_mode: CLICKPOINT_WITH_TEXT
+    pointing_input_mode: OBJ_NAME
+  # open_vocab_object_name:
+  #   prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
+  #   localization_input_mode: OBJ_NAME
+  #   localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
+  #   verification_mode: CROP_BBOX
+  #   segmentation_mode: SEGMENTATION_WITH_BBOX
+  # open_vocab_object_description:
+  #   prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
+  #   localization_input_mode: OBJ_DESCRIPTION
+  #   localization_mode: LOCALIZATION_WITH_TEXT_OPEN_VOCAB
+  #   verification_mode: CROP_BBOX
+  #   segmentation_mode: SEGMENTATION_WITH_BBOX
+  # evf_object_description:
+  #   prompt_mode: IMAGE_TO_OBJECT_DESCRIPTIONS
+  #   segmentation_mode: SEGMENTATION_WITH_TEXT
+  #   verification_mode: CROP_BBOX
