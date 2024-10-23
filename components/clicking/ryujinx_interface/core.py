@@ -36,8 +36,12 @@ class RyujinxInterface:
 
         # Example variables - replace these with actual values
         self.image_data = b'...'  # This should be your _imageByte data
-        self.width = 1920  # for captain toad
-        self.height = 1080  
+
+        self.width = None
+        self.height = None
+
+        # self.width = 3456  # for captain toad
+        # self.height = 2160  
 
         # self.width = 1600  # for Mario
         # self.height = 900
@@ -70,6 +74,8 @@ class RyujinxInterface:
                 self.action_ws = websocket.WebSocket()
                 self.action_ws.connect("ws://localhost:8086/keypress_websocket")
                 self._increment_connection_count()
+
+            self._set_stream_properties()
 
             self.obs_ws.settimeout(2)# Set websocket timeout to 2 seconds 
             self.action_ws.settimeout(2)# Set websocket timeout to 2 seconds 
@@ -134,6 +140,7 @@ class RyujinxInterface:
             return
         
         image = Image.frombytes(mode='RGBA', size=(self.width, self.height), data=message)
+
         # Remove alpha channel from image
         image = image.convert("RGB")
         return image
@@ -146,6 +153,23 @@ class RyujinxInterface:
 
     def go_to_game_window(self):
         self.click_center()
+
+    def _set_stream_properties(self):
+        try:
+            response = requests.get(self.game_url + '/stream_info')
+            response.raise_for_status()
+            
+            # Decode the content using utf-8-sig
+            response = response.content.decode('utf-8-sig')
+
+            response = json.loads(response)
+        except requests.RequestException as e:
+            print(f"Error getting stream info: {e}")
+
+        print("Stream info: ", response)
+        self.width = response["width"]
+        self.height = response["height"]
+        print(f"Stream properties: {self.width}x{self.height}")
 
     def pause_game(self):
         try:
