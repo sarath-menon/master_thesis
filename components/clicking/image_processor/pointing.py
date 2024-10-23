@@ -12,7 +12,7 @@ def process_description(description: str):
     return description
 
 def process_name(obj: ImageObject):
-    return f"Point to the {obj.name.lower()}"
+    return f"Point to the {obj.name}"
 
 class PointingInput(Enum):
     OBJ_NAME = ModuleMode("obj_name", process_name)
