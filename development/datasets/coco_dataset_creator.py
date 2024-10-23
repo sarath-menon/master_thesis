@@ -47,8 +47,6 @@ def create_coco_dataset(root_dir, output_file, do_rename=False):
         "annotations": [],
         "categories": []
     }
-    
-    image_id = 1
 
     def get_creation_time(file_path):
         return os.path.getctime(file_path)
@@ -79,6 +77,9 @@ def create_coco_dataset(root_dir, output_file, do_rename=False):
                 
                 relative_path = os.path.relpath(image_path, root_dir)
                 
+                # Use the filename (without extension) as the id
+                image_id = os.path.splitext(file)[0]
+                
                 coco_format["images"].append({
                     "id": image_id,
                     "file_name": relative_path,
@@ -86,16 +87,10 @@ def create_coco_dataset(root_dir, output_file, do_rename=False):
                     "height": height,
                     "metadata": {"instructions": ""}
                 })
+
+    # sort the images by id
+    coco_format["images"].sort(key=lambda x: int(x["id"]))
                 
-                image_id += 1
-    
-    # Add a dummy category (you can modify this as needed)
-    coco_format["categories"].append({
-        "id": 1,
-        "name": "default",
-        "supercategory": "none"
-    })
-    
     output_file_abs = os.path.abspath(output_file)
     os.makedirs(os.path.dirname(output_file_abs), exist_ok=True)
     with open(output_file_abs, 'w') as f:
@@ -109,3 +104,35 @@ output_json = './datasets/monopoly_dataset/coco_annotations.json'
 
 create_coco_dataset(root_directory, output_json)
 # %%
+
+import yaml
+
+def add_instructions_to_coco(json_file_path, yaml_file_path):
+    # Load the JSON file
+    with open(json_file_path, 'r') as json_file:
+        coco_data = json.load(json_file)
+    
+    # Load the YAML file
+    with open(yaml_file_path, 'r') as yaml_file:
+        instructions_data = yaml.safe_load(yaml_file)
+    
+    # Create a dictionary for quick lookup of images by file name
+    image_dict = {img['file_name'].split('.')[0]: img for img in coco_data['images']}
+    
+    # Update the images with instructions
+    for image_id, instruction in instructions_data.items():
+        str_image_id = str(image_id)
+        if str_image_id in image_dict:
+            image_dict[str_image_id]['metadata']['instructions'] = instruction
+        else:
+            print(f"Warning: Image ID {str_image_id} not found in the COCO dataset.")
+    
+    # Save the updated JSON file
+    with open(json_file_path, 'w') as json_file:
+        json.dump(coco_data, json_file, indent=2)
+    print(f"Instructions added to COCO dataset and saved to {json_file_path}")
+
+# Usage example
+json_file_path = './datasets/monopoly_dataset/coco_annotations.json'
+yaml_file_path = './datasets/monopoly_dataset/instructions.yaml'
+add_instructions_to_coco(json_file_path, yaml_file_path)
