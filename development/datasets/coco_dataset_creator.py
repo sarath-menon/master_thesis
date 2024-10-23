@@ -85,7 +85,7 @@ def create_coco_dataset(root_dir, output_file, do_rename=False):
                     "file_name": relative_path,
                     "width": width,
                     "height": height,
-                    "metadata": {"user_prompt": ""}
+                    "metadata": {"user_prompts": []}
                 })
 
     # sort the images by id
@@ -120,10 +120,11 @@ def add_instructions_to_coco(json_file_path, yaml_file_path):
     image_dict = {img['file_name'].split('.')[0]: img for img in coco_data['images']}
     
     # Update the images with instructions
-    for image_id, instruction in instructions_data.items():
+    for image_id, prompts in instructions_data.items():
         str_image_id = str(image_id)
         if str_image_id in image_dict:
-            image_dict[str_image_id]['metadata']['user_prompt'] = instruction
+            # Create a list of user prompts
+            image_dict[str_image_id]['metadata']['user_prompts'] = prompts
         else:
             print(f"Warning: Image ID {str_image_id} not found in the COCO dataset.")
     
@@ -136,3 +137,5 @@ def add_instructions_to_coco(json_file_path, yaml_file_path):
 json_file_path = './datasets/monopoly_dataset/coco_annotations.json'
 yaml_file_path = './datasets/monopoly_dataset/instructions.yaml'
 add_instructions_to_coco(json_file_path, yaml_file_path)
+
+# %%
