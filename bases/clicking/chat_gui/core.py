@@ -114,14 +114,19 @@ async def chatbox_callback(message, history):
     # click on the screen
     window_capture = WindowCapture()
     window_capture.click(x=clickpoint.x, y=clickpoint.y)
-    
-    # Overlay a star icon on the image at the clickpoint coordinates
+
+
+    # Overlay a circle on the image at the clickpoint coordinates
     draw = ImageDraw.Draw(img)
     x = int(clickpoint.x / 100 * img.width)
     y = int(clickpoint.y / 100 * img.height)
-    star_size = 10
-    star_points = generate_star_points((x, y), size=star_size)
-    draw.polygon(star_points, fill="yellow", outline="black")
+    circle_radius = 10
+    draw.ellipse(
+        [(x - circle_radius, y - circle_radius), (x + circle_radius, y + circle_radius)],
+        fill="yellow",
+        outline="black"
+    )
+    
     
     # Convert PIL image to bytes
     img_byte_arr = io.BytesIO()
@@ -148,12 +153,12 @@ def generate_star_points(centroid, size=20):
         angle = math.pi / 2 + (i * 2 * math.pi / 10)
         if i % 2 == 0:
             # Outer point
-            x = x + size * math.cos(angle)
-            y = y - size * math.sin(angle)
+            x = centroid[0] + size / 2 + size * math.cos(angle)
+            y = centroid[1] + size / 2 - size * math.sin(angle)
         else:
             # Inner point (halfway toward the center)
-            x = x + (size / 2) * math.cos(angle)
-            y = y - (size / 2) * math.sin(angle)
+            x = centroid[0] + size / 2 + (size / 2) * math.cos(angle)
+            y = centroid[1] + size / 2 - (size / 2) * math.sin(angle)
         points.append((x, y))
     return points
     
@@ -174,7 +179,7 @@ async def clicking_pipeline_callback(model, text_input):
     star_size = 10
     star_points = generate_star_points((x, y), size=star_size)
     draw.polygon(star_points, fill="yellow", outline="black")
-    
+
     # Return the overlayed image
     return img, f"x: {x}, y: {y}"
 
@@ -200,17 +205,17 @@ with gr.Blocks() as demo:
             chatbot = gr.Chatbot(
                 [],
                 elem_id="chatbot",
+                type='messages',
                 bubble_full_width=False,
             )
 
             chat_input = gr.ChatInterface(
                 fn=chatbox_callback,
-                examples=[{"text": "start button"}, {"text": "back button in the bottom left"}, {"text": "pink diamond in the top left"}],
+                examples=[{"text": "start button"}, {"text": "back button"}, {"text": "button named"}, {"text": "game object that the instructions in the textbox are asking you to click on"}],
+                example_labels=["Start button", "Back button", "Button named ...", "Follow instructions"],
+                type='messages',
                 chatbot=chatbot,
-                retry_btn=None,
-                undo_btn=None,
                 multimodal=True,
-                clear_btn="Clear",
                 autofocus=True,
             )
 
