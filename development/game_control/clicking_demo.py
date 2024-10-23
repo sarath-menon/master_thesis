@@ -77,12 +77,20 @@ class WindowCapture:
         window_x = self.current_window_info.last_cursor_x
         window_y = self.current_window_info.last_cursor_y
         window_width = self.current_window_info.width
-        window_height = self.current_window_info.height
+        actual_window_height = self.current_window_info.height
+        
+        window_height = int(window_width / (16/9))  # Calculate height for 16:9 aspect ratio
+        
+        
+        border_height = (actual_window_height - window_height) / 2
+
+        print("Screen aspect ratio: %s" % (window_width / window_height))
+        print("Border height: %s" % border_height)
         
         # Convert percentage to pixels
         pixel_x = int(window_x + (x / 100) * window_width)
-        pixel_y = int(window_y + (y / 100) * window_height)
-        
+        pixel_y = int(window_y + (y / 100) * window_height + border_height)
+
         self.mouse_controller.position = (pixel_x, pixel_y)
         
         # Update current_window_info with new cursor position
@@ -121,7 +129,9 @@ class WindowCapture:
 # Usage example
 #%%
 window_capture = WindowCapture()
-window_capture.click(x=20, y=55)
+window_capture.click(x=54.7, y=33.4)
 
 # %%
 window_capture._findWindowId()
+
+# %%
