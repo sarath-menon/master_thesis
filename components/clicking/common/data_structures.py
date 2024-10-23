@@ -94,19 +94,17 @@ class ImageObject(BaseModel):
     significance: Optional[str] = None
     validity: ObjectValidity = Field(default=ObjectValidity())
     clickpoint: Optional[ClickPoint] = None
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 class ClickingImage(BaseModel):
-    image: Image.Image
+    image: Optional[Image.Image] = None
     path: Optional[str] = None
     id: str
-    ui_elements: List[UIElement] = Field(default_factory=list)
-    annotated_objects: List[ImageObject] = Field(default_factory=list)
-    predicted_objects: List[ImageObject] = Field(default_factory=list)
-    ui_elements: List[UIElement] = Field(default_factory=list)
+    ui_elements: Optional[List[UIElement]] = Field(default_factory=list)
+    annotated_objects: Optional[List[ImageObject]] = Field(default_factory=list)
+    predicted_objects: Optional[List[ImageObject]] = Field(default_factory=list)
+    user_prompts: Optional[List[str]] = None
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
 
 class ModuleMode(NamedTuple):
     name: str
