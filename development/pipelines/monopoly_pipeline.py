@@ -25,11 +25,11 @@ import nest_asyncio
 nest_asyncio.apply()
 #%%
 # Load the configuration file«
-CONFIG_PATH = "./development/pipelines/game_object_config.yml"
+CONFIG_PATH = "./development/pipelines/monopoly_config.yml"
 with open(CONFIG_PATH, 'r') as config_file:
     config = yaml.safe_load(config_file)
 
-client = Client(base_url=config['api']['local_url'], timeout=120)
+client = Client(base_url=config['api']['url'], timeout=120)
 #%%
 prompt_refiner = PromptRefiner(config=config)
 #localization_processor = Localization(client, config=config)
@@ -37,10 +37,6 @@ prompt_refiner = PromptRefiner(config=config)
 # output_corrector = OutputCorrector(config=config)
 # segmentation_text = SegmentationText(client, config=config)
 pointing_processor = Pointing(client, config=config)
-#%%
-coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
-
-clicking_images = coco_dataset.sample_dataset(image_ids=[1,2,3])
 
 #%%
 # Define the pipeline modes
@@ -81,20 +77,23 @@ image_ids = [26]
 
 # Load initial state
 loaded_state = pipeline.load_state('.pipeline_cache/obj_descriptions/pipeline_state.pkl')
-loaded_state = loaded_state.filter_by_ids(image_ids)
+# loaded_state = loaded_state.filter_by_ids(image_ids)
 
-def remove_full_stops(description: str) -> str:
-    if description.endswith('.'):
-        return description[:-1]
-    return description
+# def remove_full_stops(description: str) -> str:
+#     if description.endswith('.'):
+#         return description[:-1]
+#     return description
 
-for image in loaded_state.images:
-    for obj in image.predicted_objects:
-        obj.description = remove_full_stops(obj.description)
-        obj.bbox = None
-        obj.mask = None
-        obj.validity.status = ValidityStatus.UNKNOWN
+# for image in loaded_state.images:
+#     for obj in image.predicted_objects:
+#         obj.description = remove_full_stops(obj.description)
+#         obj.bbox = None
+#         obj.mask = None
+#         obj.validity.status = ValidityStatus.UNKNOWN
 #%%
+coco_dataset = CocoDataset(config['dataset']['images_path'], config['dataset']['annotations_path'])
+clicking_images = coco_dataset.sample_dataset()
+
 all_results = asyncio.run(pipeline.run_for_all_modes(
     initial_images=clicking_images,
     # initial_state=loaded_state,
@@ -107,6 +106,7 @@ all_results = asyncio.run(pipeline.run_for_all_modes(
 pipeline.print_mode_results_summary(all_results)
 
 result =  all_results.get_run_by_mode_name("direct_clickpoint") 
+
 #%%
 
 def plot_image_with_point(image, point):
@@ -126,4 +126,9 @@ def plot_image_with_point(image, point):
 
 for clicking_image in result.images:
     for obj in clicking_image.predicted_objects:
+        if obj.clickpoint.validity.status == 'invalid':
+            print(f"Invalid clickpoint for object: {obj.name}")
+            continue
         plot_image_with_point(clicking_image.image, obj.clickpoint)
+        print(f"Image {clicking_image.id}: {obj.name}")
+#%%

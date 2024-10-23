@@ -7,7 +7,7 @@ dataset:
 
 # API settings
 api:
-  url: 'http://localhost:8082'
+  url: 'http://localhost:8083'
 
 # Model settings
 models:
