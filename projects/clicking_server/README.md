@@ -2,6 +2,11 @@
 
 ## Docker
 
+Generate wheel
+```
+poetry build-project --directory projects/clicking_server
+```
+
 To build and run the docker container
 
 ```
@@ -18,11 +23,12 @@ docker rm clicking_container
 
 To push container to docker hub
 ````
-docker tag clicking_server sarathmenon1999/clicking_server 
-docker push sarathmenon1999/clicking_server
+<!-- docker tag clicking_server sarathmenon1999/clicking_server  -->
+docker tag clicking_server:latest sarathmenon1999/clicking_server:v0.1
+docker push sarathmenon1999/clicking_server:v0.1
 ```
 
-## Hugging Face
+## Hugging Face 
 
 High speed model download 
 
