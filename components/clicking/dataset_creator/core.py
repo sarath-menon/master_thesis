@@ -54,23 +54,27 @@ class CocoDataset:
             ann_ids = self.coco.getAnnIds(imgIds=img_id)
             annotations = self.coco.loadAnns(ann_ids)
             
-            user_prompt = img_info['metadata'].get('user_prompt')
-            
             objects = self._create_image_objects(annotations)
-            
-            if user_prompt:
-                prompt_object = ImageObject(
-                    name=user_prompt,
-                    category=ObjectCategory.GAME_ASSET
-                )
+
+            user_prompts = None
+            if 'metadata' in img_info:
+                user_prompts = img_info['metadata'].get('user_prompts', [])
+
+                prompt_objects = []
+                for prompt in user_prompts:
+                    prompt_object = ImageObject(
+                        name=prompt,
+                        category=ObjectCategory.GAME_ASSET
+                    )
+                    prompt_objects.append(prompt_object)
 
             clicking_images.append(ClickingImage(
                 image=image, 
                 id=str(img_id), 
                 annotated_objects=objects, 
-                predicted_objects=[prompt_object] if user_prompt else [],
+                predicted_objects=prompt_objects if user_prompts else [],
                 path=image_path,
-                user_prompt=user_prompt
+                user_prompts=user_prompts
             ))
 
         print(f"Loaded {len(clicking_images)} clicking images")
