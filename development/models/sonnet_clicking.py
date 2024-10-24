@@ -14,21 +14,38 @@ from PIL import Image
 client = ImageProcessorBase(model="claude-3-5-sonnet-20241022")
 
 #%%
-text_prompt = """
-Give the outout as JSON in the following format:
-reasoning: <your thinking where the object is located in the image>
-x: <exact x-coordiante>
-y: <exact y-coordiante>
-"""
 
 messages = [{"role": "system", "content": 
 """
-You are an expert at locating objects on a image. Your task is to help the user locate object in the provided image, by providing the user with the correct coordiantes.
-You receive an image from the user and its resolustion and the object you should locate. The output needs to be your best guess of the coordinates of that object.
-Give us the middle/center of the object the user wants to locate. Also be precise and don't give rough estimations. Try to be as precicse as possible.
-The top left corner is the origin with 0, 0 coordinate.
+You are an expert at locating objects in images. Your task is to identify the precise pixel coordinates of objects in images.
+
+Input:
+- An image
+- The name of an object to locate
+
+Output Requirements:
+1. Provide the exact pixel coordinates (x,y) for the center point of the specified object
+2. The coordinate system starts at (0,0) in the top-left corner of the image
+3. X coordinates increase from left to right
+4. Y coordinates increase from top to bottom
+5. Coordinates must be integers representing exact pixel positions
+
+Guidelines:
+- Be as precise as possible - do not provide rough estimates
+- Always aim for the center point of the object
+- If multiple instances of the object exist, specify which one you are referring to
+- If the object is not visible or cannot be found, explicitly state this
 """
 }]
+
+text_prompt = """
+Analyze the image and provide the following JSON output:
+{
+    "reasoning": "Explanation of how you identified the object's location in 20 words",
+    "x": "Exact pixel x-coordinate of object's center (integer)",
+    "y": "Exact pixel y-coordinate of object's center (integer)"
+}
+"""
 
 image = Image.open("./datasets/anthropic_clicking/anthropic_demo.jpg")
 response = await client.get_image_response(image=image, messages=messages, text_prompt=text_prompt)
