@@ -88,12 +88,14 @@ class WindowCapture:
         window_y = self.current_window_info.last_cursor_y
         window_width = self.current_window_info.width
         window_height = self.current_window_info.height
+
+        print(f"window_width: {window_width}, window_height: {window_height}")
         
         # window_height = int(window_width / (16/9))  # Calculate height for 16:9 aspect ratio
         
         # border_height = (actual_window_height - window_height) / 2
 
-        print("Screen aspect ratio: %s" % (window_width / window_height))
+        print("Screen aspect ratio: %s" % (window_height/ window_width ))
         # print("Border height: %s" % border_height)
         
         # Convert percentage to pixels
@@ -160,11 +162,81 @@ class WindowCapture:
 # Usage example
 #%%
 window_capture = WindowCapture(windowName='iPhone Mirroring')
-window_capture.click(x=20, y=90)
+
+# hamburger menu
+x=100
+y=100
+
+# go button
+x=50.5
+y=81.5
+
+# # ring
+# x=7.2
+# y=75.2
+
+# # hamburger menu
+# x=91
+# y=7.3
+
+x_offset = 0
+y_offset = 5
+
+# offset to account for the hidden border
+if x > 50:
+    x-=x_offset
+else:
+    x+=x_offset
+if y < 50:
+    y+=y_offset
+window_capture.click(x, y)
 
 # %% 
 window_capture._getWindowInfo()
 # %%
 screenshot = window_capture.capture_window()
 screenshot
+# %%
+import numpy as np
+def crop_image(image_path, start_x=0, end_x=None, start_y=0, crop_height=None, target_width=None):
+    """
+    Process screenshot with custom cropping and optional scaling
+    
+    Args:
+        image_path: Path to the image file
+        start_x: Left crop position
+        end_x: Right crop position (if None, uses full width minus start_x)
+        start_y: Starting y coordinate for crop
+        crop_height: Height of the crop area
+        target_width: Desired final width in pixels (maintains aspect ratio if specified)
+    """
+    img = Image.open(image_path)
+    img = img.convert('RGB')
+    
+    # Handle right side cropping
+    if end_x is None:
+        end_x = img.width - start_x
+    
+    # Use full height if not specified
+    if crop_height is None:
+        crop_height = img.height - start_y
+    
+    # Perform the crop
+    img = img.crop((start_x, start_y, end_x, start_y + crop_height))
+    
+    # Scale if target width is specified
+    if target_width:
+        aspect_ratio = img.width / img.height
+        target_height = int(target_width / aspect_ratio)
+        img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+
+    print(f"Final image resolution: {img.size}")
+    print(f"Final aspect ratio: {img.height/img.width:.3f}")
+    return img
+
+# Example usage:
+# img = crop_image('./development/iphone_click/screenshot.png', start_x=120, start_y=145, target_width=1000, crop_height=1630)
+img = crop_image('./development/iphone_click/screenshot.png', start_x=0, start_y=5, target_width=1000, crop_height=1625)
+plt.imshow(img)
+# img.save('./development/iphone_click/screenshot_cropped.png', 'PNG')
 # %%
