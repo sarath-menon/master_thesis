@@ -22,52 +22,43 @@ class WindowInfo(BaseModel):
 class MacOSInterface:
     def __init__(self, windowName, scale_factor=0.5):
         self.windowName = windowName
-        self.window_id_map = {'Ryujinx': '', 'iPhone Mirroring': 'iPhone Mirroring'}
         self.scale_factor = scale_factor
 
         self.current_window_info = self._getWindowInfo()
         self.mouse_controller = mouse.Controller()
 
-    def _findWindowId(self):
-        window_list = CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID)
-
-        # ## Iterate through the list and print window details
-        # for window in window_list:
-        #     if self.windowName == window['kCGWindowOwnerName']:
-        #         window_id = window.get('kCGWindowNumber')
-        #         window_name = window.get('kCGWindowOwnerName')
-        #         window_size = window.get('kCGWindowBounds', {}).get('Width', 'Unknown'), window.get('kCGWindowBounds', {}).get('Height', 'Unknown')
-        #         print(f"Window ID: {window_id}, Window Name: {window_name}, Window Size: {window_size}")
-
-        for window in window_list:
-            if self.windowName == window['kCGWindowOwnerName']:
-                # 'Ryjunix' has many windows, select the window with a name
-                if window['kCGWindowName'].strip() != self.window_id_map[self.windowName]:
-                    # print('found window id %s' % window.get('kCGWindowNumber'))
-                    return window.get('kCGWindowNumber')
-
-        print('unable to find window id')
-        return False
-
     def _getWindowInfo(self) -> WindowInfo | None:
         window_list = CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID)
         for window in window_list:
-            if self.windowName == window['kCGWindowOwnerName']:
-                if self.window_id_map[self.windowName] == window['kCGWindowName']:
-                    bounds = window.get('kCGWindowBounds', {})
-                    return WindowInfo(
-                        name=window['kCGWindowName'],
-                        width=bounds.get('Width', 0),
-                        height=bounds.get('Height', 0),
-                        position=(bounds.get('X', 0), bounds.get('Y', 0)),
-                        last_cursor_x=bounds.get('X', 0),
-                        last_cursor_y=bounds.get('Y', 0),
-                        id=window.get('kCGWindowNumber', 0)
-                    )
+            
+            if self.windowName != window['kCGWindowOwnerName']:
+                continue
+
+            match self.windowName:
+                case 'Ryujinx':
+                    if window['kCGWindowName'].strip() == '':
+                        continue
+                case 'iPhone Mirroring':
+                    if window['kCGWindowName'].strip() != self.windowName:
+                        continue
+
+            bounds = window.get('kCGWindowBounds', {})
+            return WindowInfo(
+                name=window['kCGWindowName'],
+                width=bounds.get('Width', 0),
+                height=bounds.get('Height', 0),
+                position=(bounds.get('X', 0), bounds.get('Y', 0)),
+                last_cursor_x=bounds.get('X', 0),
+                last_cursor_y=bounds.get('Y', 0),
+                id=window.get('kCGWindowNumber', 0)
+            )
         print('Unable to find window')
         return None
 
+    
+
     def move_cursor(self, x: float, y: float) -> None:
+        print(f"Window info: {self.current_window_info}")
         if not self.current_window_info:
             print("Window information not available")
             return
@@ -90,6 +81,11 @@ class MacOSInterface:
             borderless_window_height = int(window_width / (16/9))  # Calculate height for 16:9 aspect ratio
         
             border_height = (window_height - borderless_window_height) / 2
+
+            print(f"borderless_window_height: {borderless_window_height}")    
+            print(f"window_height: {window_height}")
+
+
         elif self.windowName == 'iPhone Mirroring':
             window_x = self.current_window_info.position[0]
             window_y = self.current_window_info.position[1]
@@ -108,15 +104,7 @@ class MacOSInterface:
         self.mouse_controller.position = (pixel_x, pixel_y)
         
         # Update current_window_info with new cursor position
-        self.current_window_info = WindowInfo(
-            name=self.current_window_info.name,
-            position=self.current_window_info.position,
-            width=self.current_window_info.width,
-            height=self.current_window_info.height,
-            last_cursor_x=pixel_x,
-            last_cursor_y=pixel_y,
-            id=self.current_window_info.id
-        )
+        self.current_window_info = self._getWindowInfo()
         print(f"Cursor moved to {pixel_x}, {pixel_y}")
 
     def click(self, x=None, y=None, duration=0.1):
