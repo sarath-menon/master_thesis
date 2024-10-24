@@ -3,7 +3,7 @@ import gradio as gr
 from PIL import Image
 import requests
 from io import BytesIO
-from clicking.ryujinx_interface.core import RyujinxInterface
+from clicking.emulator_interface import RyujinxInterface, IphoneMirrorInterface
 import base64
 import asyncio
 import datetime
@@ -15,20 +15,12 @@ from clicking.pipelines.molmo_direct import MolmoDirectPipelineWrapper
 import yaml
 import math
 from PIL import ImageDraw
-from clicking.chat_gui.macos_clicking import WindowCapture
 from clicking.common.data_structures import ValidityStatus
 
 URL = "http://localhost:8086/screenshot"
-
-gc = RyujinxInterface()
-
-from dataclasses import dataclass
-
-@dataclass
-class GameData:
-    selected_model: str = "gpt-4o-img"
-    is_auto_execute: bool = False
-config = GameData()
+# gc = RyujinxInterface()
+gc = IphoneMirrorInterface()
+ 
 
 images_list = [{"files": ["/Users/sarathmenon/Documents/master_thesis/datasets/game_dataset/raw/fortnite/1.jpg"], "text": "Please pay attention to the movement of the object from the first image to the second image, then write a HTML code to show this movement."}]
 
@@ -111,9 +103,15 @@ async def chatbox_callback(message, history):
     if clickpoint.validity.status == 'invalid':
         return f"Invalid clickpoint: {clickpoint.validity.reason}"
 
+     # # mock clickpoint
+    # x = 5
+    # y = 5
+
     # click on the screen
-    window_capture = WindowCapture()
-    window_capture.click(x=clickpoint.x, y=clickpoint.y)
+    gc.click(x=clickpoint.x, y=clickpoint.y)
+    
+    # save the image
+    img.save(os.path.join('./development/iphone_click', "screenshot.png"), "PNG")
 
 
     # Overlay a circle on the image at the clickpoint coordinates
@@ -128,15 +126,16 @@ async def chatbox_callback(message, history):
     )
     
     
+    
     # Convert PIL image to bytes
+    img_base64 = image_to_base64(img)
     img_byte_arr = io.BytesIO()
     img.save(img_byte_arr, format='PNG')
     img_byte_arr = img_byte_arr.getvalue()
 
     # Create and return MultimodalMessage
     # text_msg = f"Clickpoint is x: {x}, y: {y}"
-    img_base64 = image_to_base64(img)
-    img_msg = f"<img src='data:image/webp;base64,{img_base64}' style='width: 600px; max-width:none; max-height:none'></img>"
+    img_msg = f"<img src='data:image/webp;base64,{img_base64}' style='width: 300px; max-width:none; max-height:none'></img>"
 
     return img_msg
 
@@ -161,27 +160,34 @@ def generate_star_points(centroid, size=20):
             y = centroid[1] + size / 2 - (size / 2) * math.sin(angle)
         points.append((x, y))
     return points
-    
-async def clicking_pipeline_callback(model, text_input):
-    img = gc.get_screenshot()
-    
-    # Process the image using the pipeline wrapper
-    clickpoint = await pipeline_wrapper.process_image(img, text_input)
 
-    # click on the screen
-    window_capture = WindowCapture()
-    window_capture.click(x=clickpoint.x, y=clickpoint.y)
+def set_emulator(emulator):
+    global gc
+    if emulator == "Ryujinx":
+        gc = RyujinxInterface()
+    elif emulator == "Iphone Mirror":
+        gc = IphoneMirrorInterface()
     
-    # Overlay a star icon on the image at the clickpoint coordinates
-    draw = ImageDraw.Draw(img)
-    x = int(clickpoint.x / 100 * img.width)
-    y = int(clickpoint.y / 100 * img.height)
-    star_size = 10
-    star_points = generate_star_points((x, y), size=star_size)
-    draw.polygon(star_points, fill="yellow", outline="black")
+# async def clicking_pipeline_callback(model, text_input):
+#     img = gc.get_screenshot()
+    
+#     # Process the image using the pipeline wrapper
+#     clickpoint = await pipeline_wrapper.process_image(img, text_input)
 
-    # Return the overlayed image
-    return img, f"x: {x}, y: {y}"
+#     # click on the screen
+#     window_capture = WindowCapture()
+#     window_capture.click(x=clickpoint.x, y=clickpoint.y)
+    
+#     # Overlay a star icon on the image at the clickpoint coordinates
+#     draw = ImageDraw.Draw(img)
+#     x = int(clickpoint.x / 100 * img.width)
+#     y = int(clickpoint.y / 100 * img.height)
+#     star_size = 10
+#     star_points = generate_star_points((x, y), size=star_size)
+#     draw.polygon(star_points, fill="yellow", outline="black")
+
+#     # Return the overlayed image
+#     return img, f"x: {x}, y: {y}"
 
 # Load the configuration file
 CONFIG_PATH = "./development/pipelines/game_object_config.yml"
@@ -219,22 +225,22 @@ with gr.Blocks() as demo:
                 autofocus=True,
             )
 
-        # object detection output
-        with gr.Tab("Object Detection"):
-            with gr.Column():
-                vlm_input = gr.Image(show_label=False)
+        # # object detection output
+        # with gr.Tab("Object Detection"):
+        #     with gr.Column():
+        #         vlm_input = gr.Image(show_label=False)
 
-            with gr.Row():
-                with gr.Column():
-                    text_input = gr.Textbox(label="Text input", placeholder="Enter a text input")
+        #     with gr.Row():
+        #         with gr.Column():
+        #             text_input = gr.Textbox(label="Text input", placeholder="Enter a text input")
                 
-                    obj_detection_dropdown = gr.Dropdown(value="florence_2", choices=["grounding_dino", "florence_2"], label="Select model")
-                    submit_button = gr.Button("Submit")
+        #             obj_detection_dropdown = gr.Dropdown(value="florence_2", choices=["grounding_dino", "florence_2"], label="Select model")
+        #             submit_button = gr.Button("Submit")
 
-                with gr.Column():
-                    obj_detection_output = gr.Textbox(label="Model output")
+        #         with gr.Column():
+        #             obj_detection_output = gr.Textbox(label="Model output")
 
-                submit_button.click(fn=clicking_pipeline_callback, inputs=[obj_detection_dropdown, text_input], outputs=[vlm_input, obj_detection_output])
+        #         submit_button.click(fn=clicking_pipeline_callback, inputs=[obj_detection_dropdown, text_input], outputs=[vlm_input, obj_detection_output])
 
         with gr.Tab("Manual Action"):
             with gr.Column():
@@ -251,13 +257,20 @@ with gr.Blocks() as demo:
         with gr.Row():
             pause_button = gr.Button("Pause game")
             resume_button = gr.Button("Resume game")
+            
+            pause_button.click(fn=gc.pause_emulator)
+            resume_button.click(fn=gc.resume_emulator)
+
+        with gr.Row():
+            emulator_dropdown = gr.Dropdown(
+                ["Iphone Mirror", "Ryujinx"], label="Emulator selector"
+            )
             connect_emulator_btn = gr.Button("Connect emulator")
             disconnect_emulator_btn = gr.Button("Disconnect emulator")
 
-            pause_button.click(fn=gc.pause_game)
-            resume_button.click(fn=gc.resume_game)
-            connect_emulator_btn.click(fn=gc.connect_websockets)
-            disconnect_emulator_btn.click(fn=gc.close_websockets)
+            emulator_dropdown.change(fn=set_emulator, inputs=[emulator_dropdown])
+            connect_emulator_btn.click(fn=gc.connect_emulator)
+            disconnect_emulator_btn.click(fn=gc.disconnect_emulator)
 
 if __name__ == "__main__":
     demo.launch()
