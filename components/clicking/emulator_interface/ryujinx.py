@@ -10,8 +10,10 @@ import numpy as np
 import json
 import queue
 import atexit
+from .core import BaseEmulator
+from .macos_clicking import MacOSInterface
 
-class RyujinxInterface:
+class RyujinxInterface(BaseEmulator):
     _instance = None
     _connection_count = 0
 
@@ -23,9 +25,8 @@ class RyujinxInterface:
 
     def _initialize(self):
         self.game_url = "http://localhost:8086"
+        self.macos_interface = MacOSInterface(windowName='Ryujinx')
 
-        self.score = 0
-        self.level = 1
         self.is_game_over = False
         self.is_running = True
         self.screen_width, self.screen_height = pyautogui.size()
@@ -51,7 +52,7 @@ class RyujinxInterface:
         self.action_ws = None
 
         # Register the cleanup function
-        atexit.register(self.close_websockets)
+        atexit.register(self.disconnect_emulator)
 
     @classmethod
     def _increment_connection_count(cls):
@@ -63,7 +64,7 @@ class RyujinxInterface:
         cls._connection_count -= 1
         print(f"Connection closed. Total connections: {cls._connection_count}")
 
-    def connect_websockets(self):
+    def connect_emulator(self):
         try:    
             if not self.obs_ws or not self.obs_ws.connected:
                 self.obs_ws = websocket.WebSocket()
@@ -83,7 +84,7 @@ class RyujinxInterface:
             print(f"Failed to connect to websockets: {e}")
             return
 
-    def close_websockets(self):
+    def disconnect_emulator(self):
         try:
             if self.obs_ws:
                 self.obs_ws.close()
@@ -103,7 +104,7 @@ class RyujinxInterface:
                 }
         try:
             if not self.action_ws or not self.action_ws.connected:
-                self.connect_websockets()
+                self.connect_emulator()
             self.action_ws.send(json.dumps(msg))
             print(f"Sent message: {msg}")
         except websocket.WebSocketException as e:
@@ -131,7 +132,7 @@ class RyujinxInterface:
         message = {"duration": 0, "fps": 0, "screenshot": "True"}
         try:
             if not self.obs_ws or not self.obs_ws.connected:
-                self.connect_websockets()
+                self.connect_emulator()
             self.obs_ws.send(json.dumps(message))
 
             message = self.obs_ws.recv()
@@ -171,7 +172,7 @@ class RyujinxInterface:
         self.height = response["height"]
         print(f"Stream properties: {self.width}x{self.height}")
 
-    def pause_game(self):
+    def pause_emulator(self):
         try:
             response = requests.post(self.game_url + '/pause_game')
             response.raise_for_status()  
@@ -179,7 +180,7 @@ class RyujinxInterface:
         except requests.RequestException as e:
             print(f"Error pausing game: {e}")
 
-    def resume_game(self):
+    def resume_emulator(self):
         try:
             response = requests.post(self.game_url + '/resume_game')
             response.raise_for_status()  
@@ -215,18 +216,6 @@ class RyujinxInterface:
             return None
 
         self.keypress(key, duration)
-        
 
-    def camera_down(self):
-        pyautogui.hotkey('fn', 'f7')
-
-    def get_game_state(self):
-        return {
-            "score": self.score,
-            "level": self.level,
-            "is_game_over": self.is_game_over
-        }
-    
-    def collect_treasure(self, direction):
-        print(f"Collecting treasure in {direction}")
-        
+    def click(self, x, y, duration=0.1):
+        self.macos_interface.click(x, y, duration)
