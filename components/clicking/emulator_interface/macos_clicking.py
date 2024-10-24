@@ -58,7 +58,7 @@ class MacOSInterface:
     
 
     def move_cursor(self, x: float, y: float) -> None:
-        print(f"Window info: {self.current_window_info}")
+
         if not self.current_window_info:
             print("Window information not available")
             return
@@ -82,10 +82,6 @@ class MacOSInterface:
         
             border_height = (window_height - borderless_window_height) / 2
 
-            print(f"borderless_window_height: {borderless_window_height}")    
-            print(f"window_height: {window_height}")
-
-
         elif self.windowName == 'iPhone Mirroring':
             window_x = self.current_window_info.position[0]
             window_y = self.current_window_info.position[1]
@@ -105,7 +101,6 @@ class MacOSInterface:
         
         # Update current_window_info with new cursor position
         self.current_window_info = self._getWindowInfo()
-        print(f"Cursor moved to {pixel_x}, {pixel_y}")
 
     def click(self, x=None, y=None, duration=0.1):
         if x is not None and y is not None:

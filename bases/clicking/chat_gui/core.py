@@ -99,14 +99,9 @@ async def chatbox_callback(message, history):
     # Process the image using the pipeline wrapper
     clickpoint = await pipeline_wrapper.process_image(img, message['text'])
 
-    print(f"clickpoint status: {clickpoint.validity.status}")
     if clickpoint.validity.status == 'invalid':
         return f"Invalid clickpoint: {clickpoint.validity.reason}"
-
-     # # mock clickpoint
-    # x = 5
-    # y = 5
-
+        
     # click on the screen
     gc.click(x=clickpoint.x, y=clickpoint.y)
     
