@@ -38,20 +38,58 @@ Guidelines:
 """
 }]
 
-text_prompt = """
-Analyze the image and provide the following JSON output:
-{
-    "reasoning": "Explanation of how you identified the object's location in 20 words",
-    "x": "Exact pixel x-coordinate of object's center (integer)",
-    "y": "Exact pixel y-coordinate of object's center (integer)"
-}
-"""
+def get_text_prompt(object_name: str):
+    return f"""
+    The object to locate is a {object_name}. Analyze the image and provide the following JSON output:
+    {{
+        "reasoning": "Explanation of how you identified the object's location in 20 words",
+        "x": "Exact pixel x-coordinate of object's center (integer)",
+        "y": "Exact pixel y-coordinate of object's center (integer)"
+    }}
+    """
 
-image = Image.open("./datasets/anthropic_clicking/anthropic_demo.jpg")
-response = await client.get_image_response(image=image, messages=messages, text_prompt=text_prompt)
+text_prompt = get_text_prompt("button named I AGREE")
+# image = Image.open("./datasets/anthropic_clicking/anthropic_demo.jpg")
+image = Image.open("./datasets/resized_media/monopoly_images/51.jpg")
+centered_image, offset, scale_factor = create_centered_image(image)
+
+response = await client.get_image_response(image=centered_image, messages=messages, text_prompt=text_prompt)
 
 response = json.loads(response)
-response 
+
+# convert to pixel coordinates in the original image
+x = (response["x"] - offset[0]) * scale_factor
+y = (response["y"] - offset[1]) * scale_factor
+print(f"x: {x}, y: {y}")
+
+plot_image_with_point(image, x, y)
+# plot_image_with_point(centered_image, response["x"], response["y"])
+
+#%%
+
+def create_centered_image(input_image: Image.Image, canvas_width: int = 1024, canvas_height: int = 768) -> Image.Image:
+    # Create transparent background
+    background = Image.new('RGBA', (canvas_width, canvas_height), (0, 0, 0, 0))
+    
+    # Scale image if larger than canvas
+    scale_factor = 4
+    if input_image.width > canvas_width or input_image.height > canvas_height:
+        input_image = input_image.resize((input_image.width // scale_factor, input_image.height // scale_factor))
+    
+    # Calculate position to paste input image
+    x_offset = (canvas_width - input_image.width) // 2
+    y_offset = (canvas_height - input_image.height) // 2
+    
+    # Create a copy of the background and paste input image
+    result = background.copy()
+    result.paste(input_image, (x_offset, y_offset))
+    
+    return result, [x_offset, y_offset], scale_factor
+
+
+image = Image.open("./datasets/resized_media/monopoly_images/51.jpg")
+image, offset = create_centered_image(image)
+image
 #%%
 import matplotlib.pyplot as plt
 
@@ -61,9 +99,9 @@ def plot_image_with_point(image, x, y):
     plt.grid(False)
     plt.axis('off')
 
-    plt.plot(x, y, marker='*', color='yellow', markersize=15)
+    plt.plot(x, y, marker='*', color='red', markersize=15)
     
     plt.show()
 
-plot_image_with_point(image, response["x"], response["y"])
+
 # %%
