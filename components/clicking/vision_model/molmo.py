@@ -111,7 +111,7 @@ class Molmo():
         # generated_text = self.processor.tokenizer.decode(generated_tokens, skip_special_tokens=True)
 
         # vllm inference
-        sampling_params = SamplingParams(temperature=1.0, max_tokens=200)
+        sampling_params = SamplingParams(temperature=0.0, max_tokens=200)
         outputs = self.model.generate({
             "prompt": text_input,
             "multi_modal_data": {"image": image},
