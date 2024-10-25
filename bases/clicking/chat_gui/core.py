@@ -94,7 +94,7 @@ async def bot(history: list):
         if not os.path.exists(yaml_file):
             response = "Error: YAML file not found"
             history.append({"role": "assistant", "content": response})
-            yield history
+            yield history, ""  # Add empty string for text_output
             return
 
         async for img, clickpoint, text_input in LoopExecutor(CONFIG_PATH).execute_sequence_async(
@@ -102,7 +102,7 @@ async def bot(history: list):
             get_image_func=gc.get_screenshot,
         ):
             if clickpoint.validity.status == 'invalid':
-                response = f"Invalid clickpoint: {clickpoint.validity.reason}"
+                response = f"No valid clickpoint for object: {text_input}"
             else:
                 gc.click(x=clickpoint.x, y=clickpoint.y)
                 draw_clickpoint(img, clickpoint)
@@ -111,7 +111,7 @@ async def bot(history: list):
                 response = f"{text_msg}\n<img src='data:image/webp;base64,{img_base64}' style='width: 500px; max-width:none; max-height:none'></img>"
 
             history.append({"role": "assistant", "content": response})
-            yield history
+            yield history, text_input  # Yield both history and text_input
 
     # Handle text messages
     else:
@@ -128,22 +128,58 @@ async def bot(history: list):
             response = f"{text_msg}\n<img src='data:image/webp;base64,{img_base64}' style='width: 500px; max-width:none; max-height:none'></img>"
 
         history.append({"role": "assistant", "content": response})
-        yield history
-
+        yield history, last_message  # Yield both history and last_message
 CSS ="""
 #chatbot { flex-grow: 1; overflow: auto; height: 60vh !important;}
 """
 
+# js = """
+# (function() {
+#     function scrollChatToBottom() {
+#         const chatbot = document.querySelector('#chatbot');
+#         if (chatbot) {
+#             chatbot.scrollTop = chatbot.scrollHeight;
+#         }
+#     }
+
+#     if (document.readyState === 'loading') {
+#         document.addEventListener('DOMContentLoaded', initObserver);
+#     } else {
+#         initObserver();
+#     }
+
+#     function initObserver() {
+#         const chatbot = document.querySelector('#chatbot');
+#         if (chatbot) {
+#             const observer = new MutationObserver(scrollChatToBottom);
+#             observer.observe(chatbot, {
+#                 childList: true,
+#                 subtree: true
+#             });
+#             scrollChatToBottom();
+#         }
+#     }
+# })();
+# """
 with gr.Blocks(css=CSS) as demo:
     gr.Markdown("# Game Screenshot and Response")
 
     with gr.Column():
         with gr.Tab("Chatbot"):
+
+            # output text
+            text_output = gr.Textbox(
+                value="",
+                interactive=False,
+                label="Current instruction",
+            )
+
             chatbot = gr.Chatbot(
                 [], 
                 elem_id="chatbot",
                 type='messages',
                 bubble_full_width=False,
+                autoscroll=True,
             )
 
             chat_input = gr.MultimodalTextbox(
@@ -151,12 +187,14 @@ with gr.Blocks(css=CSS) as demo:
                 file_count="multiple",
                 placeholder="Enter message or upload file...",
                 show_label=False,
+                autoscroll=True,
+                autofocus=True,
             )
 
             chat_msg = chat_input.submit(
                 add_message, [chatbot, chat_input], [chatbot, chat_input]
             )
-            bot_msg = chat_msg.then(bot, chatbot, chatbot, api_name="bot_response")
+            bot_msg = chat_msg.then(bot, chatbot, [chatbot, text_output], api_name="bot_response")
             bot_msg.then(lambda: gr.MultimodalTextbox(interactive=True), None, [chat_input])
 
             def print_like_dislike(x: gr.LikeData):
