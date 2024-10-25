@@ -32,9 +32,8 @@ poetry_shell:
 test BRICK NAME *ARGS:
     poetry run pytest -p no:warnings test/{{BRICK}}/clicking/{{NAME}} -x -v --tb=short {{ARGS}}
 
-install_projects:
-    pip install projects/clicking_server/dist/clicking_server-0.1.0-py3-none-any.whl
-    # pip install projects/ryujinx_controller/dist/ryujinx_controller-0.1.0-py3-none-any.whl
+# install_server:
+#     pip install projects/clicking_server/dist/clicking_server-0.1.0-py3-none-any.whl
 
-install_projects_editable:
+install_server:
     pip install -e projects/clicking_server
