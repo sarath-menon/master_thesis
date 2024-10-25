@@ -130,7 +130,7 @@ async def chatbox_callback(message, history):
 
     # Create and return MultimodalMessage
     # text_msg = f"Clickpoint is x: {x}, y: {y}"
-    img_msg = f"<img src='data:image/webp;base64,{img_base64}' style='width: 300px; max-width:none; max-height:none'></img>"
+    img_msg = f"<img src='data:image/webp;base64,{img_base64}' style='width: 500px; max-width:none; max-height:none'></img>"
 
     return img_msg
 
@@ -193,18 +193,16 @@ with open(CONFIG_PATH, 'r') as config_file:
 pipeline_wrapper = MolmoDirectPipelineWrapper(config)
 
 CSS ="""
-.contain { display: flex; flex-direction: column; }
-#component-0 { height: 100%; }
-#chatbot { flex-grow: 1; overflow: auto;}
+#chatbot { flex-grow: 1; overflow: auto; height: 60vh !important;}
 """
 
-with gr.Blocks() as demo:
+with gr.Blocks(css=CSS) as demo:
     gr.Markdown("# Game Screenshot and Response")
 
     with gr.Column():
         with gr.Tab("Chatbot"):
             chatbot = gr.Chatbot(
-                [],
+                [], 
                 elem_id="chatbot",
                 type='messages',
                 bubble_full_width=False,
