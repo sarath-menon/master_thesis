@@ -386,3 +386,25 @@ def show_ui_elements(clicking_image: ClickingImage, label_alpha=0.7, label_y_off
 
     print(f"Button: {buttons}")
     print(f"Unmatched Button: {unmatched_buttons}")
+
+
+def show_clickpoint_crosshair(image, clickpoint, linewidth: int = 2, marker_size: int = 10):
+    plt.figure(figsize=(10, 8))
+    plt.imshow(image)
+    plt.grid(False)
+    plt.axis('off')
+
+    # Convert the point coordinates to image coordinates
+    img_width, img_height = image.size
+    x_img = clickpoint.x/100 * img_width
+    y_img = clickpoint.y/100 * img_height
+    
+    # Draw crosshair lines spanning full image width/height
+    width = image.size[0]
+    height = image.size[1]
+    
+    plt.plot([0, width], [y_img, y_img], color='black', linewidth=linewidth, linestyle='dotted')
+    plt.plot([x_img, x_img], [0, height], color='black', linewidth=linewidth, linestyle='dotted')
+    plt.plot(x_img, y_img, marker='o', color='red', markersize=marker_size)
+    
+    plt.show()
