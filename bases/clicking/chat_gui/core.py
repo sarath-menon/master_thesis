@@ -14,6 +14,7 @@ from PIL import ImageDraw
 import io
 from clicking.vision_model.utils import pil_to_base64
 from development.pipelines.loop_executor import LoopExecutor
+import time
 
 RYUJINX_URL = "http://localhost:8086/screenshot"
 gc = RyujinxInterface()
@@ -50,54 +51,6 @@ def draw_clickpoint(img, clickpoint):
     )
     return img
 
-async def chatbox_callback(message, history):
-
-    if message.get('files') and message['files'][0].endswith('.yaml'):
-        yaml_file = next(f for f in message['files'] if f.endswith('.yaml'))
-        
-        if not os.path.exists(yaml_file):
-            yield "Error: YAML file not found"
-            return
-            
-        # Execute the sequence using the loop executor
-        async for img, clickpoint, text_input in LoopExecutor(CONFIG_PATH).execute_sequence_async(
-            sequence_file=yaml_file,
-            get_image_func=gc.get_screenshot,
-            delay=1.0
-        ):
-            gc.click(x=clickpoint.x, y=clickpoint.y)
-            draw_clickpoint(img, clickpoint)
-
-            img_base64 = pil_to_base64(img)
-            img_msg = f"{text_input}\n<img src='data:image/webp;base64,{img_base64}' style='width: 500px; max-width:none; max-height:none'></img>"
-
-            yield img_msg
-
-
-    # Process the single screenshot using the pipeline wrapper
-    else:
-        img = gc.get_screenshot()
-        clickpoint = await pipeline_wrapper.process_image(img, message['text'])
-
-        if clickpoint.validity.status == 'invalid':
-            yield f"Invalid clickpoint: {clickpoint.validity.reason}"
-            return
-            
-        # click on the screen
-        gc.click(x=clickpoint.x, y=clickpoint.y)
-
-        # Draw the clickpoint on the image
-        img = draw_clickpoint(img, clickpoint)
-    
-        # Create response message
-        text_msg = f"Clicked on ({clickpoint.x}, {clickpoint.y})" 
-        img_base64 = pil_to_base64(img)
-        img_msg = f"{text_msg}\n<img src='data:image/webp;base64,{img_base64}' style='width: 500px; max-width:none; max-height:none'></img>"
-
-        print(message)
-        yield img_msg
-
-
 def execute_btn_callback(chat_input):
     response = chat_input[-1][-1]
     response_json = json.loads(response)
@@ -123,6 +76,60 @@ pipeline_wrapper = MolmoDirectPipelineWrapper(config)
 # Initialize the loop executor
 loop_executor = LoopExecutor(CONFIG_PATH)
 
+
+def add_message(history, message):
+    if message.get('files'):
+        for file in message['files']:
+            history.append({"role": "user", "content": {"path": file}})
+    if message.get('text'):
+        history.append({"role": "user", "content": message['text']})
+    return history, gr.MultimodalTextbox(value=None, interactive=False)
+
+async def bot(history: list):
+    last_message = history[-1]["content"]
+
+    # Handle file uploads (YAML files)
+    if last_message[0].endswith('.yaml'):
+        yaml_file = last_message[0]
+        if not os.path.exists(yaml_file):
+            response = "Error: YAML file not found"
+            history.append({"role": "assistant", "content": response})
+            yield history
+            return
+
+        async for img, clickpoint, text_input in LoopExecutor(CONFIG_PATH).execute_sequence_async(
+            sequence_file=yaml_file,
+            get_image_func=gc.get_screenshot,
+        ):
+            if clickpoint.validity.status == 'invalid':
+                response = f"Invalid clickpoint: {clickpoint.validity.reason}"
+            else:
+                gc.click(x=clickpoint.x, y=clickpoint.y)
+                draw_clickpoint(img, clickpoint)
+                img_base64 = pil_to_base64(img)
+                text_msg = f"{text_input}: ({clickpoint.x}, {clickpoint.y})"
+                response = f"{text_msg}\n<img src='data:image/webp;base64,{img_base64}' style='width: 500px; max-width:none; max-height:none'></img>"
+
+            history.append({"role": "assistant", "content": response})
+            yield history
+
+    # Handle text messages
+    else:
+        img = gc.get_screenshot()
+        clickpoint = await pipeline_wrapper.process_image(img, last_message)
+
+        if clickpoint.validity.status == 'invalid':
+            response = f"Invalid clickpoint: {clickpoint.validity.reason}"
+        else:
+            gc.click(x=clickpoint.x, y=clickpoint.y)
+            img = draw_clickpoint(img, clickpoint)
+            text_msg = f"Clicked on ({clickpoint.x}, {clickpoint.y})"
+            img_base64 = pil_to_base64(img)
+            response = f"{text_msg}\n<img src='data:image/webp;base64,{img_base64}' style='width: 500px; max-width:none; max-height:none'></img>"
+
+        history.append({"role": "assistant", "content": response})
+        yield history
+
 CSS ="""
 #chatbot { flex-grow: 1; overflow: auto; height: 60vh !important;}
 """
@@ -139,15 +146,23 @@ with gr.Blocks(css=CSS) as demo:
                 bubble_full_width=False,
             )
 
-            chat_input = gr.ChatInterface(
-                fn=chatbox_callback,
-                examples=[{"text": "start button"}, {"text": "back button"}, {"text": "button named"}, {"text": "game object that the instructions in the textbox are asking you to click on"}],
-                example_labels=["Start button", "Back button", "Button named ...", "Follow instructions"],
-                type='messages',
-                chatbot=chatbot,
-                multimodal=True,
-                autofocus=True,
+            chat_input = gr.MultimodalTextbox(
+                interactive=True,
+                file_count="multiple",
+                placeholder="Enter message or upload file...",
+                show_label=False,
             )
+
+            chat_msg = chat_input.submit(
+                add_message, [chatbot, chat_input], [chatbot, chat_input]
+            )
+            bot_msg = chat_msg.then(bot, chatbot, chatbot, api_name="bot_response")
+            bot_msg.then(lambda: gr.MultimodalTextbox(interactive=True), None, [chat_input])
+
+            def print_like_dislike(x: gr.LikeData):
+                print(x.index, x.value, x.liked)
+
+            chatbot.like(print_like_dislike, None, None, like_user_message=True)
 
         with gr.Row():
             pause_button = gr.Button("Pause game")
