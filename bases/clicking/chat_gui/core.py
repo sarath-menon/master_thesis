@@ -13,10 +13,11 @@ import math
 from PIL import ImageDraw
 import io
 from clicking.vision_model.utils import pil_to_base64
+from development.pipelines.loop_executor import LoopExecutor
 
 RYUJINX_URL = "http://localhost:8086/screenshot"
-# gc = RyujinxInterface()
-gc = IphoneMirrorInterface()
+gc = RyujinxInterface()
+# gc = IphoneMirrorInterface()
 
 async def save_image_and_response(image_array, response):
     # Create a directory with the current date and time
@@ -37,24 +38,7 @@ async def save_image_and_response(image_array, response):
     print(f"Saved image and response in {directory_path}")
 
 
-
-async def chatbox_callback(message, history):
-    img = gc.get_screenshot()
-    
-    # Process the image using the pipeline wrapper
-    clickpoint = await pipeline_wrapper.process_image(img, message['text'])
-
-    if clickpoint.validity.status == 'invalid':
-        return f"Invalid clickpoint: {clickpoint.validity.reason}"
-        
-    # click on the screen
-    gc.click(x=clickpoint.x, y=clickpoint.y)
-    
-    # save the image
-    img.save(os.path.join('./development/iphone_click', "screenshot.png"), "PNG")
-
-
-    # Overlay a circle on the image at the clickpoint coordinates
+def draw_clickpoint(img, clickpoint):
     draw = ImageDraw.Draw(img)
     x = int(clickpoint.x / 100 * img.width)
     y = int(clickpoint.y / 100 * img.height)
@@ -63,16 +47,56 @@ async def chatbox_callback(message, history):
         [(x - circle_radius, y - circle_radius), (x + circle_radius, y + circle_radius)],
         fill="yellow",
         outline="black"
-    )    
+    )
+    return img
+
+async def chatbox_callback(message, history):
+
+    if message.get('files') and message['files'][0].endswith('.yaml'):
+        yaml_file = next(f for f in message['files'] if f.endswith('.yaml'))
+        
+        if not os.path.exists(yaml_file):
+            yield "Error: YAML file not found"
+            return
+            
+        # Execute the sequence using the loop executor
+        async for img, clickpoint, text_input in LoopExecutor(CONFIG_PATH).execute_sequence_async(
+            sequence_file=yaml_file,
+            get_image_func=gc.get_screenshot,
+            delay=1.0
+        ):
+            gc.click(x=clickpoint.x, y=clickpoint.y)
+            draw_clickpoint(img, clickpoint)
+
+            img_base64 = pil_to_base64(img)
+            img_msg = f"{text_input}\n<img src='data:image/webp;base64,{img_base64}' style='width: 500px; max-width:none; max-height:none'></img>"
+
+            yield img_msg
+
+
+    # Process the single screenshot using the pipeline wrapper
+    else:
+        img = gc.get_screenshot()
+        clickpoint = await pipeline_wrapper.process_image(img, message['text'])
+
+        if clickpoint.validity.status == 'invalid':
+            yield f"Invalid clickpoint: {clickpoint.validity.reason}"
+            return
+            
+        # click on the screen
+        gc.click(x=clickpoint.x, y=clickpoint.y)
+
+        # Draw the clickpoint on the image
+        img = draw_clickpoint(img, clickpoint)
     
-    # Convert PIL image to bytes
-    img_base64 = pil_to_base64(img)
+        # Create response message
+        text_msg = f"Clicked on ({clickpoint.x}, {clickpoint.y})" 
+        img_base64 = pil_to_base64(img)
+        img_msg = f"{text_msg}\n<img src='data:image/webp;base64,{img_base64}' style='width: 500px; max-width:none; max-height:none'></img>"
 
-    # Create and return MultimodalMessage
-    # text_msg = f"Clickpoint is x: {x}, y: {y}"
-    img_msg = f"<img src='data:image/webp;base64,{img_base64}' style='width: 500px; max-width:none; max-height:none'></img>"
+        print(message)
+        yield img_msg
 
-    return img_msg
 
 def execute_btn_callback(chat_input):
     response = chat_input[-1][-1]
@@ -95,6 +119,9 @@ with open(CONFIG_PATH, 'r') as config_file:
 
 # Initialize the pipeline wrapper
 pipeline_wrapper = MolmoDirectPipelineWrapper(config)
+
+# Initialize the loop executor
+loop_executor = LoopExecutor(CONFIG_PATH)
 
 CSS ="""
 #chatbot { flex-grow: 1; overflow: auto; height: 60vh !important;}
@@ -122,18 +149,6 @@ with gr.Blocks(css=CSS) as demo:
                 autofocus=True,
             )
 
-        with gr.Tab("Manual Action"):
-            with gr.Column():
-                gr.Markdown("## Select action manually")
-                action_select = gr.Radio(["move_player", "orbit_camera", "throw_hat", "jump"], label="Select action")
-
-                direction_select = gr.Radio(["forward", "backward", "left", "right"], label="Select direction")
-
-                action_button = gr.Button("Do action")
-                action_select.change(fn=update_direction_options, inputs=[action_select], outputs=[direction_select])
-
-                action_button.click(fn=do_action, inputs=[action_select, direction_select])    
-        
         with gr.Row():
             pause_button = gr.Button("Pause game")
             resume_button = gr.Button("Resume game")
@@ -143,7 +158,7 @@ with gr.Blocks(css=CSS) as demo:
 
         with gr.Row():
             emulator_dropdown = gr.Dropdown(
-                ["Iphone Mirror", "Ryujinx"], label="Emulator selector"
+                [ "Ryujinx", "Iphone Mirror"], label="Emulator selector"
             )
             connect_emulator_btn = gr.Button("Connect emulator")
             disconnect_emulator_btn = gr.Button("Disconnect emulator")
