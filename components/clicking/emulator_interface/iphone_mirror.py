@@ -28,7 +28,6 @@ class IphoneMirrorInterface(BaseEmulator):
 
         # crop image to remove hidden border
         img = crop_image(img, start_x=120, start_y=150, target_width=1000, crop_height=1625)
-        print(f"Image resolution: {img.width}x{img.height}")
         return img
 
     def pause_emulator(self):

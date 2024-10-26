@@ -25,6 +25,7 @@ class MacOSInterface:
         self.scale_factor = scale_factor
 
         self.current_window_info = self._getWindowInfo()
+
         self.mouse_controller = mouse.Controller()
 
     def _getWindowInfo(self) -> WindowInfo | None:
@@ -52,10 +53,7 @@ class MacOSInterface:
                 last_cursor_y=bounds.get('Y', 0),
                 id=window.get('kCGWindowNumber', 0)
             )
-        print('Unable to find window')
-        return None
-
-    
+        raise ValueError(f"Window with name {self.windowName} not found")
 
     def move_cursor(self, x: float, y: float) -> None:
 
