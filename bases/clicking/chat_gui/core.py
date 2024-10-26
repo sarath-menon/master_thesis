@@ -97,9 +97,11 @@ async def bot(history: list):
             yield history, ""  # Add empty string for text_output
             return
 
+
         async for img, clickpoint, text_input in LoopExecutor(CONFIG_PATH).execute_sequence_async(
             sequence_file=yaml_file,
             get_image_func=gc.get_screenshot,
+            delay=1.0
         ):
             if clickpoint.validity.status == 'invalid':
                 response = f"No valid clickpoint for object: {text_input}"
