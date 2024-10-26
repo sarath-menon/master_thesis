@@ -41,7 +41,7 @@ def swipe_right(driver, x_left, x_right, y_pos):
   actions.perform()
 #%%
 
-driver = webdriver.Remote("http://127.0.0.1:4723", options=options)
+driver = webdriver.Remote("http://127.0.0.1:8210", options=options)
 # set up swiping
 deviceSize = driver.get_window_size()
 print("Device Width and Height : ",deviceSize)
@@ -67,6 +67,25 @@ actions.w3c_actions.pointer_action.release()
 actions.perform()
 #%%
 
-swipe_right(driver, start_x, end_x, start_y)
+swipe_left(driver, start_x, end_x, start_y)
 
+# %%
+import matplotlib.pyplot as plt
+
+import numpy as np
+from PIL import Image
+import io
+
+# Convert PNG bytes to PIL Image and then to numpy array
+image_bytes = driver.get_screenshot_as_png()
+image = Image.open(io.BytesIO(image_bytes))
+image_array = np.array(image)
+
+plt.imshow(image_array)
+plt.axis('off')
+plt.grid(False)
+plt.show()
+# %%
+# save image
+image.save("screenshot.png")
 # %%
