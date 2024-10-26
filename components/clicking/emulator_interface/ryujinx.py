@@ -219,3 +219,6 @@ class RyujinxInterface(BaseEmulator):
 
     def click(self, x, y, duration=0.1):
         self.macos_interface.click(x, y, duration)
+
+    def double_click(self, x, y):
+        self.macos_interface.double_click(x, y)
