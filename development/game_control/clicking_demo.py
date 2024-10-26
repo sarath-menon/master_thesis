@@ -94,14 +94,7 @@ class WindowCapture:
         self.mouse_controller.position = (pixel_x, pixel_y)
         
         # Update current_window_info with new cursor position
-        self.current_window_info = WindowInfo(
-            name=self.current_window_info.name,
-            width=self.current_window_info.width,
-            height=self.current_window_info.height,
-            last_cursor_x=pixel_x,
-            last_cursor_y=pixel_y,
-            id=self.current_window_info.id
-        )
+        self.current_window_info = self._getWindowInfo()
         print(f"Cursor moved to {pixel_x}, {pixel_y}")
 
     def click(self, x=None, y=None, duration=0.1):
@@ -129,9 +122,12 @@ class WindowCapture:
 # Usage example
 #%%
 window_capture = WindowCapture()
-window_capture.click(x=54.7, y=33.4)
+
+#%%
+
+window_capture.click(x=19.5, y=45.4)
 
 # %%
-window_capture._findWindowId()
+window_capture._getWindowInfo()
 
 # %%
