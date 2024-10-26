@@ -7,7 +7,7 @@ license = ""
 
 packages = [
     { include = "clicking/chat_gui", from = "../../bases" },
-    { include = "clicking/ryujinx_interface", from = "../../components" },
+    { include = "clicking/emulator_interface", from = "../../components" },
 ]
 
 
