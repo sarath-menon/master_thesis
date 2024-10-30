@@ -73,12 +73,9 @@ class AppiumInterface(BaseEmulator):
             })
             cls._instance.driver = None
             cls._instance.screen_size = None
+            cls._instance.screen_width = None
+            cls._instance.screen_height = None
 
-            deviceSize = cls._instance.driver.get_window_size()
-            print("Device Width and Height : ",deviceSize)
-            cls._instance.screen_width = deviceSize['width']
-            cls._instance.screen_height = deviceSize['height']
-                        
         return cls._instance
 
     def __init__(self, **kwargs):
@@ -91,6 +88,8 @@ class AppiumInterface(BaseEmulator):
             if not self.driver:
                 self.driver = webdriver.Remote(self.full_url, options=self.options)
                 self.screen_size = self.driver.get_window_size()
+                self.screen_width = self.screen_size['width']
+                self.screen_height = self.screen_size['height']
                 self.logger.info(f"Device Width and Height: {self.screen_size}")
             self._connection_count += 1
             self.logger.info(f"Connected to emulator. Active connections: {self._connection_count}")
@@ -156,12 +155,12 @@ class AppiumInterface(BaseEmulator):
         except Exception as e:
             self.logger.error(f"Failed to save recording: {e}")
 
-    def click(self, x_percent, y_percent, duration=0.1):
+    def click(self, x, y, duration=0.1):
         screen_width = self.screen_width
         screen_height = self.screen_height
 
-        x = screen_width * x_percent / 100
-        y = screen_height * y_percent / 100
+        x = screen_width * x / 100
+        y = screen_height * y / 100
 
         actions = ActionChains(self.driver)
         actions.w3c_actions = ActionBuilder(
