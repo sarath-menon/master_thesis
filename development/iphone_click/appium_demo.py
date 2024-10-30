@@ -23,7 +23,14 @@ options.load_capabilities({
 	"appium:showXcodeLog": "true",
 	"appium:includeSafariInWebviews": True,
 	"appium:newCommandTimeout": 3600,
-	"appium:connectHardwareKeyboard": True
+	"appium:connectHardwareKeyboard": True,
+	"appium:enablePerformanceLogging": True,
+    "appium:shouldTerminateApp": True,
+    "appium:recordVideo": True,
+    "appium:videoScale": "1.0",
+    "appium:videoType": "h264",
+    "appium:videoFps": 30,
+    "appium:showTaps": True,  # This will show touch indicators
 })
 
 def swipe_left(driver, x_left, x_right, y_pos):
@@ -86,6 +93,56 @@ plt.axis('off')
 plt.grid(False)
 plt.show()
 # %%
-# save image
+# screenshot
 image.save("screenshot.png")
 # %%
+
+# screen record
+# ... existing imports ...
+from datetime import datetime
+import time
+# Add these capabilities to your options.load_capabilities():
+# options.load_capabilities({
+#     # ... your existing capabilities ...
+#     "appium:enablePerformanceLogging": True,
+#     "appium:shouldTerminateApp": True,
+#     "appium:recordVideo": True,
+#     "appium:videoScale": "1.0",
+#     "appium:videoType": "h264",
+#     "appium:videoFps": 30,
+#     "appium:showTaps": True,  # This will show touch indicators
+# })
+
+def start_recording(driver):
+    try:
+        driver.start_recording_screen()
+        print("Started screen recording")
+    except Exception as e:
+        print(f"Failed to start recording: {e}")
+
+def stop_recording(driver, filename=None):
+    if filename is None:
+        filename = f"screen_recording_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
+    
+    try:
+        import base64
+        video_data = driver.stop_recording_screen()
+        video_bytes = base64.b64decode(video_data)
+        with open(filename, "wb") as f:
+            f.write(video_bytes)
+        print(f"Saved recording to {filename}")
+    except Exception as e:
+        print(f"Failed to save recording: {e}")
+
+# Usage example (add this where you want to record):
+start_recording(driver)
+
+# # Your test actions here
+# swipe_left(driver, start_x, end_x, start_y)
+
+time.sleep(3)
+
+# Stop and save the recording
+stop_recording(driver, "swipe_test.mp4")
+# %%
+driver.quit()
