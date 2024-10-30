@@ -25,9 +25,9 @@ def get_mask_centroid(mask):
 
     return circle_center
 
-def pil_to_base64(img):
+def pil_to_base64(img, format="PNG"):
     buffered = io.BytesIO()
-    img.save(buffered, format="PNG")
+    img.save(buffered, format=format)
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 
