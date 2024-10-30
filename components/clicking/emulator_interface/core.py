@@ -1,11 +1,22 @@
 from abc import ABC, abstractmethod
 from PIL import Image
+import logging
 
 class BaseEmulator(ABC):
     """
     Abstract base class for emulator interfaces.
     Defines the core functionality that all emulator interfaces must implement.
     """
+    
+    def __init__(self):
+        # Configure logger
+        self.logger = logging.getLogger(self.__class__.__name__)
+        if not self.logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter('%(levelname)s - %(name)s - %(message)s')
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+            self.logger.setLevel(logging.INFO)
     
     @abstractmethod
     def get_screenshot(self) -> Image.Image:
@@ -16,31 +27,6 @@ class BaseEmulator(ABC):
             PIL.Image: Screenshot from the emulator in RGB format
         """
         pass
-    
-    @abstractmethod
-    def keypress(self, key: str, duration: int) -> None:
-        """
-        Send a keypress event to the emulator.
-        
-        Args:
-            key: The key to press
-            duration: How long to press the key in milliseconds
-        """
-        pass
-
-    @abstractmethod
-    def pause_emulator(self):
-        """
-        Pause the emulator.
-        """
-        pass    
-
-    @abstractmethod
-    def resume_emulator(self):
-        """
-        Resume the emulator.
-        """
-        pass    
 
     @abstractmethod
     def connect_emulator(self):
