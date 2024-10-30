@@ -12,6 +12,9 @@ import queue
 import atexit
 from .core import BaseEmulator
 from .macos_clicking import MacOSInterface
+import subprocess
+
+RYUJINX_PATH = "/Users/sarathmenon/Documents/Ryujinx/build/Ryujinx"
 
 class RyujinxInterface(BaseEmulator):
     _instance = None
@@ -25,7 +28,7 @@ class RyujinxInterface(BaseEmulator):
 
     def _initialize(self):
         self.game_url = "http://localhost:8086"
-        self.macos_interface = MacOSInterface(windowName='Ryujinx')
+        self.macos_interface = None
 
         self.is_game_over = False
         self.is_running = True
@@ -54,6 +57,8 @@ class RyujinxInterface(BaseEmulator):
         # Register the cleanup function
         atexit.register(self.disconnect_emulator)
 
+        self.ryujinx_process = None
+
     @classmethod
     def _increment_connection_count(cls):
         cls._connection_count += 1
@@ -66,6 +71,20 @@ class RyujinxInterface(BaseEmulator):
 
     def connect_emulator(self):
         try:    
+            # Start Ryujinx process in a separate thread
+            def run_ryujinx():
+                self.ryujinx_process = subprocess.Popen([RYUJINX_PATH])
+            
+            thread = threading.Thread(target=run_ryujinx)
+            thread.daemon = True  # Make thread daemon so it exits when main program exits
+            thread.start()
+            
+            # Wait for Ryujinx to start up and user to open the game
+            time.sleep(10)  
+
+            # Initialize MacOSInterface to interact with Ryujinx window
+            self.macos_interface = MacOSInterface(windowName='Ryujinx')
+
             if not self.obs_ws or not self.obs_ws.connected:
                 self.obs_ws = websocket.WebSocket()
                 self.obs_ws.connect("ws://localhost:8086/stream_websocket")
@@ -79,13 +98,20 @@ class RyujinxInterface(BaseEmulator):
             self._set_stream_properties()
 
             self.obs_ws.settimeout(2)# Set websocket timeout to 2 seconds 
-            self.action_ws.settimeout(2)# Set websocket timeout to 2 seconds 
+            self.action_ws.settimeout(2)# Set websocket timeout to 2 seconds
+
+            return True
         except websocket.WebSocketException as e:
             print(f"Failed to connect to websockets: {e}")
-            return
+            return False
 
     def disconnect_emulator(self):
         try:
+            # Terminate Ryujinx process if it exists
+            if self.ryujinx_process:
+                self.ryujinx_process.terminate()
+                self.ryujinx_process = None
+
             if self.obs_ws:
                 self.obs_ws.close()
                 self._decrement_connection_count()
