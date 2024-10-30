@@ -23,43 +23,62 @@ import atexit
 class AppiumInterface(BaseEmulator):
     _instance = None
     _connection_count = 0
-
     app_ids = {"settings": "com.apple.Preferences", "monopoly": "com.scopely.monopolygo"}
 
-    def __new__(cls):
+    def __new__(cls, *args, **kwargs):
         if cls._instance is None:
+            # 1. Create the instance
             cls._instance = super().__new__(cls)
-            cls._instance._initialize()
+            
+            # 2. Initialize BaseEmulator first to set up logger
+            BaseEmulator.__init__(cls._instance)
+            
+            # 3. Now initialize all other attributes
+            cls._instance.url = kwargs.get('url', "http://127.0.0.1")
+            cls._instance.port = kwargs.get('port', 8210)
+            cls._instance.full_url = f"{cls._instance.url}:{cls._instance.port}"
+            cls._instance.appium_process = None
+            cls._instance._initialized = True
+            
+            # 4. Start server and continue with other initialization
+            cls._instance.start_appium_server()
+            
+            # Validate launch app
+            launch_app = kwargs.get('launch_app', 'monopoly')
+            if launch_app not in cls.app_ids:
+                raise ValueError(f"Could not find app id for {launch_app}")
+            
+            # Initialize Appium options
+            screenshot_quality = kwargs.get('screenshot_quality', 1)
+            mjpeg_quality = kwargs.get('mjpeg_quality', 25)
+            mjpeg_framerate = kwargs.get('mjpeg_framerate', 10)
+            
+            cls._instance.options = AppiumOptions()
+            cls._instance.options.load_capabilities({
+                "platformName": "iOS",
+                "appium:bundleId": cls.app_ids[launch_app],
+                "appium:automationName": "XCUITest",
+                "appium:udid": "00008030-001104281E02802E",
+                "appium:xcodeSigningId": "iPhone Developer",
+                "appium:xcodeOrgId": "95Z4N2T99D",
+                "appium:updatedWDABundleId": "com.selva123456.WebDriverAgentRunner",
+                "appium:includeSafariInWebviews": True,
+                "appium:newCommandTimeout": 3600,
+                "appium:connectHardwareKeyboard": True,
+                "appium:enablePerformanceLogging": True,
+                "appium:shouldTerminateApp": True,
+                "appium:mjpegServerScreenshotQuality": mjpeg_quality,
+                "appium:screenshotQuality": screenshot_quality,
+                "appium:mjpegServerFramerate": mjpeg_framerate,
+            })
+            cls._instance.driver = None
+            cls._instance.screen_size = None
+            
         return cls._instance
 
-    def _initialize(self, url="http://127.0.0.1", port=8210, launch_app="monopoly"):
-        super().__init__()
-        self.url = url
-        self.port = port
-        self.full_url = f"{self.url}:{self.port}"
-        self.appium_process = None
-        self.start_appium_server()
-
-        if launch_app not in self.app_ids:
-            raise ValueError(f"Could not find app id for {launch_app}")
-        
-        self.options = AppiumOptions()
-        self.options.load_capabilities({
-            "platformName": "iOS",
-            "appium:bundleId": self.app_ids[launch_app],
-            "appium:automationName": "XCUITest",
-            "appium:udid": "00008030-001104281E02802E",
-            "appium:xcodeSigningId": "iPhone Developer",
-            "appium:xcodeOrgId": "95Z4N2T99D",
-            "appium:updatedWDABundleId": "com.selva123456.WebDriverAgentRunner",
-            "appium:includeSafariInWebviews": True,
-            "appium:newCommandTimeout": 3600,
-            "appium:connectHardwareKeyboard": True,
-            "appium:enablePerformanceLogging": True,
-            "appium:shouldTerminateApp": True,
-        })
-        self.driver = None
-        self.screen_size = None
+    def __init__(self, **kwargs):
+        # No initialization needed here as it's all done in __new__
+        pass
 
     def connect_emulator(self):
         self.logger.info(f"Connecting to emulator on {self.full_url}")
@@ -73,12 +92,9 @@ class AppiumInterface(BaseEmulator):
     def disconnect_emulator(self):
         self._connection_count -= 1
         if self._connection_count == 0 and self.driver:
-            # Terminate the app to stop automation mode
-            self.driver.terminate_app(self.options.capabilities['appium:bundleId'])
-            # Close the driver session
             self.driver.quit()
             self.driver = None
-            self.logger.info("Disconnected from emulator and terminated app")
+            self.logger.info("Disconnected from emulator")
 
     def swipe_left(self, x_left, x_right, y_pos):
         actions = ActionChains(self.driver)
