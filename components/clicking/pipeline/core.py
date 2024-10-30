@@ -32,6 +32,7 @@ import hashlib
 import pickle
 from tqdm.asyncio import tqdm as async_tqdm
 import time
+import logging
 
 T = TypeVar('T')
 
@@ -52,6 +53,16 @@ def custom_cache(func):
             cache[key] = func(state, *args, **kwargs)
         return cache[key]
     return wrapper
+
+def setup_pipeline_logger(name: str = "pipeline", level=logging.INFO):
+    logger = logging.getLogger(name)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+    logger.setLevel(level)
+    return logger
 
 @dataclass
 class PipelineStep(Generic[T]):
@@ -145,11 +156,21 @@ class PipelineRunResults:
         return self.results[mode_name].result
     
 class Pipeline:
-    def __init__(self, config: Dict[str, Any], cache_folder= "./cache"):
+    def __init__(self, config: Dict[str, Any], cache_folder= "./cache", enable_logging: bool = True, log_level: int = logging.INFO):
         self.steps: List[PipelineStep] = []
         self.config = config
         self.cache_dir = config['pipeline']['cache_dir']
+        
+        # Initialize logger based on enable_logging parameter
+        if enable_logging:
+            self.logger = setup_pipeline_logger(level=log_level)
+        else:
+            self.logger = logging.getLogger("pipeline")
+            self.logger.addHandler(logging.NullHandler())
+            self.logger.disabled = True
+            
         os.makedirs(self.cache_dir, exist_ok=True)
+        
 
     async def run(
         self,
@@ -190,14 +211,14 @@ class Pipeline:
                 raise asyncio.CancelledError()
 
             try:
-                print(f"Starting execution of step '{step.name}'")
+                self.logger.debug(f"Starting execution of step '{step.name}'")
                 state = await asyncio.to_thread(step.function, state)
             except asyncio.CancelledError:
-                print(f"Step '{step.name}' was cancelled.")
+                self.logger.warning(f"Step '{step.name}' was cancelled.")
                 raise
             
             if stop_after_step and step.name == stop_after_step:
-                print(f"Stopping execution after step: {step.name}")
+                self.logger.info(f"Stopping execution after step: {step.name}")
                 break
         
         return state
@@ -243,17 +264,17 @@ class Pipeline:
                 with open(file_path, 'rb') as f:
                     state = pickle.load(f)
             except FileNotFoundError:
-                print(f"Error: File not found at {file_path}")
+                self.logger.error(f"Error: File not found at {file_path}")
                 return None
             except pickle.UnpicklingError:
-                print(f"Error: Unable to unpickle file at {file_path}")
+                self.logger.error(f"Error: Unable to unpickle file at {file_path}")
                 return None
             except Exception as e:
-                print(f"Unexpected error occurred while loading state: {str(e)}")
+                self.logger.error(f"Unexpected error occurred while loading state: {str(e)}")
                 return None
 
             creation_time = datetime.fromtimestamp(os.path.getctime(file_path))
-            print(f"State from {creation_time.strftime('%d-%m-%Y %H:%M:%S')} loaded successfully")
+            self.logger.info(f"State from {creation_time.strftime('%d-%m-%Y %H:%M:%S')} loaded successfully")
             return state
         except Exception as e:
             print(f"Error loading pipeline state: {str(e)}")
@@ -289,7 +310,7 @@ class Pipeline:
             config_file_path = os.path.join(new_folder_path, "config.yml")
             with open(config_file_path, 'w') as f:
                 yaml.dump(self.config, f)
-            print(f"Config saved as YAML at {config_file_path}")
+            self.logger.info(f"Config saved as YAML at {config_file_path}")
 
             if save_as_json:
                 json_thread.join()
@@ -307,17 +328,17 @@ class Pipeline:
             config_file_path = os.path.join(new_folder_path, "config.yml")
             with open(config_file_path, 'w') as f:
                 yaml.dump(self.config, f)
-            print(f"Config saved as YAML at {config_file_path}")
+            self.logger.info(f"Config saved as YAML at {config_file_path}")
         except Exception as e:
-            print(f"Error saving config: {str(e)}")
+            self.logger.error(f"Error saving config: {str(e)}")
 
         try:
             prompts_src_path = os.path.join('prompts')
             prompts_dest_path = os.path.join(new_folder_path, 'prompts')
             shutil.copytree(prompts_src_path, prompts_dest_path)
-            print(f"Prompts folder copied to {prompts_dest_path}")
+            self.logger.info(f"Prompts folder copied to {prompts_dest_path}")
         except Exception as e:
-            print(f"Error saving prompts: {str(e)}")
+            self.logger.error(f"Error saving prompts: {str(e)}")
 
     def save_state_pickle(self, state: PipelineState, folder_path: str):
         try:
@@ -325,9 +346,9 @@ class Pipeline:
             
             with open(new_file_path, 'wb') as f:
                 pickle.dump(state, f)
-            print(f"Pipeline state saved successfully to {new_file_path}")
+            self.logger.info(f"Pipeline state saved successfully to {new_file_path}")
         except Exception as e:
-            print(f"Error saving pipeline state as pickle: {str(e)}")
+            self.logger.error(f"Error saving pipeline state as pickle: {str(e)}")
 
     def save_metadata(self, state: PipelineState, folder_path: str):
         num_objects = len(state.images)
@@ -380,9 +401,9 @@ class Pipeline:
             with open(os.path.join(os.getcwd(), new_file_path), 'w+') as f:
                 f.write(json_data)
             
-            print(f"Pipeline state saved as JSON successfully to {new_file_path}")
+            self.logger.info(f"Pipeline state saved as JSON successfully to {new_file_path}")
         except Exception as e:
-            print(f"Error saving pipeline state as JSON: {str(e)}")
+            self.logger.error(f"Error saving pipeline state as JSON: {str(e)}")
 
 
     async def run_for_all_modes(
@@ -391,7 +412,8 @@ class Pipeline:
         initial_images: Optional[List[ClickingImage]] = None,
         pipeline_modes: PipelineModeSequence = None,
         start_from_step: Optional[str] = None,
-        stop_after_step: Optional[str] = None
+        stop_after_step: Optional[str] = None,
+        verbose: bool = False
     ) -> PipelineRunResults:
         results = {}
 
@@ -401,7 +423,7 @@ class Pipeline:
         start_time = time.time()
 
         for i, mode in enumerate(pipeline_modes.modes):
-            print(f"Running mode: {mode.name}")
+            self.logger.debug(f"Running mode: {mode.name}")
             
             # Create deep copies of the initial state or images for each run
             initial_state_copy = copy.deepcopy(initial_state) if initial_state else None
@@ -443,7 +465,7 @@ class Pipeline:
 
             end_time = time.time() 
             elapsed_time = end_time - start_time
-            print(f"Completed mode '{mode.name}' in {elapsed_time:.2f} seconds")
+            self.logger.debug(f"Completed mode '{mode.name}' in {elapsed_time:.2f} seconds")
 
         return PipelineRunResults(results)
 
@@ -467,3 +489,6 @@ class Pipeline:
             summary_table.add_row(row)
 
         print(summary_table)
+
+
+
