@@ -71,10 +71,12 @@ def set_emulator(emulator):
     print("Emulator set to:", gc.__class__.__name__)
 
 def connect_wrapper():
-    return gc.connect_emulator()
+    success = gc.connect_emulator()
+    return "Connected" if success else "Connection failed"
 
 def disconnect_wrapper():
-    return gc.disconnect_emulator()
+    success = gc.disconnect_emulator()
+    return "Disconnected" if success else "Disconnection failed"
 
 # Load the configuration file
 CONFIG_PATH = "./development/pipelines/game_object_config.yml"
@@ -223,15 +225,22 @@ with gr.Blocks(css=CSS) as demo:
         #     resume_button.click(fn=gc.resume_emulator)
 
         with gr.Row():
-            emulator_dropdown = gr.Dropdown(
-                [ "None", "Ryujinx", "Appium", "Iphone Mirror"], label="Emulator selector"
-            )
+            with gr.Column():
+                emulator_dropdown = gr.Dropdown(
+                    [ "None", "Ryujinx", "Appium", "Iphone Mirror"], label="Emulator selector"
+                )
+                connection_status = gr.Textbox(
+                    value="Disconnected",
+                    label="Connection Status",
+                    interactive=False
+                )
+
             connect_emulator_btn = gr.Button("Connect emulator")
             disconnect_emulator_btn = gr.Button("Disconnect emulator")
-
+            
             emulator_dropdown.change(fn=set_emulator, inputs=[emulator_dropdown])
-            connect_emulator_btn.click(fn=connect_wrapper)
-            disconnect_emulator_btn.click(fn=disconnect_wrapper)
+            connect_emulator_btn.click(fn=connect_wrapper, outputs=[connection_status])
+            disconnect_emulator_btn.click(fn=disconnect_wrapper, outputs=[connection_status])
 
 if __name__ == "__main__":
     demo.launch()
