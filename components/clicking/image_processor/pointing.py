@@ -25,7 +25,6 @@ class Pointing(BaseProcessor):
 
     def create_prediction_request(self, image_base64: str, obj, mode: TaskType) -> PredictionReq:
         input_text = self.pointing_input_mode.value.handler(obj)
-        print(f"Input text: {input_text}")
         return PredictionReq(
             image=image_base64,
             task=mode,

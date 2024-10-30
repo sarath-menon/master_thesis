@@ -155,6 +155,6 @@ def crop_image(image, start_x=0, end_x=None, start_y=0, crop_height=None, target
         target_height = int(target_width / aspect_ratio)
         img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
 
-    print(f"Final image resolution: {img.size}")
-    print(f"Final aspect ratio: {img.height/img.width:.3f}")
+    # print(f"Final image resolution: {img.size}")
+    # print(f"Final aspect ratio: {img.height/img.width:.3f}")
     return img
