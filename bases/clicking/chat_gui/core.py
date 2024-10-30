@@ -2,7 +2,7 @@ import numpy as np
 import gradio as gr
 from PIL import Image
 from io import BytesIO
-from clicking.emulator_interface import RyujinxInterface, IphoneMirrorInterface
+from clicking.emulator_interface import *
 import base64
 import datetime
 import os
@@ -17,8 +17,8 @@ from development.pipelines.loop_executor import LoopExecutor
 import time
 
 RYUJINX_URL = "http://localhost:8086/screenshot"
-gc = RyujinxInterface()
-# gc = IphoneMirrorInterface()
+
+gc = CustomEmulator()
 
 async def save_image_and_response(image_array, response):
     # Create a directory with the current date and time
@@ -56,14 +56,25 @@ def execute_btn_callback(chat_input):
     response_json = json.loads(response)
     print(response_json["action"], response_json["direction/target"])
 
-
-
 def set_emulator(emulator):
     global gc
     if emulator == "Ryujinx":
         gc = RyujinxInterface()
     elif emulator == "Iphone Mirror":
         gc = IphoneMirrorInterface()
+    elif emulator == "Appium":
+        gc = AppiumInterface()  
+        time.sleep(2)
+    else:
+        print("No emulator selected")
+
+    print("Emulator set to:", gc.__class__.__name__)
+
+def connect_wrapper():
+    return gc.connect_emulator()
+
+def disconnect_wrapper():
+    return gc.disconnect_emulator()
 
 # Load the configuration file
 CONFIG_PATH = "./development/pipelines/game_object_config.yml"
@@ -204,23 +215,23 @@ with gr.Blocks(css=CSS) as demo:
 
             chatbot.like(print_like_dislike, None, None, like_user_message=True)
 
-        with gr.Row():
-            pause_button = gr.Button("Pause game")
-            resume_button = gr.Button("Resume game")
+        # with gr.Row():
+        #     pause_button = gr.Button("Pause game")
+        #     resume_button = gr.Button("Resume game")
             
-            pause_button.click(fn=gc.pause_emulator)
-            resume_button.click(fn=gc.resume_emulator)
+        #     pause_button.click(fn=gc.pause_emulator)
+        #     resume_button.click(fn=gc.resume_emulator)
 
         with gr.Row():
             emulator_dropdown = gr.Dropdown(
-                [ "Ryujinx", "Iphone Mirror"], label="Emulator selector"
+                [ "None", "Ryujinx", "Appium", "Iphone Mirror"], label="Emulator selector"
             )
             connect_emulator_btn = gr.Button("Connect emulator")
             disconnect_emulator_btn = gr.Button("Disconnect emulator")
 
             emulator_dropdown.change(fn=set_emulator, inputs=[emulator_dropdown])
-            connect_emulator_btn.click(fn=gc.connect_emulator)
-            disconnect_emulator_btn.click(fn=gc.disconnect_emulator)
+            connect_emulator_btn.click(fn=connect_wrapper)
+            disconnect_emulator_btn.click(fn=disconnect_wrapper)
 
 if __name__ == "__main__":
     demo.launch()
