@@ -73,7 +73,12 @@ class AppiumInterface(BaseEmulator):
             })
             cls._instance.driver = None
             cls._instance.screen_size = None
-            
+
+            deviceSize = cls._instance.driver.get_window_size()
+            print("Device Width and Height : ",deviceSize)
+            cls._instance.screen_width = deviceSize['width']
+            cls._instance.screen_height = deviceSize['height']
+                        
         return cls._instance
 
     def __init__(self, **kwargs):
@@ -81,22 +86,36 @@ class AppiumInterface(BaseEmulator):
         pass
 
     def connect_emulator(self):
-        self.logger.info(f"Connecting to emulator on {self.full_url}")
-        if not self.driver:
-            self.driver = webdriver.Remote(self.full_url, options=self.options)
-            self.screen_size = self.driver.get_window_size()
-            self.logger.info(f"Device Width and Height: {self.screen_size}")
-        self._connection_count += 1
-        self.logger.info(f"Connected to emulator. Active connections: {self._connection_count}")
+        try:
+            self.logger.info(f"Connecting to emulator on {self.full_url}")
+            if not self.driver:
+                self.driver = webdriver.Remote(self.full_url, options=self.options)
+                self.screen_size = self.driver.get_window_size()
+                self.logger.info(f"Device Width and Height: {self.screen_size}")
+            self._connection_count += 1
+            self.logger.info(f"Connected to emulator. Active connections: {self._connection_count}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to connect to emulator: {e}")
+            return False
 
     def disconnect_emulator(self):
-        self._connection_count -= 1
-        if self._connection_count == 0 and self.driver:
-            self.driver.quit()
-            self.driver = None
-            self.logger.info("Disconnected from emulator")
+        try:
+            self._connection_count -= 1
+            if self._connection_count == 0 and self.driver:
+                self.driver.quit()
+                self.driver = None
+                self.logger.info("Disconnected from emulator")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to disconnect from emulator: {e}")
+            return False
 
-    def swipe_left(self, x_left, x_right, y_pos):
+    def swipe_left(self):
+        x_left = self.screen_width /9
+        x_right = self.screen_width * 8/9
+        y_pos = self.screen_height /2
+
         actions = ActionChains(self.driver)
         actions.w3c_actions.pointer_action.move_to_location(x_left, y_pos)
         actions.w3c_actions.pointer_action.click_and_hold()
@@ -137,10 +156,16 @@ class AppiumInterface(BaseEmulator):
         except Exception as e:
             self.logger.error(f"Failed to save recording: {e}")
 
-    def click(self, x, y, duration=0.1):
+    def click(self, x_percent, y_percent, duration=0.1):
+        screen_width = self.screen_width
+        screen_height = self.screen_height
+
+        x = screen_width * x_percent / 100
+        y = screen_height * y_percent / 100
+
         actions = ActionChains(self.driver)
         actions.w3c_actions = ActionBuilder(
-            self.driver, 
+            self.driver,
             mouse=PointerInput(interaction.POINTER_TOUCH, "touch")
         )
         actions.w3c_actions.pointer_action.move_to_location(x, y)
@@ -168,7 +193,11 @@ class AppiumInterface(BaseEmulator):
 
     def stop_appium_server(self):
         if self.appium_process:
-            os.killpg(os.getpgid(self.appium_process.pid), signal.SIGTERM)
-            self.appium_process = None
-            self.logger.info("Stopped Appium server")
+            try:
+                os.killpg(os.getpgid(self.appium_process.pid), signal.SIGTERM)
+            except (ProcessLookupError, OSError) as e:
+                self.logger.warning(f"Process already terminated: {e}")
+            finally:
+                self.appium_process = None
+                self.logger.info("Stopped Appium server")
 
