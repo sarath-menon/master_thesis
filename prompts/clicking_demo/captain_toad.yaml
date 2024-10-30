@@ -1,3 +1,8 @@
 instructions:
   - button named START
   - delay 4
+  - right arrow symbol
+  - delay 2
+  - right arrow symbol
+  - delay 2
+  - back button

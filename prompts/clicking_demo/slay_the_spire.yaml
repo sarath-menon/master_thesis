@@ -1,8 +1,11 @@
 instructions:
   - button named GO
-  - button named BUILD
-  - x symbol at the bottom
-  - hamburger menu at the top right
-  - x symbol at the bottom
+  - delay 10
+  - button BUILD
   - money symbol in the info bar at the top
+  - x symbol at the bottom
+  - hamburger menu in the top right
+  - button named MY SHOWROOM
+  - x symbol at the bottom
+  - third  game card from the left
   - x symbol at the bottom

@@ -4,6 +4,8 @@
 #   - microwave
 
 instructions:
+  - button named Resume
+  - delay 2
   - soccer ball
   - left door of the cabinet
   - inside of the cabinet
