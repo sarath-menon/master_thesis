@@ -16,8 +16,6 @@ from clicking.vision_model.utils import pil_to_base64
 from development.pipelines.loop_executor import LoopExecutor
 import time
 
-RYUJINX_URL = "http://localhost:8086/screenshot"
-
 gc = CustomEmulator()
 
 async def save_image_and_response(image_array, response):

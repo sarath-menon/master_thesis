@@ -18,9 +18,6 @@ class IphoneMirrorInterface(BaseEmulator):
     def _initialize(self):
         self.macos_interface = MacOSInterface(windowName='iPhone Mirroring')
 
-    def keypress(self, key):
-        pass
-
     def get_screenshot(self):
         img = self.macos_interface.capture_window()
         # # scale image down to 1/2 resolution
