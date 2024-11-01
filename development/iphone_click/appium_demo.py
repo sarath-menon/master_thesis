@@ -1,4 +1,7 @@
 #%%
+%load_ext autoreload
+%autoreload 2
+
 from appium import webdriver
 from appium.options.common.base import AppiumOptions
 from appium.webdriver.common.appiumby import AppiumBy
@@ -75,7 +78,6 @@ actions.perform()
 #%%
 
 swipe_left(driver, start_x, end_x, start_y)
-
 # %%
 import matplotlib.pyplot as plt
 
@@ -146,3 +148,20 @@ time.sleep(3)
 stop_recording(driver, "swipe_test.mp4")
 # %%
 driver.quit()
+
+# %%
+from components.clicking.emulator_interface.appium import AppiumInterface
+
+appium = AppiumInterface(mjpeg_quality=10)
+appium.connect_emulator()
+# %%
+appium.swipe_left()
+
+#%%
+screenshot = appium.get_screenshot()
+screenshot
+# %%
+
+appium.click(50, 70)
+# %%
+appium.disconnect_emulator()
