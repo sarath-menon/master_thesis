@@ -1,0 +1,1 @@
+/Users/sarathmenon/Documents/master_thesis/development/macos_touch_recorder/touch_recorder/target/debug/touch_recorder: /Users/sarathmenon/Documents/master_thesis/development/macos_touch_recorder/touch_recorder/src/main.rs

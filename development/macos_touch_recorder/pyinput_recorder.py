@@ -1,0 +1,18 @@
+from pynput import mouse
+
+def on_move(x, y):
+    print(f'Mouse moved to ({x}, {y})')
+
+def on_click(x, y, button, pressed):
+    state = 'pressed' if pressed else 'released'
+    print(f'Mouse {state} at ({x}, {y}) with {button}')
+
+def on_scroll(x, y, dx, dy):
+    print(f'Mouse scrolled at ({x}, {y})')
+
+# Create and start the listener
+with mouse.Listener(
+    on_move=on_move,
+    on_click=on_click,
+    on_scroll=on_scroll) as listener:
+    listener.join()
