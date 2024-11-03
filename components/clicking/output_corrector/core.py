@@ -8,7 +8,7 @@ import numpy as np
 from clicking.common.mask import SegmentationMask, SegmentationMode
 from clicking.prompt_manager.core import PromptManager
 import asyncio
-from clicking.common.image_utils import ImageProcessorBase
+from clicking.common.image_utils import HostedModelClientBase
 from clicking.common.data_structures import ClickingImage, ValidityStatus
 from clicking.prompt_refinement.data_structures import *
 import json
@@ -49,7 +49,7 @@ class VerificationMode(Enum):
     CROP_BBOX = ModuleMode("crop", process_bbox_crop)
     CROP_MASK = ModuleMode("crop", process_mask_crop)
 
-class OutputCorrector(ImageProcessorBase):
+class OutputCorrector(HostedModelClientBase):
     def __init__(self, config: Dict, model: str = "gpt-4o-2024-08-06", temperature: float = 0.0):
         super().__init__(model, temperature)
         self.PROMPT_PATH = config['prompts']['output_corrector_path']

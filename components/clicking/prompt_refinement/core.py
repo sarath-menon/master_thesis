@@ -1,4 +1,4 @@
-from clicking.common.image_utils import ImageProcessorBase
+from clicking.common.image_utils import HostedModelClientBase
 from litellm import completion, acompletion
 import os
 import dotenv
@@ -27,7 +27,7 @@ os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 T = TypeVar('T')
 
-class PromptRefiner(ImageProcessorBase):
+class PromptRefiner(HostedModelClientBase):
     def __init__(self,  config: Dict, model: str = "gpt-4o", temperature: float = 0.0):
         super().__init__(model, temperature)
         self.prompt_manager = PromptManager(config['prompts']['refinement_path'])

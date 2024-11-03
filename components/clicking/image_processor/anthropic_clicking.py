@@ -4,7 +4,7 @@ from clicking.common.data_structures import *
 from enum import Enum
 from clicking.vision_model.utils import pil_to_base64
 from clicking_client.types import Response
-from clicking.common.image_utils import ImageProcessorBase
+from clicking.common.image_utils import HostedModelClientBase
 import asyncio
 from tqdm.asyncio import tqdm as async_tqdm
 from clicking.prompt_manager.core import PromptManager
@@ -33,7 +33,7 @@ def create_centered_image(input_image: Image.Image, canvas_width: int = 1024, ca
     
     return result, (x_offset, y_offset), scale_factor
 
-class AnthropicClicking(ImageProcessorBase):
+class AnthropicClicking(HostedModelClientBase):
     def __init__(self, client: Client, config: Dict, model: str = "claude-3-5-sonnet-20241022"):
         super().__init__(model)
         self.client = client

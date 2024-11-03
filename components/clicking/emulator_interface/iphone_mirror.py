@@ -3,7 +3,7 @@ import numpy as np
 from .core import BaseEmulator
 import subprocess
 from .macos_clicking import MacOSInterface
-from ..common.image_utils import crop_image
+from ..vision_model.utils import crop_image
 
 class IphoneMirrorInterface(BaseEmulator):
     _instance = None
