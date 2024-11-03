@@ -54,7 +54,7 @@ def draw_clickpoint(img, clickpoint, radius=10, color="yellow", outline="black",
     )
     return img
 
-def img_click_callback(img, tolerance, evt: gr.SelectData):
+def img_click_callback(img, evt: gr.SelectData):
     x, y = evt.index
 
     img_pil = Image.fromarray(img)
@@ -64,19 +64,26 @@ def img_click_callback(img, tolerance, evt: gr.SelectData):
     y_percent = (y / img_pil.height) * 100
 
     img_ann = draw_clickpoint(img_pil, ClickPoint(x=x_percent, y=y_percent))
-    return img_ann
+
+    text_output = f"Clickpoint: {x_percent}, {y_percent}"
+    return img_ann, text_output
 
 with gr.Blocks(css=CSS) as demo:
     gr.Markdown("# Hosted Model Chat")
 
-    with gr.Tab("Image selector"):
-        tolerance = gr.Slider(label="Tolerance", info="How different colors can be in a segment.", minimum=0, maximum=256*3, value=50)
+    with gr.Tab("Clickpoint input"):
+        with gr.Column():
+            with gr.Row():
+                input_img = gr.Image(label="Input")
+                output_img = gr.Image(label="Selected Segment")
 
-        with gr.Row():
-            input_img = gr.Image(label="Input")
-            output_img = gr.Image(label="Selected Segment")
+            text_output = gr.Textbox(
+                value="",
+                interactive=False,
+                label="Output",
+            )
 
-        input_img.select(img_click_callback, [input_img, tolerance], output_img)
+            input_img.select(img_click_callback, [input_img], [output_img, text_output])
 
     with gr.Tab("Chatbot"):
         chatbot = gr.Chatbot(
