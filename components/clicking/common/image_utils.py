@@ -14,10 +14,12 @@ T = TypeVar('T')
 
 import os
 
-class ImageProcessorBase:
-    def __init__(self, model: str = "gpt-4o-2024-08-06", temperature: float = 0.0):
+class HostedModelClientBase:
+    def __init__(self, model: str = "gpt-4o-2024-08-06", temperature: float = 0.0, api_key: Optional[str] = None, api_base: Optional[str] = None):
         self.model = model
         self.temperature = temperature
+        self.api_key = api_key
+        self.api_base = api_base
 
     def _pil_to_base64(self, image: Image.Image) -> str:
         with io.BytesIO() as buffer:
@@ -45,6 +47,8 @@ class ImageProcessorBase:
 
         response = await acompletion(
             model=self.model, 
+            api_key=self.api_key,
+            api_base=self.api_base,
             messages=messages, 
             temperature=self.temperature, 
             response_format=response_format,
@@ -89,6 +93,8 @@ class ImageProcessorBase:
         try:
             responses = batch_completion(
                 model=self.model,
+                api_key=self.api_key,
+                api_base=self.api_base,
                 messages=batch_messages,
                 temperature=self.temperature,
                 response_format=response_format,
@@ -124,37 +130,3 @@ class ImageProcessorBase:
         return results
 
 
-def crop_image(image, start_x=0, end_x=None, start_y=0, crop_height=None, target_width=None):
-    """
-    Process screenshot with custom cropping and optional scaling
-    
-    Args:
-        image_path: Path to the image file
-        start_x: Left crop position
-        end_x: Right crop position (if None, uses full width minus start_x)
-        start_y: Starting y coordinate for crop
-        crop_height: Height of the crop area
-        target_width: Desired final width in pixels (maintains aspect ratio if specified)
-    """
-    img = image.convert('RGB')
-    
-    # Handle right side cropping
-    if end_x is None:
-        end_x = img.width - start_x
-    
-    # Use full height if not specified
-    if crop_height is None:
-        crop_height = img.height - start_y
-    
-    # Perform the crop
-    img = img.crop((start_x, start_y, end_x, start_y + crop_height))
-    
-    # Scale if target width is specified
-    if target_width:
-        aspect_ratio = img.width / img.height
-        target_height = int(target_width / aspect_ratio)
-        img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
-
-    # print(f"Final image resolution: {img.size}")
-    # print(f"Final aspect ratio: {img.height/img.width:.3f}")
-    return img
