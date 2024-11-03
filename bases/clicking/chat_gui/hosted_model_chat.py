@@ -9,6 +9,7 @@ from pydantic import BaseModel
 import yaml
 import os
 from clicking.common.image_utils import HostedModelClientBase
+from clicking.prompt_manager.core import PromptManager
 
 
 CONFIG_PATH = "projects/chat_gui/hosted_models.yaml"    
@@ -30,7 +31,7 @@ for model in config["runpod"]:
 endpoint_names = [endpoint.model_name for endpoint in endpoints]
 
 client = None
-
+prompt_manager = PromptManager(config['prompts']['hosted_model_path'])
 
 def execute_btn_callback(chat_input):
     response = chat_input[-1][-1]
@@ -100,9 +101,7 @@ def img_click_callback(img, evt: gr.SelectData):
         }}. Make sure that you describe the exact object at this point.
         """
 
-        # text_input = f"""
-        # The image is a game screenshot. Describe the object at the coordinates: <point x="{x_percent:.1f}" y="{y_percent:.1f}"> </point>. Make sure that you describe the exact object at this point.
-        # """
+        text_input = prompt_manager.get_prompt(type='user', prompt_key="clickpoint_input", template_values={"x_percent": x_percent, "y_percent": y_percent})
         text_output = client.get_image_response(img_pil, text_input, messages)
     
 
