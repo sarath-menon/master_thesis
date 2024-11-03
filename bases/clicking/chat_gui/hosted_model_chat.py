@@ -10,6 +10,9 @@ import yaml
 import os
 from clicking.common.image_utils import HostedModelClientBase
 
+
+CONFIG_PATH = "projects/chat_gui/hosted_models.yaml"    
+
 class Endpoint(BaseModel):
     model_name: str
     url: str
@@ -28,15 +31,6 @@ endpoint_names = [endpoint.model_name for endpoint in endpoints]
 
 client = None
 
-CONFIG_PATH = "projects/chat_gui/hosted_models.yaml"    
-
-
-# CONFIG = load_config()
-# # read the config file      
-# endpoints = []
-# for model in CONFIG["runpod"]:
-#     endpoint = Endpoint(**model)
-#     endpoints.append(endpoint)
 
 def execute_btn_callback(chat_input):
     response = chat_input[-1][-1]
@@ -54,7 +48,6 @@ def add_message(history, message):
 async def bot(history: list):
     last_message = history[-1]["content"]
 
-    # response = await client.get_image_response(image, text_input, messages)
     response = "This is a test response"
     history.append({"role": "assistant", "content": response})
     yield history
@@ -68,8 +61,6 @@ def draw_clickpoint(img, clickpoint, radius=10, color="yellow", outline="black",
     x = int(clickpoint.x / 100 * img.width)
     y = int(clickpoint.y / 100 * img.height)
 
-    print(x, y)
-
     # Draw horizontal dotted line
     for i in range(0, img.width, line_spacing):
         draw.line([(i, y), (i+line_width, y)], fill=outline, width=line_width)
@@ -78,12 +69,12 @@ def draw_clickpoint(img, clickpoint, radius=10, color="yellow", outline="black",
     for i in range(0, img.height, line_spacing):
         draw.line([(x, i), (x, i+line_width)], fill=outline, width=line_width)
         
-    # Draw circle at intersection
-    draw.ellipse(
-        [(x - radius, y - radius), (x + radius, y + radius)],
-        fill=color,
-        outline=outline
-    )
+    # # Draw circle at intersection
+    # draw.ellipse(
+    #     [(x - radius, y - radius), (x + radius, y + radius)],
+    #     fill=color,
+    #     outline=outline
+    # )
     return img
 
 def img_click_callback(img, evt: gr.SelectData):
@@ -95,16 +86,27 @@ def img_click_callback(img, evt: gr.SelectData):
     x_percent = (x / img_pil.width) * 100
     y_percent = (y / img_pil.height) * 100
 
-    img_ann = draw_clickpoint(img_pil, ClickPoint(x=x_percent, y=y_percent))
-
-    text_output = f"Clickpoint: {x_percent}, {y_percent}"
+    print(f"Clickpoint: {x_percent:.1f}, {y_percent:.1f}")
 
     if client is None:
         text_output = "No model selected"
     else:
         messages = []
-        text_input = "Point to the button named Shop"
-        text_output =  client.get_image_response(img_pil, text_input, messages)
+        text_input = f"""
+        The image is a game screenshot. Describe the object at the coordinates:
+        {{
+        "x": {x_percent:.1f},
+        "y": {y_percent:.1f}
+        }}. Make sure that you describe the exact object at this point.
+        """
+
+        # text_input = f"""
+        # The image is a game screenshot. Describe the object at the coordinates: <point x="{x_percent:.1f}" y="{y_percent:.1f}"> </point>. Make sure that you describe the exact object at this point.
+        # """
+        text_output = client.get_image_response(img_pil, text_input, messages)
+    
+
+    img_ann = draw_clickpoint(img_pil.copy(), ClickPoint(x=x_percent, y=y_percent))
 
     return img_ann, text_output
 
@@ -175,15 +177,16 @@ with gr.Blocks(css=CSS) as demo:
             model_dropdown = gr.Dropdown(
                 [endpoint.model_name for endpoint in endpoints], label="Model selector"
             )
-            submit_btn = gr.Button("Set model")
+            # submit_btn = gr.Button("Set model")
             # connection_status = gr.Textbox(
             #     value="Disconnected",
             #     label="Connection Status",
             #     interactive=False
             # )
 
-            # model_dropdown.change(fn=set_model, inputs=[model_dropdown])
-            submit_btn.click(fn=set_model, inputs=[model_dropdown])
+            set_model(model_dropdown.value)
+            model_dropdown.change(fn=set_model, inputs=[model_dropdown])
+            # submit_btn.click(fn=set_model, inputs=[model_dropdown])
         
         # with gr.Row():
         #     with gr.Column():
