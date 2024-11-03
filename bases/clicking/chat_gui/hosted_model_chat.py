@@ -5,6 +5,38 @@ import json
 from clicking.vision_model.utils import pil_to_base64
 from PIL import ImageDraw, Image
 from clicking.common.data_structures import ClickPoint
+from pydantic import BaseModel
+import yaml
+import os
+from clicking.common.image_utils import HostedModelClientBase
+
+class Endpoint(BaseModel):
+    model_name: str
+    url: str
+
+def load_config():
+    CONFIG = yaml.safe_load(open(CONFIG_PATH))
+    return CONFIG
+
+config = load_config()
+endpoints = []
+for model in config["runpod"]:
+    endpoint = Endpoint(**model)
+    endpoints.append(endpoint)
+
+endpoint_names = [endpoint.model_name for endpoint in endpoints]
+
+client = None
+
+CONFIG_PATH = "projects/chat_gui/hosted_models.yaml"    
+
+
+# CONFIG = load_config()
+# # read the config file      
+# endpoints = []
+# for model in CONFIG["runpod"]:
+#     endpoint = Endpoint(**model)
+#     endpoints.append(endpoint)
 
 def execute_btn_callback(chat_input):
     response = chat_input[-1][-1]
@@ -66,7 +98,30 @@ def img_click_callback(img, evt: gr.SelectData):
     img_ann = draw_clickpoint(img_pil, ClickPoint(x=x_percent, y=y_percent))
 
     text_output = f"Clickpoint: {x_percent}, {y_percent}"
+
+    if client is None:
+        text_output = "No model selected"
+    else:
+        messages = []
+        text_input = "Point to the button named Shop"
+        text_output =  client.get_image_response(img_pil, text_input, messages)
+
     return img_ann, text_output
+
+def set_model(model):
+    global client
+
+    for endpoint in endpoints:
+        print(endpoint.model_name, model)
+        if endpoint.model_name != model:
+            continue
+
+        client = HostedModelClientBase(model=endpoint.model_name, api_base=endpoint.url, api_key=os.environ["RUNPOD_API_KEY"])
+        print("Model set to:", model)
+        return
+
+    print(f"Could not find model: {model} in config file")
+
 
 with gr.Blocks(css=CSS) as demo:
     gr.Markdown("# Hosted Model Chat")
@@ -116,21 +171,26 @@ with gr.Blocks(css=CSS) as demo:
 
     with gr.Row():
         with gr.Column():
-            emulator_dropdown = gr.Dropdown(
-                [ "None", "Ryujinx", "Appium", "Iphone Mirror"], label="Emulator selector"
-            )
-            connection_status = gr.Textbox(
-                value="Disconnected",
-                label="Connection Status",
-                interactive=False
-            )
 
-        connect_emulator_btn = gr.Button("Connect emulator")
-        disconnect_emulator_btn = gr.Button("Disconnect emulator")
+            model_dropdown = gr.Dropdown(
+                [endpoint.model_name for endpoint in endpoints], label="Model selector"
+            )
+            submit_btn = gr.Button("Set model")
+            # connection_status = gr.Textbox(
+            #     value="Disconnected",
+            #     label="Connection Status",
+            #     interactive=False
+            # )
+
+            # model_dropdown.change(fn=set_model, inputs=[model_dropdown])
+            submit_btn.click(fn=set_model, inputs=[model_dropdown])
         
-        # emulator_dropdown.change(fn=set_emulator, inputs=[emulator_dropdown])
-        # connect_emulator_btn.click(fn=connect_wrapper, outputs=[connection_status])
-        # disconnect_emulator_btn.click(fn=disconnect_wrapper, outputs=[connection_status])
+        # with gr.Row():
+        #     with gr.Column():
+        #     # connect_emulator_btn.click(fn=connect_wrapper, outputs=[connection_status])
+        #     # disconnect_emulator_btn.click(fn=disconnect_wrapper, outputs=[connection_status])
+        # connect_emulator_btn = gr.Button("Connect emulator")
+        # disconnect_emulator_btn = gr.Button("Disconnect emulator")
 
 if __name__ == "__main__":
     demo.launch()
